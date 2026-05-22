@@ -157,7 +157,7 @@
     'wiosłowanie sztangą w opadzie':                 'back_middle',
     'wiosłowanie sztangą':                           'back_middle',
     'wiosłowanie pendlay':                           'back_middle',
-    'wiosłowanie hantlą jednorącz':                  'back_middle',
+    'wiosłowanie hantlem jednoręcz':                 'back_middle',
     'wiosłowanie hantlą':                            'back_middle',
     'wiosłowanie t-bar':                             'back_middle',
     'wiosłowanie wąskim chwytem':                    'back_middle',
@@ -193,7 +193,7 @@
     'spider curl':                                   'biceps_long',
     // BICEPS - KRÓTKA GŁOWA
     'uginanie ramion ze sztangą':                    'biceps_short',
-    'uginanie ramion ze sztangą ez':                 'biceps_short',
+    'uginanie ze sztangą ez':                        'biceps_short',
     'uginanie sztangi':                              'biceps_short',
     'uginanie ramion z hantlami stojąc':             'biceps_short',
     'uginanie ramion z hantlami':                    'biceps_short',
@@ -202,7 +202,6 @@
     'uginanie na wyciągu':                           'biceps_short',
     'cable curl':                                    'biceps_short',
     'uginanie ramion ze sztangą stojąc':             'biceps_short',
-    'uginanie ze sztangą ez stojąc':                 'biceps_short',
     'uginanie z liną':                               'biceps_short',
     // RAMIENNY
     'uginanie hantli młotkowo':                      'biceps_brach',
@@ -383,7 +382,7 @@
           // KLATKA (3)
           { name: 'Wyciskanie sztangi na ławce poziomej', sets: 5, reps: '4-6', tip: 'Eksplozja w górę, kontrola w dół' },
           { name: 'Wyciskanie hantli na ławce skośnej', sets: 3, reps: '6-8', tip: 'Ciężkie hantle, pełen zakres' },
-          { name: 'Pompki na poręczach', sets: 3, reps: '8-12', tip: 'Pochyl tułów — klatka dolna' },
+          { name: 'Dipy na poręczach', sets: 3, reps: '8-12', tip: 'Pochyl tułów — klatka dolna' },
           // BARKI (2)
           { name: 'Wyciskanie żołnierskie', sets: 4, reps: '4-6', tip: 'Tułów napięty, sztanga w linii' },
           { name: 'Wznosy hantli bokiem', sets: 3, reps: '10-12', tip: 'Płynny ruch, bez bujania' },
@@ -419,7 +418,7 @@
           { name: 'Wznosy hantli bokiem', sets: 3, reps: '12-15', tip: 'Do poziomu barków' },
           // TRICEPS (2)
           { name: 'Overhead triceps extension hantlem', sets: 3, reps: '10-12', tip: 'Oburącz za głowę' },
-          { name: 'Kickback', sets: 3, reps: '12-15', tip: 'Tułów równoległy do podłogi' }
+          { name: 'Kickback hantlem', sets: 3, reps: '12-15', tip: 'Tułów równoległy do podłogi' }
         ]
       },
       {
@@ -443,7 +442,7 @@
           // KLATKA (3)
           { name: 'Wyciskanie sztangi na ławce skośnej', sets: 3, reps: '8-10', tip: 'Klatka górna' },
           { name: 'Wyciskanie sztangi na ławce poziomej', sets: 3, reps: '8-10', tip: 'Klatka środkowa' },
-          { name: 'Pompki na poręczach', sets: 3, reps: '10-15', tip: 'Klatka dolna — pochyl tułów' },
+          { name: 'Dipy na poręczach', sets: 3, reps: '10-15', tip: 'Klatka dolna — pochyl tułów' },
           // BARKI (2)
           { name: 'Wyciskanie żołnierskie', sets: 3, reps: '8-10', tip: 'Barki przednie' },
           { name: 'Wznosy hantli bokiem', sets: 3, reps: '12-15', tip: 'Barki boczne' },
@@ -515,7 +514,7 @@
           { name: 'Face pull', sets: 3, reps: '15-20', tip: 'Łokcie wysoko, ciągnij do twarzy' },
           { name: 'Odwrotne rozpiętki', sets: 3, reps: '15-20', tip: 'Pochyl się, łokcie lekko ugięte' },
           // BICEPS (2)
-          { name: 'Uginanie ramion ze sztangą EZ', sets: 3, reps: '10-12', tip: 'Bez bujania, kontroluj' },
+          { name: 'Uginanie ze sztangą EZ', sets: 3, reps: '10-12', tip: 'Bez bujania, kontroluj' },
           { name: 'Uginanie hantli młotkowo', sets: 3, reps: '10-12', tip: 'Brachialis — objętość ramion' },
           // PRZEDRAMIĘ (1)
           { name: 'Uginanie hantli młotkowo', sets: 3, reps: '10-12', tip: 'Brachialis i przedramię' }
@@ -546,10 +545,10 @@
           // PLECY (3)
           { name: 'Martwy ciąg klasyczny', sets: 4, reps: '4-6', tip: 'Maksymalne ciężary' },
           { name: 'Wiosłowanie sztangą Pendlay', sets: 4, reps: '6-8', tip: 'Każde powt. z ziemi' },
-          { name: 'Wiosłowanie hantlą jednorącz', sets: 3, reps: '10-12', tip: 'Skupienie na ściskaniu' },
+          { name: 'Wiosłowanie hantlem jednoręcz', sets: 3, reps: '10-12', tip: 'Skupienie na ściskaniu' },
           // TYLNE BARKI (2)
           { name: 'Face pull', sets: 3, reps: '15-20', tip: 'Łokcie na poziomie barków' },
-          { name: 'Wznosy hantli w opadzie', sets: 3, reps: '15-20', tip: 'Pochyl tułów 90°' },
+          { name: 'Odwrotne rozpiętki', sets: 3, reps: '15-20', tip: 'Pochyl tułów 90°' },
           // BICEPS (2)
           { name: 'Uginanie ramion ze sztangą', sets: 3, reps: '8-10', tip: 'Cięższe ciężary' },
           { name: 'Uginanie hantli młotkowo', sets: 3, reps: '10-12', tip: 'Brachialis' },
@@ -570,7 +569,7 @@
           { name: 'Reverse pec deck', sets: 3, reps: '15-20', tip: 'Maszyna motyl odwrotnie' },
           // BICEPS (2)
           { name: 'Uginanie hantli młotkowo', sets: 3, reps: '10-12', tip: 'Brachialis' },
-          { name: 'Uginanie ze sztangą ez stojąc', sets: 3, reps: '10-12', tip: 'Klasyczne' },
+          { name: 'Uginanie ze sztangą EZ', sets: 3, reps: '10-12', tip: 'Klasyczne' },
           // PRZEDRAMIĘ (1)
           { name: 'Uginanie zottmana', sets: 3, reps: '10-12', tip: 'Rotacja nadgarstka na górze' }
         
@@ -603,7 +602,7 @@
           { name: 'Wiosłowanie sztangą', sets: 4, reps: '5-6', tip: 'Cięższe ciężary' },
           // TYLNE BARKI (2)
           { name: 'Face pull', sets: 3, reps: '15-20', tip: 'Rotatory — zdrowie barków' },
-          { name: 'Wznosy hantli w opadzie', sets: 3, reps: '15-20', tip: 'Tylne barki' },
+          { name: 'Odwrotne rozpiętki', sets: 3, reps: '15-20', tip: 'Tylne barki' },
           // BICEPS (2)
           { name: 'Uginanie ramion ze sztangą', sets: 3, reps: '6-8', tip: 'Cięższe ciężary' },
           { name: 'Uginanie hantli młotkowo', sets: 3, reps: '8-10', tip: 'Siłowo' },
@@ -621,7 +620,7 @@
           { name: 'Wiosłowanie na wyciągu siedząc', sets: 3, reps: '10-12', tip: 'Do brzucha' },
           // TYLNE BARKI (2)
           { name: 'Cable face pull', sets: 3, reps: '15-20', tip: 'Zdrowe barki' },
-          { name: 'Wznosy w opadzie z liną', sets: 3, reps: '15-20', tip: 'Tylne barki przez wyciąg' },
+          { name: 'Odwrotne rozpiętki na lince', sets: 3, reps: '15-20', tip: 'Tylne barki przez wyciąg' },
           // BICEPS (2)
           { name: 'Uginanie z liną', sets: 3, reps: '12-15', tip: 'Biceps przez wyciąg' },
           { name: 'Uginanie hantli młotkowo', sets: 3, reps: '10-12', tip: 'Wykończenie brachialis' },
@@ -635,13 +634,13 @@
         exercises: [
           // PLECY (3)
           { name: 'Podciąganie szerokim chwytem', sets: 3, reps: '6-10', tip: 'Superseria z wiosłowaniem' },
-          { name: 'Wiosłowanie hantlą jednorącz', sets: 3, reps: '10-12', tip: 'Bez przerwy po podciąganiu' },
+          { name: 'Wiosłowanie hantlem jednoręcz', sets: 3, reps: '10-12', tip: 'Bez przerwy po podciąganiu' },
           { name: 'Wiosłowanie sztangą', sets: 3, reps: '8-10', tip: 'Główne ćwiczenie pleców' },
           // TYLNE BARKI (2)
           { name: 'Face pull', sets: 3, reps: '15-20', tip: 'Tylne barki' },
           { name: 'Odwrotne rozpiętki', sets: 3, reps: '15-20', tip: 'Superseria z face pull' },
           // BICEPS (2)
-          { name: 'Uginanie ramion ze sztangą EZ', sets: 3, reps: '10-12', tip: 'Superseria z hantlami' },
+          { name: 'Uginanie ze sztangą EZ', sets: 3, reps: '10-12', tip: 'Superseria z hantlami' },
           { name: 'Uginanie hantli', sets: 3, reps: '10-12', tip: 'Bez przerwy' },
           // PRZEDRAMIĘ (1)
           { name: 'Uginanie zottmana', sets: 3, reps: '12-15', tip: 'Powolna rotacja — kontroluj' }
@@ -659,7 +658,7 @@
           { name: 'Cable face pull', sets: 3, reps: '15-20', tip: 'Tylne barki i zdrowie rotatorów' },
           { name: 'Reverse pec deck', sets: 3, reps: '15-20', tip: 'Izolacja tylnych barków' },
           // BICEPS (2)
-          { name: 'Concentration curl', sets: 3, reps: '10-12', tip: 'Łokieć na udzie' },
+          { name: 'Concentration curl hantlem', sets: 3, reps: '10-12', tip: 'Łokieć na udzie' },
           { name: 'Uginanie hantli na modlitewniku', sets: 3, reps: '10-12', tip: 'Długa głowa bicepsa' },
           // PRZEDRAMIĘ (1)
           { name: 'Uginanie hantli młotkowo', sets: 3, reps: '10-12', tip: 'Brachialis — objętość ramion' }
@@ -675,9 +674,9 @@
           { name: 'Wiosłowanie sztangą w opadzie', sets: 3, reps: '8-10', tip: 'Plecy środkowe' },
           // TYLNE BARKI (2)
           { name: 'Face pull', sets: 3, reps: '15-20', tip: 'Tylne barki — nie pomijaj!' },
-          { name: 'Wznosy hantli w opadzie', sets: 3, reps: '15-20', tip: 'Rear delts izolacja' },
+          { name: 'Odwrotne rozpiętki', sets: 3, reps: '15-20', tip: 'Rear delts izolacja' },
           // BICEPS (2)
-          { name: 'Uginanie ze sztangą ez stojąc', sets: 3, reps: '8-10', tip: 'Biceps — główne' },
+          { name: 'Uginanie ze sztangą EZ', sets: 3, reps: '8-10', tip: 'Biceps — główne' },
           { name: 'Uginanie hantli', sets: 3, reps: '10-12', tip: 'Naprzemiennie, supinacja' },
           // PRZEDRAMIĘ (1)
           { name: 'Uginanie zottmana', sets: 3, reps: '10-12', tip: 'Pronacja i supinacja naprzemiennie' }
@@ -844,7 +843,7 @@
           { name: 'Leg press', sets: 3, reps: '10-12', tip: 'Stopy szeroko — przywodziciele' },
           // HAMSTRING / POŚLADKI (7 serii)
           { name: 'Martwy ciąg rumuński', sets: 4, reps: '8-10', tip: 'Hamstring i pośladki' },
-          { name: 'Hip abduction', sets: 3, reps: '12-15', tip: 'Przywodziciele i pośladki' },
+          { name: 'Odwodzenie nóg na maszynie', sets: 3, reps: '12-15', tip: 'Przywodziciele i pośladki' },
           // JEDNOSTRONNE (3 serie)
           { name: 'Bulgarian split squat', sets: 3, reps: '8-10 na nogę', tip: 'Tylna noga na ławce' },
           // ŁYDKI (3 serie)
@@ -861,7 +860,7 @@
           { name: 'Bulgarian split squat', sets: 4, reps: '8-10 na nogę', tip: 'Tylna noga na ławce' },
           { name: 'Step-up', sets: 3, reps: '10-12 na nogę', tip: 'Pchaj piętą' },
           // HAMSTRING / POŚLADKI (6 serii)
-          { name: 'Single leg rdl', sets: 3, reps: '10-12 na nogę', tip: 'Balans na jednej nodze' },
+          { name: 'Single leg RDL', sets: 3, reps: '10-12 na nogę', tip: 'Balans na jednej nodze' },
           { name: 'Single leg hip thrust', sets: 3, reps: '10-12 na nogę', tip: 'Ścisk pośladka' },
           // JEDNOSTRONNE — tu całość jest jednonożna, dodajemy łydki jednonóż
           { name: 'Wykroki z hantlami', sets: 3, reps: '12-15', tip: 'Naprzemiennie w ruchu' },
@@ -887,7 +886,7 @@
         { name: 'Wyciskanie hantli na ławce skośnej', sets: 3, reps: '8-12', tip: 'Skos 30°, pełen zakres' },
         { name: 'Podciąganie szerokim chwytem', sets: 3, reps: '8-12', tip: 'Ściągnij łopatki w dół' },
         { name: 'Wyciskanie żołnierskie', sets: 3, reps: '6-10', tip: 'Stabilny tułów, łokcie pod sztangą' },
-        { name: 'Uginanie ramion ze sztangą EZ', sets: 3, reps: '10-15', tip: 'Bez bujania, kontroluj' },
+        { name: 'Uginanie ze sztangą EZ', sets: 3, reps: '10-15', tip: 'Bez bujania, kontroluj' },
         { name: 'Wyprosty triceps na wyciągu', sets: 3, reps: '10-15', tip: 'Łokcie przy tułowiu' }
       ]
     },
@@ -941,8 +940,8 @@
         { name: 'Wiosłowanie hantlem jednoręcz', sets: 3, reps: '8-12', tip: 'Pełen zakres, do biodra' },
         { name: 'Wyciskanie arnolda', sets: 3, reps: '8-12', tip: 'Rotacja dłoni podczas ruchu' },
         { name: 'Wznosy hantli bokiem', sets: 3, reps: '12-20', tip: 'Barki boczne' },
-        { name: 'Uginanie ramion ze sztangą EZ', sets: 3, reps: '10-15', tip: 'Wąski chwyt — biceps krótki' },
-        { name: 'Françaises wyciskanie sztangi', sets: 3, reps: '10-15', tip: 'Triceps długa głowa' }
+        { name: 'Uginanie ze sztangą EZ', sets: 3, reps: '10-15', tip: 'Wąski chwyt — biceps krótki' },
+        { name: 'Francuskie wyciskanie sztangi', sets: 3, reps: '10-15', tip: 'Triceps długa głowa' }
       ]
     },
     {
@@ -1049,7 +1048,7 @@
         { name: 'Wiosłowanie sztangą w opadzie', sets: 4, reps: '6-10', tip: 'Do brzucha, plecy proste' },
         { name: 'Wyciskanie żołnierskie', sets: 3, reps: '6-10', tip: 'Barki — stabilny tułów' },
         { name: 'Uginanie nóg leżąc', sets: 3, reps: '10-15', tip: 'Hamstring — kontroluj opuszczanie' },
-        { name: 'Uginanie ramion ze sztangą EZ', sets: 3, reps: '10-15', tip: 'Biceps — bez bujania' },
+        { name: 'Uginanie ze sztangą EZ', sets: 3, reps: '10-15', tip: 'Biceps — bez bujania' },
         { name: 'Hanging leg raise', sets: 3, reps: '10-15', tip: 'Core — nogi proste' }
       ]
     },
@@ -1091,7 +1090,7 @@
         { name: 'Ściąganie drążka szerokim chwytem', sets: 4, reps: '8-12', tip: 'Lat pulldown' },
         { name: 'Wykroki z hantlami', sets: 3, reps: '10-12 na nogę', tip: 'Naprzemiennie w ruchu' },
         { name: 'Wznosy hantli bokiem', sets: 3, reps: '12-20', tip: 'Do poziomu barków' },
-        { name: 'Françaises wyciskanie sztangi', sets: 3, reps: '10-15', tip: 'Triceps długa głowa' },
+        { name: 'Francuskie wyciskanie sztangi', sets: 3, reps: '10-15', tip: 'Triceps długa głowa' },
         { name: 'Brzuszki na drążku', sets: 3, reps: '12-15', tip: 'Kontroluj górę i dół' }
       ]
     }
@@ -1109,7 +1108,7 @@
         { name: 'Wiosłowanie hantlem jednoręcz', sets: 4, reps: '8-12', tip: 'Do biodra, łopatka w ruchu' },
         { name: 'Hip thrust', sets: 3, reps: '8-12', tip: 'Pośladki — ścisk na górze' },
         { name: 'Face pull', sets: 3, reps: '12-20', tip: 'Tylne barki i rotacja zewn.' },
-        { name: 'Uginanie ramion ze sztangą EZ', sets: 2, reps: '10-15', tip: 'Biceps' },
+        { name: 'Uginanie ze sztangą EZ', sets: 2, reps: '10-15', tip: 'Biceps' },
         { name: 'Wspięcia na palce stojąc', sets: 4, reps: '12-20', tip: 'Łydki — pełen zakres' }
       ]
     },
