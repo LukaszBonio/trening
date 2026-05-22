@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -226,8 +227,16 @@ body { background-image: radial-gradient(circle at 0% 0%, rgba(212,255,58,0.04) 
 .last-weight-hint {
   font-size: 10px; color: var(--text-muted); font-weight: 500;
   text-align: center; margin-top: 3px; letter-spacing: 0.1px;
-  min-height: 14px;
+  min-height: 14px; transition: color 0.3s;
 }
+.eq-toggle-btn {
+  display: inline-flex; align-items: center; gap: 3px;
+  margin-top: 3px; padding: 2px 7px; border-radius: 10px;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--text-muted); font-size: 10px; cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.eq-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
 .reps-input { width: 50px; padding: 6px 0; border: none; background: transparent; color: var(--text); font-family: inherit; font-size: 14px; font-weight: 500; text-align: center; outline: none; }
 .reps-input::-webkit-outer-spin-button, .reps-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .reps-input[type=number] { -moz-appearance: textfield; }
@@ -2526,8 +2535,8 @@ function renderExercises(exs, source) {
 function getEquipmentPref(exerciseName) {
   try {
     const k = 'eq_' + exerciseName.toLowerCase().replace(/\s+/g, '_').slice(0, 40);
-    return localStorage.getItem(k) || 'bar';
-  } catch { return 'bar'; }
+    return localStorage.getItem(k) || null;
+  } catch { return null; }
 }
 
 function setEquipmentPref(exerciseName, type) {
@@ -2537,69 +2546,147 @@ function setEquipmentPref(exerciseName, type) {
   } catch {}
 }
 
-// Wykryj typ sprzętu z nazwy ćwiczenia
+// Mapowanie type → emoji do wyświetlenia
+const EQUIPMENT_EMOJI = {
+  barbell:    '🏋️',
+  dumbbell:   '⚙️',
+  machine:    '🔧',
+  cable:      '📎',
+  bodyweight: '💪',
+  kettlebell: '🔔',
+};
+
+// Wykryj typ sprzętu z nazwy ćwiczenia — zwraca ustrukturyzowany string
 function detectEquipmentFromName(name) {
   const n = name.toLowerCase();
-  if (/sztang[ai]|barbell|olimp/.test(n)) return '🏋️';
-  if (/hantle[lk]?|dumbbell|jednoręcz/.test(n)) return '⚙️';
-  if (/maszyn[ay]|cable|wyciąg|linki|pulli?ey/.test(n)) return '🔧';
-  if (/drążek|podciąg|pull.?up|chin.?up/.test(n)) return '💪';
-  if (/gryf|ez.?bar|curl.?bar/.test(n)) return '🏋️';
-  if (/kettlebell|kettle/.test(n)) return '🔔';
-  return '';
+  if (/drążek|podciąg|pull.?up|chin.?up|dipy|pompk/.test(n)) return 'bodyweight';
+  if (/sztang[ai]|barbell|olimp|gryf|ez.?bar|curl.?bar|żołnierskie|wąskim chwytem/.test(n)) return 'barbell';
+  if (/hantle[lk]?|dumbbell|jednoręcz|jednorącz|arnolda|młotkow/.test(n)) return 'dumbbell';
+  if (/kabel|cable|wyciąg|linka|linie|crossover|pushdown|face.?pull|rdl.*linki/.test(n)) return 'cable';
+  if (/maszyn[ay]|hack.?squat|leg.?press|leg.?curl|leg.?extension|pec.?deck|seated.?row/.test(n)) return 'machine';
+  if (/kettlebell|kettle/.test(n)) return 'kettlebell';
+  return null; // nieznany — użytkownik może ustawić ręcznie
 }
 
-// Pobierz ostatni ciężar dla ćwiczenia z historii aktualnego profilu
-function getLastWeight(exerciseName) {
+// Pobierz ostateczny typ sprzętu: najpierw preferencja użytkownika, potem autodetekt
+function getEquipmentType(exerciseName) {
+  return getEquipmentPref(exerciseName) || detectEquipmentFromName(exerciseName);
+}
+
+// Pobierz ostatnie N sesji dla ćwiczenia z historii (tylko wpisy z kg > 0 lub reps > 0)
+function getLastSessions(exerciseName, n = 5) {
   const p = getCurrentProfile();
-  if (!p || !p.history) return null;
+  if (!p || !p.history) return [];
+  const sessions = [];
   for (const w of p.history) {
-    const ex = w.exercises && w.exercises.find(e =>
-      e.name && e.name.toLowerCase() === exerciseName.toLowerCase()
-    );
-    if (ex && ex.kg > 0) return ex.kg;
+    if (!w.exercises) continue;
+    const ex = w.exercises.find(e => e.name && e.name.toLowerCase() === exerciseName.toLowerCase());
+    if (ex && (ex.kg > 0 || ex.reps > 0)) {
+      sessions.push({ kg: ex.kg || 0, reps: ex.reps || 0, timestamp: w.timestamp });
+      if (sessions.length >= n) break;
+    }
   }
-  return null;
+  return sessions; // od najnowszej do najstarszej
 }
 
-// Zwraca hint z ostatnim ciężarem (do wyświetlenia pod polem kg)
-function getLastWeightHint(exerciseName) {
-  const lastKg = getLastWeight(exerciseName);
-  if (lastKg === null) {
-    // Sugestia startowa na podstawie nazwy
+// Pobierz ostatni ciężar (zachowane dla kompatybilności z innymi miejscami w kodzie)
+function getLastWeight(exerciseName) {
+  const sessions = getLastSessions(exerciseName, 1);
+  return sessions.length ? sessions[0].kg : null;
+}
+
+// Generuje sugestię progresji bez API na podstawie historii ostatnich sesji.
+// Zwraca obiekt { text, type } gdzie type: 'progress'|'stagnation'|'regress'|'new'|'bodyweight'
+function getProgressionSuggestion(exerciseName) {
+  const equipment = getEquipmentType(exerciseName);
+  const sessions = getLastSessions(exerciseName, 5);
+
+  // Brak historii — zwróć sugestię startową
+  if (!sessions.length) {
     const n = exerciseName.toLowerCase();
-    let suggestion = null;
-    if (/wyciskanie sztangi na ławce/.test(n)) suggestion = 60;
-    else if (/wyciskanie sztangi/.test(n)) suggestion = 50;
-    else if (/przysi[aą]d|squat/.test(n)) suggestion = 60;
-    else if (/martwy ci[ąa]g|deadlift/.test(n)) suggestion = 70;
-    else if (/wyciskani[ae]/.test(n)) suggestion = 40;
-    else if (/hantle/.test(n)) suggestion = 12;
-    if (suggestion) return 'sugestia: ~' + suggestion + ' kg';
-    return '';
+    let kg = null;
+    if (/wyciskanie sztangi na ławce poziomej/.test(n)) kg = 60;
+    else if (/wyciskanie sztangi/.test(n)) kg = 50;
+    else if (/przysi[aą]d|squat/.test(n)) kg = 60;
+    else if (/martwy ci[ąa]g|deadlift/.test(n)) kg = 70;
+    else if (/wyciskani[ae]/.test(n)) kg = 40;
+    else if (/hantle/.test(n)) kg = 12;
+    return kg
+      ? { text: 'sugestia: ~' + kg + ' kg', type: 'new' }
+      : { text: '', type: 'new' };
   }
-  const eq = detectEquipmentFromName(exerciseName);
-  return (eq ? eq + ' ' : '') + 'ostatnio: ' + lastKg + ' kg';
+
+  const latest = sessions[0];
+
+  // Ćwiczenia z masą ciała — progresja przez powtórzenia
+  if (equipment === 'bodyweight' && latest.kg === 0) {
+    if (sessions.length < 2) return { text: '💪 ' + latest.reps + ' powt ostatnio', type: 'bodyweight' };
+    const sameReps = sessions.slice(0, 3).every(s => s.reps === latest.reps);
+    if (sameReps && sessions.length >= 3) {
+      return { text: '💪 spróbuj +1 powt (stagnacja ' + latest.reps + ')', type: 'stagnation' };
+    }
+    const improving = sessions.length >= 2 && latest.reps > sessions[1].reps;
+    if (improving) return { text: '💪 ' + latest.reps + ' powt — dobra progresja!', type: 'progress' };
+    return { text: '💪 ostatnio: ' + latest.reps + ' powt', type: 'bodyweight' };
+  }
+
+  // Ćwiczenia z ciężarem zewnętrznym
+  const lastKg = latest.kg;
+  if (lastKg === 0) return { text: '', type: 'new' };
+
+  const emoji = EQUIPMENT_EMOJI[equipment] || '';
+
+  if (sessions.length < 3) {
+    return { text: (emoji ? emoji + ' ' : '') + 'ostatnio: ' + lastKg + ' kg', type: 'new' };
+  }
+
+  const recent3 = sessions.slice(0, 3).map(s => s.kg);
+  const allSame = recent3.every(kg => kg === lastKg);
+
+  if (allSame) {
+    // Stagnacja ≥3 sesje — zaproponuj +2.5kg (lub +1.25 dla hantli)
+    const step = equipment === 'dumbbell' ? 1 : 2.5;
+    const next = Math.round((lastKg + step) * 4) / 4; // zaokrąglij do 0.25
+    return { text: (emoji ? emoji + ' ' : '') + 'spróbuj ' + next + ' kg (+' + step + ')', type: 'stagnation' };
+  }
+
+  const increasing = recent3[0] >= recent3[1] && recent3[1] >= recent3[2] && recent3[0] > recent3[2];
+  if (increasing) {
+    return { text: (emoji ? emoji + ' ' : '') + 'ostatnio: ' + lastKg + ' kg ↑', type: 'progress' };
+  }
+
+  const decreasing = recent3[0] < recent3[1];
+  if (decreasing) {
+    return { text: (emoji ? emoji + ' ' : '') + 'ostatnio: ' + lastKg + ' kg ↓', type: 'regress' };
+  }
+
+  return { text: (emoji ? emoji + ' ' : '') + 'ostatnio: ' + lastKg + ' kg', type: 'new' };
+}
+
+// Zwraca gotowy string do wyświetlenia pod polem kg
+function getLastWeightHint(exerciseName) {
+  const s = getProgressionSuggestion(exerciseName);
+  return s.text;
 }
 
 // Toggle sprzętu wywoływany z onclick na karcie
 function toggleEquipment(i, exerciseName) {
-  const curr = getEquipmentPref(exerciseName);
-  const next = curr === 'bar' ? 'db' : 'bar';
+  const curr = getEquipmentType(exerciseName);
+  // Cykl: barbell → dumbbell → cable → machine → bodyweight → barbell
+  const cycle = ['barbell', 'dumbbell', 'cable', 'machine', 'bodyweight'];
+  const currIdx = cycle.indexOf(curr);
+  const next = cycle[(currIdx + 1) % cycle.length];
   setEquipmentPref(exerciseName, next);
-  // Aktualizuj UI
-  const btnBar = document.getElementById('eqBar_' + i);
-  const btnDb = document.getElementById('eqDb_' + i);
-  if (btnBar) btnBar.classList.toggle('active', next === 'bar');
-  if (btnDb) btnDb.classList.toggle('active', next === 'db');
-  // Odśwież hint z ciężarem
-  const hint = document.getElementById('lastHint_' + i);
-  if (hint) {
-    const lastKg = getLastWeight(exerciseName);
-    hint.textContent = lastKg !== null
-      ? 'ostatnio: ' + lastKg + ' kg (' + (next === 'bar' ? 'sztanga' : 'hantle') + ')'
-      : '';
+
+  // Aktualizuj przycisk
+  const btn = document.getElementById('eqToggle_' + i);
+  if (btn) {
+    btn.textContent = (EQUIPMENT_EMOJI[next] || '❓') + ' ' + next;
   }
+
+  // Odśwież hint z sugestią progresji
+  const hint = document.getElementById('lastHint_' + i);
+  if (hint) hint.textContent = getLastWeightHint(exerciseName);
 }
 
 function renderCurrentMuscleGroup() {
@@ -2628,6 +2715,15 @@ function renderCurrentMuscleGroup() {
     const i = ex._origIdx; // Używamy oryginalnego indeksu z currentExercises
     const ytQuery = encodeURIComponent(ex.name + ' technika ćwiczenia');
     const ytUrl = `https://www.youtube.com/results?search_query=${ytQuery}`;
+    const suggestion = getProgressionSuggestion(ex.name);
+    const hintColor = suggestion.type === 'stagnation' ? 'var(--warning, #f59e0b)'
+      : suggestion.type === 'progress' ? 'var(--success, #22c55e)'
+      : suggestion.type === 'regress' ? 'var(--danger, #ef4444)'
+      : 'var(--text-muted)';
+    const eqType = getEquipmentType(ex.name);
+    const eqEmoji = EQUIPMENT_EMOJI[eqType] || '❓';
+    const eqLabel = eqType || 'nieznany';
+
     return `
     <div class="exercise-card">
       <div class="ex-num">${i + 1}</div>
@@ -2639,6 +2735,7 @@ function renderCurrentMuscleGroup() {
           </a>
         </div>
         <div class="ex-detail">${ex.sets} serie × <span class="reps-target">${escapeHtml(ex.reps)}</span>${ex.tip ? ' · <i style="opacity:0.7">' + escapeHtml(ex.tip) + '</i>' : ''}</div>
+        <button class="eq-toggle-btn" id="eqToggle_${i}" onclick="toggleEquipment(${i}, '${escapeHtml(ex.name).replace(/'/g, "\\'")}')" title="Zmień sprzęt">${eqEmoji} ${eqLabel}</button>
       </div>
       <div class="inputs-group">
         <div class="input-block">
@@ -2659,7 +2756,7 @@ function renderCurrentMuscleGroup() {
               oninput="updateTotal(${i})" placeholder="0" aria-label="Kilogramy">
             <span class="kg-unit">kg</span>
           </div>
-          <div class="last-weight-hint" id="lastHint_${i}">${getLastWeightHint(ex.name)}</div>
+          <div class="last-weight-hint" id="lastHint_${i}" style="color:${hintColor}">${suggestion.text}</div>
         </div>
       </div>
       <div class="total-display" id="total_${i}">— rep</div>
@@ -2893,7 +2990,17 @@ function saveWorkout() {
     const kg = Math.min(Math.max(parseFloat(userKg) || 0, 0), 9999);
     const orm = calculate1RM(kg, reps);
     const sets = parseInt(ex.sets) || 3;
-    return { name: ex.name, reps, total: reps * sets, sets, target: ex.reps, kg, orm, muscle: window.TPDB ? window.TPDB.detectMuscle(ex.name) : null };
+    return {
+      name: ex.name,
+      reps,
+      total: reps * sets,
+      sets,
+      target: ex.reps,
+      kg,
+      orm,
+      muscle: window.TPDB ? window.TPDB.detectMuscle(ex.name) : null,
+      equipment: getEquipmentType(ex.name) // barbell/dumbbell/machine/cable/bodyweight/null
+    };
   });
   const totalReps = exs.reduce((s, e) => s + e.total, 0);
   const duration = stopWorkoutTimer(); // sekundy
