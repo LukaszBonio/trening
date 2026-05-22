@@ -1,7 +1,7 @@
 // Trening Pro - Service Worker
-// Strategia: cache-first dla statycznych zasobów, network-first dla API
+// Strategia: cache-first dla statycznych zasobów, network-first dla index.html
 
-const CACHE_VERSION = 'trening-pro-v9';
+const CACHE_VERSION = 'trening-pro-v10';
 const CACHE_NAME = `${CACHE_VERSION}`;
 
 // Pliki do zachowania w cache (działanie offline)
@@ -11,6 +11,7 @@ const STATIC_ASSETS = [
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
+  './icon-maskable-512.png',
   './db.js',
   // CDN-y
   'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap',
@@ -64,11 +65,37 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Strategia: cache-first dla wszystkich zasobów statycznych
+  // Nawigacja (index.html) — NETWORK-FIRST z 2s timeoutem, fallback do cache.
+  // Dzięki temu zmiany w index.html są widoczne od razu po online refreshu, a offline nadal działa.
+  const isNavigation = request.mode === 'navigate' ||
+    (request.destination === 'document') ||
+    url.pathname.endsWith('/index.html') ||
+    url.pathname === '/' ||
+    url.pathname.endsWith('/');
+
+  if (isNavigation) {
+    event.respondWith(
+      Promise.race([
+        fetch(request).then((response) => {
+          if (response && response.status === 200) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(request, responseClone).catch(() => {}));
+          }
+          return response;
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000))
+      ]).catch(() =>
+        caches.match(request).then(c => c || caches.match('./index.html') || caches.match('./'))
+      )
+    );
+    return;
+  }
+
+  // Strategia: cache-first dla pozostałych zasobów statycznych (CSS, JS, fonty, ikony)
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) {
-        // Mamy w cache - zwróć od razu, ale spróbuj odświeżyć w tle
+        // Mamy w cache - zwróć od razu, ale spróbuj odświeżyć w tle (stale-while-revalidate)
         fetch(request).then((response) => {
           if (response && response.status === 200) {
             caches.open(CACHE_NAME).then((cache) => {
@@ -87,7 +114,7 @@ self.addEventListener('fetch', (event) => {
         });
         return response;
       }).catch(() => {
-        // Offline + brak w cache - zwróć stronę główną dla nawigacji
+        // Offline + brak w cache - fallback dla nawigacji
         if (request.mode === 'navigate') {
           return caches.match('./index.html');
         }
