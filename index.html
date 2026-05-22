@@ -1,7 +1,3 @@
-
-
-
-
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -2548,24 +2544,27 @@ function setEquipmentPref(exerciseName, type) {
 
 // Mapowanie type → emoji do wyświetlenia
 const EQUIPMENT_EMOJI = {
-  barbell:    '🏋️',
-  dumbbell:   '⚙️',
-  machine:    '🔧',
-  cable:      '📎',
-  bodyweight: '💪',
+  sztanga:    '🏋️',
+  hantle:     '⚙️',
+  maszyna:    '🔧',
+  wyciąg:     '📎',
+  własne:     '💪',
   kettlebell: '🔔',
 };
 
-// Wykryj typ sprzętu z nazwy ćwiczenia — zwraca ustrukturyzowany string
+// Wykryj typ sprzętu z nazwy ćwiczenia — zwraca ustrukturyzowany string po polsku
 function detectEquipmentFromName(name) {
   const n = name.toLowerCase();
-  if (/drążek|podciąg|pull.?up|chin.?up|dipy|pompk/.test(n)) return 'bodyweight';
-  if (/sztang[ai]|barbell|olimp|gryf|ez.?bar|curl.?bar|żołnierskie|wąskim chwytem/.test(n)) return 'barbell';
-  if (/hantle[lk]?|dumbbell|jednoręcz|jednorącz|arnolda|młotkow/.test(n)) return 'dumbbell';
-  if (/kabel|cable|wyciąg|linka|linie|crossover|pushdown|face.?pull|rdl.*linki/.test(n)) return 'cable';
-  if (/maszyn[ay]|hack.?squat|leg.?press|leg.?curl|leg.?extension|pec.?deck|seated.?row/.test(n)) return 'machine';
+  if (/drążek|podciąg|pull.?up|chin.?up|dipy|pompk|plank|brzuszk|leg.?raise|ab.?wheel|rollout/.test(n)) return 'własne';
+  if (/sztang[ai]|barbell|olimp|gryf|żołnierskie|wąskim chwytem/.test(n)) return 'sztanga';
+  if (/ez|ez.?bar|curl.?bar/.test(n)) return 'sztanga'; // sztanga EZ to rodzaj sztangi
+  if (/maszyn[ayię]|hack.?squat|leg.?press|leg.?curl|leg.?extension|pec.?deck|seated.?row|hip.?thrust|hip thrust|odwodzenie|przywodzenie/.test(n)) return 'maszyna';
+  if (/hantle[lk]?|hantl[aieąo]|hantlami|hantlowy|dumbbell|jednoręcz|jednorącz|arnolda|młotkow/.test(n)) return 'hantle';
+  if (/kabel|cable|wyciąg|linka|linie|crossover|pushdown|face.?pull|ściąganie|lat.?pull/.test(n)) return 'wyciąg';
   if (/kettlebell|kettle/.test(n)) return 'kettlebell';
-  return null; // nieznany — użytkownik może ustawić ręcznie
+  // Rozpiętki bez dookreślenia — najczęściej hantle
+  if (/rozpiętki|rozpiętk/.test(n)) return 'hantle';
+  return null;
 }
 
 // Pobierz ostateczny typ sprzętu: najpierw preferencja użytkownika, potem autodetekt
@@ -2619,7 +2618,7 @@ function getProgressionSuggestion(exerciseName) {
   const latest = sessions[0];
 
   // Ćwiczenia z masą ciała — progresja przez powtórzenia
-  if (equipment === 'bodyweight' && latest.kg === 0) {
+  if (equipment === 'własne' && latest.kg === 0) {
     if (sessions.length < 2) return { text: '💪 ' + latest.reps + ' powt ostatnio', type: 'bodyweight' };
     const sameReps = sessions.slice(0, 3).every(s => s.reps === latest.reps);
     if (sameReps && sessions.length >= 3) {
@@ -2645,7 +2644,7 @@ function getProgressionSuggestion(exerciseName) {
 
   if (allSame) {
     // Stagnacja ≥3 sesje — zaproponuj +2.5kg (lub +1.25 dla hantli)
-    const step = equipment === 'dumbbell' ? 1 : 2.5;
+    const step = equipment === 'hantle' ? 1 : 2.5;
     const next = Math.round((lastKg + step) * 4) / 4; // zaokrąglij do 0.25
     return { text: (emoji ? emoji + ' ' : '') + 'spróbuj ' + next + ' kg (+' + step + ')', type: 'stagnation' };
   }
@@ -2672,8 +2671,8 @@ function getLastWeightHint(exerciseName) {
 // Toggle sprzętu wywoływany z onclick na karcie
 function toggleEquipment(i, exerciseName) {
   const curr = getEquipmentType(exerciseName);
-  // Cykl: barbell → dumbbell → cable → machine → bodyweight → barbell
-  const cycle = ['barbell', 'dumbbell', 'cable', 'machine', 'bodyweight'];
+  // Cykl: sztanga → hantle → wyciąg → maszyna → własne → sztanga
+  const cycle = ['sztanga', 'hantle', 'wyciąg', 'maszyna', 'własne'];
   const currIdx = cycle.indexOf(curr);
   const next = cycle[(currIdx + 1) % cycle.length];
   setEquipmentPref(exerciseName, next);
