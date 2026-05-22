@@ -1,8 +1,27 @@
 // ============================================================================
 // TRENING PRO - Baza danych: plany offline + słownik głów mięśniowych
-// Push:  3 klatka / 2 barki / 2 triceps        = 7 ćwiczeń
-// Pull:  3 plecy / 2 tylne barki / 2 biceps / 1 przedramię = 8 ćwiczeń
-// Legs:  2 czworogłowy / 2 hamstring+pośladki / 1 jednostronne / 1 łydki / 1 core = 7 ćwiczeń
+//
+// Push:  3 klatka (1× poziom/dół, 1× skos+, 1× izolacja/kable)
+//        2 barki  (1× wyciskanie, 1× wznosy)
+//        2 triceps
+//        = 7 ćwiczeń
+//
+// Pull:  3 plecy  (1× wertykalne: podciąganie/lat pulldown,
+//                  1× horyzontalne: wiosłowanie,
+//                  1× dodatkowe plecy)
+//        2 tylne barki (TYLKO: face pull / reverse fly / odwrotne rozpiętki)
+//        2 biceps
+//        1 przedramię
+//        = 8 ćwiczeń
+//
+// Legs:  2 czworogłowy (1× wielostawowe: przysiad/leg press,
+//                        1× izolacja lub jednostronne)
+//        2 hamstring+pośladki (1× hip hinge: RDL/martwy na prostych,
+//                               1× zgięcie kolana lub hip thrust: leg curl/hip thrust)
+//        1 jednostronne (wykroki, Bulgarian split squat)
+//        1 łydki
+//        1 core
+//        = 7 ćwiczeń
 // ============================================================================
 
 (function() {
