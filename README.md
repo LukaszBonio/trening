@@ -340,8 +340,9 @@ trening/
 - 📦 **Historia treningów** zapisywana lokalnie — nie jest nigdzie przesyłana
 - 🚫 **Brak rejestracji, konta, śledzenia aktywności i reklam**
 - 📡 Połączenie z internetem służy **wyłącznie** do komunikacji z Claude API
-- 🛡️ **Walidacja danych** — uszkodzone wpisy w pamięci lokalnej są automatycznie filtrowane
+- 🛡️ **Walidacja danych** — uszkodzone wpisy w pamięci lokalnej są automatycznie filtrowane, w tym robocze drafty treningu
 - 🔍 **Ochrona przed XSS** — odpowiedzi z AI są bezpiecznie przetwarzane przed wyświetleniem
+- ⚡ **Cache profilu w pamięci** — historia nie jest deserializowana z localStorage przy każdej operacji
 
 ---
 
@@ -353,6 +354,7 @@ trening/
 - Limit historii: 200 ostatnich treningów na profil
 - Limit tekstu przy imporcie przez AI: 4000 znaków
 - AI Coach analizuje maksymalnie 50 ostatnich treningów
+- Przełączenie zakładki (np. Push → Pull) podczas aktywnego treningu wyświetli potwierdzenie — dane nie zostaną utracone bez zgody
 
 ---
 
@@ -361,7 +363,8 @@ trening/
 ### Aplikacja nie aktualizuje się po wgraniu nowej wersji
 1. Poczekaj chwilę — aplikacja sama wykryje aktualizację i wyświetli powiadomienie
 2. Wymuś odświeżenie: **Ctrl+Shift+R** (komputer) lub wyczyść pamięć podręczną Chrome (telefon)
-3. Odinstaluj aplikację PWA i zainstaluj ją ponownie
+3. Od wersji SW v10 index.html ładowany jest zawsze z sieci (network-first) — po jednym odświeżeniu masz najnowszą wersję
+4. Odinstaluj aplikację PWA i zainstaluj ją ponownie
 
 ### Baner „Zainstaluj" nie pojawia się na Androidzie
 - Upewnij się że używasz Chrome
