@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -1343,6 +1344,66 @@ const STORAGE_BACKUP = 'tp_backup_v1';
 const BACKUP_INTERVAL_DAYS = 21; // 3 tygodnie
 const BACKUP_DISMISS_DAYS = 7;   // jeśli odłożone — przypomnij za tydzień
 
+// Wspólna konfiguracja — wszystkie "magiczne liczby" w jednym miejscu
+const CFG = {
+  HISTORY_MAX: 200,           // limit zapisanych treningów na profil
+  STATS_DAYS: 45,             // okno dla statystyk partii/wykresu postępów
+  RECENT_DAYS: 7,             // okno dla "ostatni tydzień" / smart offline plan
+  AI_HISTORY_MAX: 50,         // ile treningów wysyłamy do AI Coach
+  AI_SESSIONS_PER_EXERCISE: 10, // ile sesji na ćwiczenie wysyłamy do AI
+  IMPORT_MAX_CHARS: 4000,     // limit znaków dla importu tekstowego
+  DRAFT_TTL_MS: 24 * 60 * 60 * 1000, // 24h
+  DAY_MS: 86400000
+};
+
+// Model Claude — jedno miejsce na zmianę przy aktualizacji wersji
+const CLAUDE_MODEL = 'claude-sonnet-4-6';
+const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
+
+// Wspólny helper do wywołań Claude API.
+// Rzuca Error z czytelnym komunikatem; honoruje AbortSignal.
+async function callClaude({ prompt, maxTokens, signal }) {
+  const apiKey = localStorage.getItem(STORAGE_API_KEY);
+  if (!apiKey) throw new Error('Brak klucza API — ustaw klucz w ustawieniach profilu');
+  if (!navigator.onLine) throw new Error('Brak połączenia z internetem');
+
+  const resp = await fetch(CLAUDE_API_URL, {
+    method: 'POST',
+    signal,
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: CLAUDE_MODEL,
+      max_tokens: maxTokens,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error?.message || `HTTP ${resp.status}`);
+  }
+  const data = await resp.json();
+  if (!Array.isArray(data.content)) throw new Error('Pusta odpowiedź API');
+  const text = data.content.map(c => c.text || '').join('');
+  return text.replace(/```json|```/g, '').trim();
+}
+
+// Parsuje JSON z odpowiedzi AI i waliduje, że to obiekt (nie tablica, nie string, nie null)
+function parseClaudeJSON(rawText) {
+  let parsed;
+  try { parsed = JSON.parse(rawText); }
+  catch (e) { throw new Error('AI nie zwróciło poprawnego JSON-a — spróbuj ponownie'); }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('Nieprawidłowy format odpowiedzi — spróbuj ponownie');
+  }
+  return parsed;
+}
+
 let currentType = 'push';
 let currentMode = 'ppl'; // 'ppl' | 'upper_lower' | 'fbw'
 let currentExercises = [];
@@ -1632,15 +1693,32 @@ function saveTimerPrefs() {
 }
 
 // ============ PROFILES ============
-function getProfiles() {
-  const defaultProfile = () => [{ id: 'default', name: 'Łukasz', goal: 'reduction', goalSetAt: Date.now(), askGoalEveryTime: true, history: [] }];
+// Fabryka profilu — JEDNO miejsce gdzie definiujemy schemat domyślnego profilu
+function makeProfile({ id, name, goal = 'reduction', askGoalEveryTime = true } = {}) {
+  return {
+    id: id || ('p_' + Date.now()),
+    name: name || 'Użytkownik',
+    goal,
+    goalSetAt: Date.now(),
+    askGoalEveryTime,
+    history: []
+  };
+}
+const DEFAULT_PROFILE = () => [makeProfile({ id: 'default', name: 'Łukasz' })];
+
+// Cache deserializowanych profili. Migracja uruchamia się raz na sesję, nie na każde wywołanie.
+let _profilesCache = null;
+function invalidateProfilesCache() { _profilesCache = null; }
+
+// Parsuje, waliduje i (opcjonalnie) migruje profile. Wynik trafia do cache.
+function _loadProfilesFromStorage() {
   try {
     const raw = localStorage.getItem(STORAGE_PROFILES);
-    if (!raw) return defaultProfile();
+    if (!raw) return DEFAULT_PROFILE();
     const p = JSON.parse(raw);
-    if (!Array.isArray(p) || !p.length) return defaultProfile();
-    
-    let modified = false;
+    if (!Array.isArray(p) || !p.length) return DEFAULT_PROFILE();
+
+    let migrated = false;
     const processed = p.map(profile => {
       const mapped = {
         id: typeof profile?.id === 'string' && profile.id ? profile.id : 'p_' + Date.now(),
@@ -1657,27 +1735,39 @@ function getProfiles() {
             )
           : []
       };
-      
-      // Retroactive muscle migration
+
+      // Retroactive muscle migration — używa undefined (nigdy nie ustawiane) jako sentinel.
+      // null oznacza "sprawdzone, nie rozpoznano" i nie wymaga retry.
       mapped.history.forEach(workout => {
         workout.exercises.forEach(ex => {
           if (ex.muscle === undefined && window.TPDB) {
             ex.muscle = window.TPDB.detectMuscle(ex.name);
-            modified = true;
+            migrated = true;
           }
         });
       });
       return mapped;
     });
 
-    if (modified) localStorage.setItem(STORAGE_PROFILES, JSON.stringify(processed));
+    if (migrated) {
+      try { localStorage.setItem(STORAGE_PROFILES, JSON.stringify(processed)); } catch {}
+    }
     return processed;
   } catch (e) {
     console.warn('getProfiles: błąd deserializacji, zwracam domyślny profil', e);
-    return defaultProfile();
+    return DEFAULT_PROFILE();
   }
 }
-function saveProfiles(p) { localStorage.setItem(STORAGE_PROFILES, JSON.stringify(p)); }
+
+function getProfiles() {
+  if (!_profilesCache) _profilesCache = _loadProfilesFromStorage();
+  return _profilesCache;
+}
+function saveProfiles(p) {
+  _profilesCache = p; // utrzymaj cache zsynchronizowany
+  try { localStorage.setItem(STORAGE_PROFILES, JSON.stringify(p)); }
+  catch (e) { console.warn('saveProfiles: zapis nie powiódł się', e); }
+}
 function getCurrentProfileId() { return localStorage.getItem(STORAGE_CURRENT) || 'default'; }
 function setCurrentProfileId(id) { localStorage.setItem(STORAGE_CURRENT, id); }
 function getCurrentProfile() {
@@ -1745,10 +1835,10 @@ function addProfile() {
   const name = input.value.trim();
   if (!name) return;
   const profs = getProfiles();
-  const id = 'p_' + Date.now();
-  profs.push({ id, name, history: [] });
+  const newProfile = makeProfile({ name });
+  profs.push(newProfile);
   saveProfiles(profs);
-  setCurrentProfileId(id);
+  setCurrentProfileId(newProfile.id);
   input.value = '';
   refreshProfileUI();
   renderProfileList();
@@ -1762,7 +1852,7 @@ function addProfile() {
 function deleteProfile(id) {
   if (!confirm('Usunąć ten profil i całą jego historię?')) return;
   let profs = getProfiles().filter(p => p.id !== id);
-  if (!profs.length) profs = [{ id: 'default', name: 'Użytkownik', history: [] }];
+  if (!profs.length) profs = [makeProfile({ id: 'default', name: 'Użytkownik' })];
   saveProfiles(profs);
   if (getCurrentProfileId() === id) setCurrentProfileId(profs[0].id);
   refreshProfileUI();
@@ -1880,7 +1970,7 @@ function updateNextSuggestion(mode) {
   // Formatuj datę ostatniego
   let dateStr = '';
   if (suggestion.lastTimestamp) {
-    const diff = Math.floor((Date.now() - suggestion.lastTimestamp) / 86400000);
+    const diff = Math.floor((Date.now() - suggestion.lastTimestamp) / CFG.DAY_MS);
     if (diff === 0) dateStr = 'dziś';
     else if (diff === 1) dateStr = 'wczoraj';
     else dateStr = diff + ' dni temu';
@@ -1943,6 +2033,9 @@ const MODE_META = {
   fbw:         { label: 'Full Body',     sub: 'Przysiad · Martwy · Hip Thrust',               icon: 'ti-refresh' }
 };
 
+// Flaga zapobiegająca rejestrowaniu wielu listenerów outside-click jednocześnie
+let _modeDropdownListenerActive = false;
+
 function toggleModeDropdown() {
   const btn = document.getElementById('modeDropdownBtn');
   const menu = document.getElementById('modeDropdownMenu');
@@ -1950,12 +2043,14 @@ function toggleModeDropdown() {
   menu.classList.toggle('open', !isOpen);
   btn.classList.toggle('open', !isOpen);
   btn.setAttribute('aria-expanded', String(!isOpen));
-  if (!isOpen) {
+  if (!isOpen && !_modeDropdownListenerActive) {
+    _modeDropdownListenerActive = true;
     document.addEventListener('click', closeModeDropdownOutside, { once: true, capture: true });
   }
 }
 
 function closeModeDropdownOutside(e) {
+  _modeDropdownListenerActive = false;
   const btn = document.getElementById('modeDropdownBtn');
   const menu = document.getElementById('modeDropdownMenu');
   if (!btn.contains(e.target) && !menu.contains(e.target)) {
@@ -1963,7 +2058,11 @@ function closeModeDropdownOutside(e) {
     btn.classList.remove('open');
     btn.setAttribute('aria-expanded', 'false');
   } else {
-    document.addEventListener('click', closeModeDropdownOutside, { once: true, capture: true });
+    // Klik w środku — menu zostaje, ale potrzebujemy kolejnego listenera na następny klik
+    if (menu.classList.contains('open')) {
+      _modeDropdownListenerActive = true;
+      document.addEventListener('click', closeModeDropdownOutside, { once: true, capture: true });
+    }
   }
 }
 
@@ -2009,12 +2108,28 @@ function updateGoalBadge() {
   const badgeText = document.getElementById('goalBadgeText');
   if (!badge || !badgeText) return;
   const profile = getCurrentProfile();
-  const goalKey = profile.goal || 'mass';
+  const goalKey = profile.goal || 'reduction';
   const goal = GOALS_DATA[goalKey];
   if (goal) badgeText.textContent = goal.name;
 }
 
+// Sprawdza czy w aktywnym planie są jakiekolwiek wpisane powtórzenia (czyli "trening w toku")
+function hasWorkoutInProgress() {
+  if (!currentExercises || !currentExercises.length) return false;
+  return currentExercises.some((_, i) => {
+    const reps = parseInt(getExerciseInputValue(i, 'reps')) || 0;
+    return reps > 0;
+  });
+}
+
 function switchTab(type) {
+  if (type === currentType) return; // klik w aktywną zakładkę = no-op
+  // Ochrona przed cichą utratą treningu w toku
+  if (hasWorkoutInProgress()) {
+    if (!confirm('Masz trening w toku. Porzucić go i wybrać inny typ?\nWpisane wartości zostaną utracone.')) {
+      return;
+    }
+  }
   currentType = type;
   document.querySelectorAll('.tab').forEach(t => {
     t.classList.toggle('active', t.dataset.type === type);
@@ -2185,10 +2300,9 @@ async function executeGeneratePlan() {
   const lastNoteEntry = profile.history.filter(h => h.type === currentType && h.note).shift();
   const lastNote = lastNoteEntry?.note || '';
 
-  const profileForGoal = getCurrentProfile();
   // Upper/Lower zawsze masa+siła, reszta według celu użytkownika
   const isUpperLower = ['upper_a','upper_b','lower_a','lower_b'].includes(currentType);
-  const effectiveGoalKey = isUpperLower ? 'mass_strength' : (profileForGoal.goal || 'reduction');
+  const effectiveGoalKey = isUpperLower ? 'mass_strength' : (profile.goal || 'reduction');
   const goalData = effectiveGoalKey === 'mass_strength'
     ? { name: 'Masa + Siła', reps: '5-10', sets: '3-4', rest: 120, restText: '2-4 min', desc: 'Podstawowe ćwiczenia wielostawowe, progresja ciężaru' }
     : GOALS_DATA[effectiveGoalKey] || GOALS_DATA['mass'];
@@ -2286,42 +2400,24 @@ Odpowiedz TYLKO w formacie JSON:
 
   try {
     // Przerwij poprzedni request jeśli trwa
-  if (generateAbortController) generateAbortController.abort();
-  generateAbortController = new AbortController();
+    if (generateAbortController) generateAbortController.abort();
+    generateAbortController = new AbortController();
 
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      signal: generateAbortController.signal,
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1024,
-        messages: [{ role: 'user', content: prompt }]
-      })
+    const clean = await callClaude({
+      prompt,
+      maxTokens: 1024,
+      signal: generateAbortController.signal
     });
-    
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({}));
-      throw new Error(err.error?.message || `HTTP ${resp.status}`);
-    }
-    
-    const data = await resp.json();
-    const text = data.content.map(c => c.text || '').join('');
-    const clean = text.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(clean);
-    if (!parsed.exercises || !Array.isArray(parsed.exercises) || !parsed.exercises.length) {
+    const parsed = parseClaudeJSON(clean);
+
+    if (!Array.isArray(parsed.exercises) || !parsed.exercises.length) {
       throw new Error('Nieprawidłowy format odpowiedzi — spróbuj ponownie');
     }
     // Walidacja schematu — twarda dla name/count, fallback dla reszty
     const rawExs = parsed.exercises;
     if (rawExs.length < 5) throw new Error(`AI zwróciło za mało ćwiczeń (${rawExs.length}) — spróbuj ponownie`);
     const validatedExs = rawExs.map((ex, i) => {
-      if (!ex.name || typeof ex.name !== 'string' || !ex.name.trim()) {
+      if (!ex || typeof ex !== 'object' || !ex.name || typeof ex.name !== 'string' || !ex.name.trim()) {
         throw new Error(`Ćwiczenie #${i + 1} nie ma nazwy — spróbuj ponownie`);
       }
       return {
@@ -2365,13 +2461,16 @@ Odpowiedz TYLKO w formacie JSON:
       </div>`;
     }
     showToast('Błąd generowania', 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      const btnIcon = btn.querySelector('i');
+      if (btnIcon) btnIcon.outerHTML = '<i class="ti ti-refresh"></i>';
+    }
+    if (btnText) btnText.textContent = 'Nowy plan';
+    isLoading = false;
+    generateAbortController = null;
   }
-
-  btn.disabled = false;
-  const btnIcon = btn.querySelector('i');
-  if (btnIcon) btnIcon.outerHTML = '<i class="ti ti-refresh"></i>';
-  btnText.textContent = 'Nowy plan';
-  isLoading = false;
 }
 
 function renderExercises(exs, source) {
@@ -2618,51 +2717,6 @@ function finishMuscleGroups() {
   saveWorkout();
 }
 
-// Stara funkcja renderowania — zachowana dla kompatybilności, ale niewywoływana
-function _renderExercisesFlat(exs) {
-  const list = document.getElementById('exerciseList');
-  list.innerHTML = exs.map((ex, i) => {
-    const ytQuery = encodeURIComponent(ex.name + ' technika ćwiczenia');
-    const ytUrl = `https://www.youtube.com/results?search_query=${ytQuery}`;
-    return `
-    <div class="exercise-card">
-      <div class="ex-num">${i + 1}</div>
-      <div class="ex-info">
-        <div class="ex-name">
-          ${escapeHtml(ex.name)}
-          <a href="${ytUrl}" target="_blank" rel="noopener" class="yt-btn" title="Zobacz technikę na YouTube" onclick="event.stopPropagation();">
-            <i class="ti ti-brand-youtube"></i>Pokaż
-          </a>
-        </div>
-        <div class="ex-detail">${ex.sets} serie × <span class="reps-target">${escapeHtml(ex.reps)}</span>${ex.tip ? ' · <i style="opacity:0.7">' + escapeHtml(ex.tip) + '</i>' : ''}</div>
-      </div>
-      <div class="inputs-group">
-        <div class="input-block">
-          <span class="input-label">Powtórzenia</span>
-          <div class="reps-input-wrap">
-            <input type="number" class="reps-input" id="reps_${i}" min="0" max="999"
-              oninput="updateTotal(${i})" placeholder="0" aria-label="Powtórzenia">
-            <div class="reps-stepper">
-              <button class="reps-step" onclick="stepReps(${i}, 1)" aria-label="Zwiększ"><i class="ti ti-chevron-up" style="font-size:11px"></i></button>
-              <button class="reps-step" onclick="stepReps(${i}, -1)" aria-label="Zmniejsz"><i class="ti ti-chevron-down" style="font-size:11px"></i></button>
-            </div>
-          </div>
-        </div>
-        <div class="input-block">
-          <span class="input-label">Ciężar</span>
-          <div class="kg-input-wrap">
-            <input type="number" class="kg-input" id="kg_${i}" min="0" max="999" step="0.5"
-              oninput="updateTotal(${i})" placeholder="0" aria-label="Kilogramy">
-            <span class="kg-unit">kg</span>
-          </div>
-        </div>
-      </div>
-      <div class="total-display" id="total_${i}">— rep</div>
-    </div>
-  `;
-  }).join('');
-}
-
 function stepReps(i, dir) {
   const input = document.getElementById(`reps_${i}`);
   if (!input) return;
@@ -2732,9 +2786,9 @@ function updateTotal(i) {
   // Mark card as completed when reps entered
   const card = repsEl.closest('.exercise-card');
   if (card) card.classList.toggle('completed', v > 0);
-  saveDraft();
+  _saveDraftDebounced();
   checkAllFilled();
-  recountFilledExercises();
+  _recountFilledDebounced();
 }
 
 function checkAllFilled() {
@@ -2825,7 +2879,8 @@ function saveWorkout() {
   const { timestamp: workoutTimestamp, dateStr: workoutDateStr } = getWorkoutDateFromInput();
   const workoutNote = document.getElementById('workoutNoteInput')?.value?.trim() || '';
   const entry = {
-    id: 'w_' + workoutTimestamp,
+    // suffix random — bezpieczne nawet gdy user zapisuje 2 treningi na tę samą historyczną datę
+    id: 'w_' + workoutTimestamp + '_' + Math.random().toString(36).slice(2, 7),
     type: currentType,
     timestamp: workoutTimestamp,
     date: workoutDateStr,
@@ -2834,7 +2889,7 @@ function saveWorkout() {
     totalReps,
     duration
   };
-  updateCurrentProfile(p => { p.history = [entry, ...p.history].slice(0, 200); return p; });
+  updateCurrentProfile(p => { p.history = [entry, ...p.history].slice(0, CFG.HISTORY_MAX); return p; });
   clearDraft();
   reminderShown = false;
   reminderDismissed = false;
@@ -2939,7 +2994,7 @@ function refreshMuscleStats() {
   const container = document.getElementById('muscleStatsContent');
   if (!container) return;
   const p = getCurrentProfile();
-  const thirtyDaysAgo = Date.now() - (45 * 86400000);
+  const thirtyDaysAgo = Date.now() - (CFG.STATS_DAYS * CFG.DAY_MS);
   const recentWorkouts = p.history.filter(w => w.timestamp >= thirtyDaysAgo);
   const muscleData = {};
   recentWorkouts.forEach(w => {
@@ -2984,7 +3039,7 @@ function refreshStats() {
   const p = getCurrentProfile();
   const h = p.history;
   const now = Date.now();
-  const week = now - 7 * 86400000;
+  const week = now - CFG.RECENT_DAYS * CFG.DAY_MS;
   const lastWeek = h.filter(e => e.timestamp > week);
   
   const totalWorkouts = h.length;
@@ -3175,12 +3230,14 @@ function exportPDF() {
 
 // ============ UTIL ============
 function escapeHtml(s) {
+  if (s === null || s === undefined) return '';
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
 function showToast(msg, type = '') {
   const t = document.getElementById('toast');
-  t.innerHTML = msg;
+  // textContent zamiast innerHTML — chroni przed niezamierzonym XSS jeśli msg zawiera HTML
+  t.textContent = msg;
   t.className = 'toast show' + (type ? ' ' + type : '');
   setTimeout(() => t.classList.remove('show'), 3500);
 }
@@ -3206,8 +3263,38 @@ function saveDraft() {
   } catch(e) {}
 }
 
+// Debounce — odpala fn dopiero po `wait` ms ciszy. Używane dla hot-paths z input/oninput.
+function debounce(fn, wait) {
+  let t = null;
+  return function(...args) {
+    if (t) clearTimeout(t);
+    t = setTimeout(() => { t = null; fn.apply(this, args); }, wait);
+  };
+}
+
+// Debounced wrappers — używane wewnątrz updateTotal (które odpala się na każdym onclick/oninput)
+const _saveDraftDebounced = debounce(saveDraft, 250);
+const _recountFilledDebounced = debounce(recountFilledExercises, 150);
+
 function clearDraft() {
   localStorage.removeItem(STORAGE_DRAFT);
+}
+
+// Czy wartość input z draftu nadaje się do przywrócenia? "" / undefined / null → nie. "0" / 0 → tak.
+function _hasDraftValue(v) {
+  return v !== undefined && v !== null && v !== '';
+}
+
+// Waliduje strukturę draftu — odporne na ręczną modyfikację localStorage
+function _validateDraft(d) {
+  if (!d || typeof d !== 'object') return false;
+  if (typeof d.type !== 'string' || !d.type) return false;
+  if (typeof d.ts !== 'number') return false;
+  if (!Array.isArray(d.exercises) || !d.exercises.length) return false;
+  // Każde ćwiczenie musi mieć przynajmniej nazwę
+  if (!d.exercises.every(ex => ex && typeof ex === 'object' && typeof ex.name === 'string' && ex.name.trim())) return false;
+  if (d.inputs !== undefined && !Array.isArray(d.inputs)) return false;
+  return true;
 }
 
 function restoreDraft() {
@@ -3215,8 +3302,9 @@ function restoreDraft() {
     const raw = localStorage.getItem(STORAGE_DRAFT);
     if (!raw) return false;
     const draft = JSON.parse(raw);
-    // Nie odtwarzaj draftu starszego niż 24h
-    if (Date.now() - draft.ts > 86400000) { clearDraft(); return false; }
+    if (!_validateDraft(draft)) { clearDraft(); return false; }
+    // Nie odtwarzaj draftu starszego niż TTL
+    if (Date.now() - draft.ts > CFG.DRAFT_TTL_MS) { clearDraft(); return false; }
     currentType = draft.type;
     currentExercises = draft.exercises;
     currentSource = draft.source || null;
@@ -3228,28 +3316,30 @@ function restoreDraft() {
     // Wyrenderuj ćwiczenia (grupuje w partie)
     renderExercises(currentExercises, currentSource);
     // Wpisz wartości do _userReps/_userKg we wszystkich grupach
-    if (draft.inputs && exerciseGroups.length) {
+    const inputs = Array.isArray(draft.inputs) ? draft.inputs : [];
+    if (inputs.length && exerciseGroups.length) {
       exerciseGroups.forEach(g => {
         g.exercises.forEach(ex => {
           const i = ex._origIdx;
-          if (draft.inputs[i]) {
-            ex._userReps = draft.inputs[i].reps || '';
-            ex._userKg = draft.inputs[i].kg || '';
+          if (inputs[i]) {
+            ex._userReps = _hasDraftValue(inputs[i].reps) ? inputs[i].reps : '';
+            ex._userKg = _hasDraftValue(inputs[i].kg) ? inputs[i].kg : '';
           }
         });
       });
     }
     // Skocz do zapisanej partii
-    if (draft.muscleGroupIndex !== undefined && exerciseGroups.length) {
-      currentMuscleGroupIndex = Math.min(draft.muscleGroupIndex, exerciseGroups.length - 1);
+    if (typeof draft.muscleGroupIndex === 'number' && exerciseGroups.length) {
+      currentMuscleGroupIndex = Math.max(0, Math.min(draft.muscleGroupIndex, exerciseGroups.length - 1));
       renderCurrentMuscleGroup();
     }
     // Wpisz wartości do widocznych inputów
-    draft.inputs.forEach((inp, i) => {
+    inputs.forEach((inp, i) => {
+      if (!inp) return;
       const repsEl = document.getElementById(`reps_${i}`);
       const kgEl = document.getElementById(`kg_${i}`);
-      if (repsEl && inp.reps) { repsEl.value = inp.reps; updateTotal(i); }
-      if (kgEl && inp.kg) { kgEl.value = inp.kg; updateTotal(i); }
+      if (repsEl && _hasDraftValue(inp.reps)) { repsEl.value = inp.reps; updateTotal(i); }
+      if (kgEl && _hasDraftValue(inp.kg)) { kgEl.value = inp.kg; updateTotal(i); }
     });
     // Przelicz pasek postępu na podstawie WSZYSTKICH ćwiczeń
     recountFilledExercises();
@@ -3264,7 +3354,10 @@ function restoreDraft() {
     if (_nsR) _nsR.classList.add('visible');
     setTimeout(checkAllFilled, 500);
     return true;
-  } catch(e) { return false; }
+  } catch(e) {
+    console.warn('restoreDraft: błąd przywracania', e);
+    return false;
+  }
 }
 
 // ============ EXERCISE STATS ============
@@ -3614,9 +3707,8 @@ async function analyzeWithAI() {
   content.innerHTML = '<div class="coach-loading"><i class="ti ti-loader-2 spin"></i>Claude analizuje Twoje postępy...</div>';
 
   // Przygotuj dane: po każdym ćwiczeniu - historia ciężarów
-  // Limit do 50 najnowszych treningów - chroni przed dużymi kosztami API
-  const MAX_WORKOUTS_FOR_AI = 50;
-  const recentHistory = profile.history.slice(0, MAX_WORKOUTS_FOR_AI);
+  // Limit do AI_HISTORY_MAX najnowszych treningów - chroni przed dużymi kosztami API
+  const recentHistory = profile.history.slice(0, CFG.AI_HISTORY_MAX);
   const exerciseMap = new Map();
   recentHistory.slice().reverse().forEach(w => {
     w.exercises.forEach(ex => {
@@ -3636,15 +3728,15 @@ async function analyzeWithAI() {
   const dataForAI = {};
   exerciseMap.forEach((sessions, name) => {
     if (sessions.length >= 2) {
-      // Dla każdego ćwiczenia max 10 ostatnich sesji (Claude widzi trend bez zalewu)
-      dataForAI[name] = sessions.slice(-10);
+      // Dla każdego ćwiczenia max N ostatnich sesji (Claude widzi trend bez zalewu)
+      dataForAI[name] = sessions.slice(-CFG.AI_SESSIONS_PER_EXERCISE);
     }
   });
 
   const totalsByType = { push: 0, pull: 0, legs: 0 };
   profile.history.forEach(w => totalsByType[w.type] = (totalsByType[w.type] || 0) + 1);
 
-  const lastWeekTimestamp = Date.now() - 7 * 86400000;
+  const lastWeekTimestamp = Date.now() - CFG.RECENT_DAYS * CFG.DAY_MS;
   const lastWeekCount = profile.history.filter(w => w.timestamp > lastWeekTimestamp).length;
 
   const prompt = `Jesteś analitykiem danych treningowych. Twoim zadaniem jest wyłącznie analiza liczb z historii — zero wymyślania, zero ogólników.
@@ -3685,31 +3777,23 @@ Typy:
 - "success" = rekord, najlepszy wynik w historii`;
 
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      signal: analyzeAbortController.signal,
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1500,
-        messages: [{ role: 'user', content: prompt }]
-      })
+    const clean = await callClaude({
+      prompt,
+      maxTokens: 1500,
+      signal: analyzeAbortController.signal
     });
+    const analysis = parseClaudeJSON(clean);
 
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({}));
-      throw new Error(err.error?.message || `HTTP ${resp.status}`);
+    // Walidacja struktury — odporne na śmieciowe odpowiedzi AI
+    if (!Array.isArray(analysis.insights)) {
+      throw new Error('AI zwróciło złą strukturę insightów');
     }
-
-    const data = await resp.json();
-    const text = data.content.map(c => c.text || '').join('');
-    const clean = text.replace(/```json|```/g, '').trim();
-    const analysis = JSON.parse(clean);
+    analysis.insights = analysis.insights.filter(i =>
+      i && typeof i === 'object' &&
+      typeof i.title === 'string' &&
+      typeof i.message === 'string' &&
+      typeof i.type === 'string'
+    );
 
     renderCoachAnalysis(analysis);
     showToast('Analiza gotowa', 'success');
@@ -3723,11 +3807,12 @@ Typy:
         <p style="font-size: 11px; margin-top: 4px;">Sprawdź klucz API w ustawieniach</p>
       </div>`;
     showToast('Błąd analizy', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-refresh"></i>Odśwież analizę';
+    isAnalyzing = false;
+    analyzeAbortController = null;
   }
-
-  btn.disabled = false;
-  btn.innerHTML = '<i class="ti ti-refresh"></i>Odśwież analizę';
-  isAnalyzing = false;
 }
 
 function renderCoachAnalysis(analysis) {
@@ -4308,15 +4393,13 @@ if ('speechSynthesis' in window) {
     fab.style.cursor = 'grab';
   }
 
-  // Obserwuj pojawienie się FAB
-  const observer = new MutationObserver(() => {
-    const fab = document.getElementById('restTimerFab');
-    if (fab && fab.style.display !== 'none' && !fab._dragInit) setupDrag();
-  });
-  observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
-
-  // Też próbuj od razu
-  setTimeout(setupDrag, 200);
+  // FAB jest statyczny w HTML — wystarczy spróbować raz po DOM ready, bez MutationObservera.
+  // setupDrag jest idempotentny dzięki fladze fab._dragInit.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupDrag, { once: true });
+  } else {
+    setupDrag();
+  }
 })();
 
 // ============ PWA INSTALL & OFFLINE ============
@@ -4361,13 +4444,19 @@ async function installApp() {
     showToast('Aby zainstalować: menu przeglądarki → "Dodaj do ekranu głównego"', '');
     return;
   }
-  document.getElementById('installPrompt').classList.remove('show');
-  deferredInstallPrompt.prompt();
-  const choice = await deferredInstallPrompt.userChoice;
-  if (choice.outcome === 'accepted') {
-    showToast('Instaluję aplikację...', 'success');
+  const promptEl = document.getElementById('installPrompt');
+  if (promptEl) promptEl.classList.remove('show');
+  try {
+    await deferredInstallPrompt.prompt();
+    const choice = await deferredInstallPrompt.userChoice;
+    if (choice.outcome === 'accepted') {
+      showToast('Instaluję aplikację...', 'success');
+    }
+  } catch (e) {
+    console.warn('installApp: prompt failed', e);
+  } finally {
+    deferredInstallPrompt = null;
   }
-  deferredInstallPrompt = null;
 }
 
 function dismissInstall() {
@@ -4658,7 +4747,7 @@ function importCsvWorkouts() {
   updateCurrentProfile(p => {
     p.history = [...csvParsedData, ...p.history]
       .sort((a, b) => b.timestamp - a.timestamp)
-      .slice(0, 200);
+      .slice(0, CFG.HISTORY_MAX);
     return p;
   });
 
@@ -4693,7 +4782,11 @@ function openImportModal() {
 
 function closeImportModal() {
   document.getElementById('importModal').classList.remove('active');
-  if (importAbortController) { importAbortController.abort(); importAbortController = null; }
+  if (isImporting && importAbortController) {
+    importAbortController.abort();
+    importAbortController = null;
+    isImporting = false;
+  }
   pendingImport = null;
 }
 
@@ -4761,9 +4854,8 @@ async function parseImport() {
     return;
   }
   // Limit długości - chroni przed przypadkowym wklejeniem długiego tekstu
-  const MAX_IMPORT_LENGTH = 4000;
-  if (text.length > MAX_IMPORT_LENGTH) {
-    showToast(`Tekst za długi (${text.length}/${MAX_IMPORT_LENGTH} znaków). Skróć i spróbuj ponownie.`, 'error');
+  if (text.length > CFG.IMPORT_MAX_CHARS) {
+    showToast(`Tekst za długi (${text.length}/${CFG.IMPORT_MAX_CHARS} znaków). Skróć i spróbuj ponownie.`, 'error');
     return;
   }
 
@@ -4814,33 +4906,14 @@ Odpowiedz TYLKO w formacie JSON, bez tekstu przed/po, bez markdown:
 target = sugerowany zakres powtórzeń, np. "8-10" - zgadnij na podstawie wykonanych powtórzeń (np. zrobił 8 = target "6-10").`;
 
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      signal: importAbortController.signal,
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1500,
-        messages: [{ role: 'user', content: prompt }]
-      })
+    const clean = await callClaude({
+      prompt,
+      maxTokens: 1500,
+      signal: importAbortController.signal
     });
+    const parsed = parseClaudeJSON(clean);
 
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({}));
-      throw new Error(err.error?.message || 'HTTP ' + resp.status);
-    }
-
-    const data = await resp.json();
-    const responseText = data.content.map(c => c.text || '').join('');
-    const clean = responseText.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(clean);
-
-    if (!parsed.exercises || !parsed.exercises.length) {
+    if (!Array.isArray(parsed.exercises) || !parsed.exercises.length) {
       throw new Error('Nie udało się rozpoznać żadnego ćwiczenia');
     }
 
@@ -4870,15 +4943,16 @@ target = sugerowany zakres powtórzeń, np. "8-10" - zgadnij na podstawie wykona
     btn.disabled = false;
     btn.innerHTML = '<i class="ti ti-check"></i>Zapisz trening';
   } catch(e) {
-    if (e.name === 'AbortError') { isImporting = false; return; }
+    if (e.name === 'AbortError') return;
     console.error(e);
     result.innerHTML = '<div class="import-result error">❌ Błąd: ' + escapeHtml(e.message) + '</div>';
     btn.disabled = false;
     btn.innerHTML = '<i class="ti ti-sparkles"></i>Spróbuj ponownie';
     pendingImport = null;
+  } finally {
+    isImporting = false;
+    importAbortController = null;
   }
-
-  isImporting = false;
 }
 
 function saveImportedWorkout(parsed) {
@@ -4902,12 +4976,13 @@ function saveImportedWorkout(parsed) {
 
   const totalReps = exercises.reduce((s, e) => s + e.total, 0);
   const duration = parsed.duration_seconds || 0;
+  const now = Date.now();
 
   const entry = {
-    id: 'w_' + Date.now(),
+    id: 'w_' + now + '_' + Math.random().toString(36).slice(2, 7),
     type: importType,
-    timestamp: Date.now(),
-    date: new Date().toLocaleString('pl-PL', {
+    timestamp: now,
+    date: new Date(now).toLocaleString('pl-PL', {
       day: '2-digit', month: '2-digit', year: 'numeric',
       hour: '2-digit', minute: '2-digit'
     }),
@@ -4918,7 +4993,7 @@ function saveImportedWorkout(parsed) {
   };
 
   updateCurrentProfile(p => {
-    p.history = [entry, ...p.history].slice(0, 200);
+    p.history = [entry, ...p.history].slice(0, CFG.HISTORY_MAX);
     return p;
   });
 
@@ -4938,7 +5013,7 @@ function saveImportedWorkout(parsed) {
 function getSmartOfflinePlan(type) {
   if (!window.TPDB) return null;
   const p = getCurrentProfile();
-  const sevenDaysAgo = Date.now() - (7 * 86400000);
+  const sevenDaysAgo = Date.now() - (CFG.RECENT_DAYS * CFG.DAY_MS);
   const recent = p.history.filter(w => w.timestamp >= sevenDaysAgo && w.type === type);
 
   if (!recent.length) return window.TPDB.getRandomPlan(type);
@@ -4983,7 +5058,7 @@ function getSmartOfflinePlan(type) {
   const winner = scored[0];
   winner.plan._smartInfo = winner.novelExercises === 5
     ? 'Wszystkie ćwiczenia są nowe!'
-    : `\${winner.novelExercises} nowych ćwiczeń vs ostatnie 7 dni`;
+    : `${winner.novelExercises} nowych ćwiczeń vs ostatnie 7 dni`;
 
   return winner.plan;
 }
