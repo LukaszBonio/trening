@@ -2,8 +2,7 @@
 
 Osobista aplikacja treningowa z generowaniem planów przez AI (Claude), historią treningów, wykresami postępu i analizą partii mięśniowych. Obsługuje trzy systemy treningowe: **Push/Pull/Legs**, **Upper/Lower** i **Full Body**. Działa offline jako PWA — możesz zainstalować ją na telefonie i komputerze.
 
-Plany treningowe generuje **Claude** — model AI wytrenowany na obszernej literaturze naukowej z dziedziny fizjologii sportu, treningu siłowego i periodyzacji. Dobór ćwiczeń, liczba powtórzeń, serie i kolejność ruchów są zgodne z aktualną wiedzą naukową. Claude uwzględnia Twoją indywidualną historię — nie powtarza tych samych ćwiczeń i dostosowuje plan do Twojego poziomu zaawansowania.
-
+Plany treningowe generuje Claude — model AI z rozległą wiedzą z zakresu treningu siłowego i fizjologii sportu. Struktura planu (kolejność partii, zakresy powtórzeń, przerwy) dobierana jest zgodnie z Twoim celem treningowym. Claude analizuje historię ostatnich sesji i notatki po treningu, żeby każdy plan był lepiej dopasowany niż poprzedni.
 ---
 
 ## ✨ Funkcje
