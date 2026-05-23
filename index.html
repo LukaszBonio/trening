@@ -2263,12 +2263,41 @@ async function executeGeneratePlan() {
   
   const profile = getCurrentProfile();
   const recent = profile.history.filter(h => h.type === currentType).slice(0, 4);
-  const recentNames = recent.length 
-    ? recent.map(h => h.exercises.map(e => e.name).join(', ')).join(' | ')
-    : 'brak historii';
   // Ostatnia notatka dla tego typu treningu
   const lastNoteEntry = profile.history.filter(h => h.type === currentType && h.note).shift();
   const lastNote = lastNoteEntry?.note || '';
+
+  // Buduj historię ciężarów per ćwiczenie z ostatnich sesji tego typu treningu.
+  // Format: { "Wyciskanie sztangi": { equipment: "sztanga", sessions: [{kg: 80, reps: 8}, ...] } }
+  // Tylko sesje z wpisanymi danymi (kg > 0 lub reps > 0 dla bodyweight).
+  const weightHistory = {};
+  recent.slice().reverse().forEach(workout => {
+    workout.exercises.forEach(ex => {
+      if (!ex.name) return;
+      if ((ex.kg || 0) <= 0 && (ex.reps || 0) <= 0) return;
+      if (!weightHistory[ex.name]) {
+        // Zapisane equipment lub autodetekt z nazwy jako fallback
+        const eq = ex.equipment || detectEquipmentFromName(ex.name);
+        weightHistory[ex.name] = { equipment: eq, sessions: [] };
+      }
+      weightHistory[ex.name].sessions.push({
+        kg: ex.kg || 0,
+        reps: ex.reps || 0
+      });
+    });
+  });
+
+  // Sformatuj historię do prompta — czytelny tekst dla Claude
+  const historyLines = Object.entries(weightHistory).map(([name, data]) => {
+    const eqLabel = data.equipment ? ` [${data.equipment}]` : '';
+    const fmt = data.sessions.map(s =>
+      s.kg > 0 ? `${s.kg}kg × ${s.reps}` : `${s.reps} powt (masa ciała)`
+    ).join(' → ');
+    return `- ${name}${eqLabel}: ${fmt}`;
+  });
+  const historyText = historyLines.length
+    ? historyLines.join('\n')
+    : 'brak historii — to pierwszy trening tego typu';
 
   // Upper/Lower zawsze masa+siła, reszta według celu użytkownika
   const isUpperLower = ['upper_a','upper_b','lower_a','lower_b'].includes(currentType);
@@ -2369,6 +2398,16 @@ Dostosuj plan do celu:
 - Rekomendowany czas przerwy: ${goalData.restText}
 - Preferencje ćwiczeń: ${goalData.desc}
 
+HISTORIA OSTATNICH TRENINGÓW TEGO TYPU (od najstarszego do najnowszego):
+${historyText}
+
+WYKORZYSTAJ HISTORIĘ:
+- Tag w nawiasach [sztanga/hantle/maszyna/wyciąg/własne] pokazuje sprzęt — porównuj ciężary tylko w obrębie tego samego sprzętu (80kg sztangi ≠ 30kg hantli)
+- Oceń poziom zaawansowania użytkownika na podstawie ciężarów (np. 100kg sztangi na ławce = zaawansowany, 40kg = początkujący/średniozaawansowany)
+- Jeśli widzisz stagnację (ten sam ciężar 3+ sesje) — możesz dobrać wariant ćwiczenia który pomoże przełamać plateau
+- Jeśli widzisz progres — utrzymaj kierunek, dobierz ćwiczenia uzupełniające
+- Możesz powtarzać sprawdzone ćwiczenia z historii (progresja na tych samych ruchach jest podstawą siły) lub wprowadzić warianty — decyduj na podstawie kontekstu
+
 ${schemaByType[currentType]}
 
 ZASADY OGÓLNE:
@@ -2383,6 +2422,7 @@ ${lastNote ? `- WAŻNE: Użytkownik po ostatnim treningu napisał: "${lastNote}"
   * kable/wyciąg → "Crossover na kablach" NIE "Crossover"
   * masa ciała → "Dipy na poręczach", "Podciąganie na drążku" — tu sprzęt w nazwie jest OK bez dookreślenia
   * jedna spójna nazwa po polsku — bez skrótów, bez mieszania języków (wyjątek: face pull, RDL, hip thrust — przyjęte nazwy)
+  * WAŻNE: używaj DOKŁADNIE tych samych nazw co w historii powyżej, gdy proponujesz powtórzenie ćwiczenia (np. jeśli w historii jest "Wyciskanie sztangi na ławce poziomej" — użyj tej nazwy, nie skróconej formy)
 
 Odpowiedz TYLKO w formacie JSON:
 {"exercises":[{"name":"Wyciskanie sztangi na ławce poziomej","reps":"6-8","sets":3,"tip":"łopatki ściągnięte"}, ...]}`;
