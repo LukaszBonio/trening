@@ -1348,19 +1348,17 @@ const STORAGE_API_KEY = 'tp_apikey_v1';
 const STORAGE_DRAFT = 'tp_draft_v1';
 const STORAGE_BACKUP = 'tp_backup_v1';
 
-const BACKUP_INTERVAL_DAYS = 21; // 3 tygodnie
-const BACKUP_DISMISS_DAYS = 7;   // jeśli odłożone — przypomnij za tydzień
-
-// Wspólna konfiguracja — wszystkie "magiczne liczby" w jednym miejscu
 const CFG = {
-  HISTORY_MAX: 200,           // limit zapisanych treningów na profil
-  STATS_DAYS: 45,             // okno dla statystyk partii/wykresu postępów
-  RECENT_DAYS: 7,             // okno dla "ostatni tydzień" / smart offline plan
-  AI_HISTORY_MAX: 50,         // ile treningów wysyłamy do AI Coach
-  AI_SESSIONS_PER_EXERCISE: 10, // ile sesji na ćwiczenie wysyłamy do AI
-  IMPORT_MAX_CHARS: 4000,     // limit znaków dla importu tekstowego
-  DRAFT_TTL_MS: 24 * 60 * 60 * 1000, // 24h
-  DAY_MS: 86400000
+  HISTORY_MAX: 200,
+  STATS_DAYS: 45,
+  RECENT_DAYS: 7,
+  AI_HISTORY_MAX: 50,
+  AI_SESSIONS_PER_EXERCISE: 10,
+  IMPORT_MAX_CHARS: 4000,
+  DRAFT_TTL_MS: 24 * 60 * 60 * 1000,
+  DAY_MS: 86400000,
+  BACKUP_INTERVAL_DAYS: 21,   // 3 tygodnie
+  BACKUP_DISMISS_DAYS: 7,     // jeśli odłożone — przypomnij za tydzień
 };
 
 // Model Claude — jedno miejsce na zmianę przy aktualizacji wersji
@@ -1439,113 +1437,76 @@ let generateAbortController = null;
 let currentMuscleGroupIndex = 0; // Aktualny indeks partii mięśniowej (0 = pierwsza)
 let exerciseGroups = []; // Pogrupowane ćwiczenia [{groupName, exercises: [...], firstIdx}, ...]
 
-// Mapowanie głów mięśniowych na partie + kolejność wyświetlania
-const MUSCLE_TO_GROUP = {
-  // Push
-  'chest_upper': 'klatka', 'chest_middle': 'klatka', 'chest_lower': 'klatka',
-  'shoulder_front': 'barki', 'shoulder_side': 'barki', 'shoulder_rear': 'barki',
-  'triceps_long': 'triceps', 'triceps_lat': 'triceps', 'triceps_med': 'triceps',
-  // Pull
-  'back_lats': 'plecy', 'back_middle': 'plecy', 'back_upper': 'plecy', 'back_lower': 'plecy',
-  'biceps_long': 'biceps', 'biceps_short': 'biceps', 'biceps_brach': 'biceps',
-  'forearms': 'przedramię',
-  // Legs
-  'quads': 'czworogłowy',
-  'hamstrings': 'hamstring',
-  'glutes': 'pośladki', 'adductors': 'pośladki',
-  'calves': 'łydki',
-  // Core
-  'abs': 'core', 'obliques': 'core', 'core': 'core'
-};
-
-const GROUP_ORDER = {
-  push: ['klatka', 'barki', 'triceps'],
-  pull: ['plecy', 'barki', 'biceps', 'przedramię'],
-  legs: ['czworogłowy', 'hamstring', 'pośladki', 'łydki', 'core'],
-  upper_a: ['klatka', 'plecy', 'barki', 'biceps', 'triceps'],
-  upper_b: ['klatka', 'plecy', 'barki', 'biceps', 'triceps'],
-  lower_a: ['czworogłowy', 'hamstring', 'pośladki', 'łydki', 'core'],
-  lower_b: ['czworogłowy', 'hamstring', 'pośladki', 'łydki', 'core'],
-  fbw_a: ['czworogłowy', 'klatka', 'plecy', 'barki', 'hamstring', 'biceps', 'core'],
-  fbw_b: ['hamstring', 'klatka', 'plecy', 'czworogłowy', 'barki', 'triceps', 'core'],
-  fbw_c: ['czworogłowy', 'klatka', 'plecy', 'pośladki', 'barki', 'biceps', 'łydki']
-};
-
-// Grupowanie po indeksie dla planów AI (deterministyczne, niezależne od nazw)
-// Klucz: typ → tablica { group, count } w kolejności
-const INDEX_GROUPS = {
+// ============ WORKOUT SCHEMA — jedyne źródło prawdy o strukturze treningów ============
+// Każdy typ ma: groups (partia + count + muscles) — z tego generujemy GROUP_ORDER, INDEX_GROUPS, MUSCLE_TO_GROUP
+const WORKOUT_SCHEMA = {
   push: [
-    { group: 'klatka',  count: 3 },
-    { group: 'barki',   count: 2 },
-    { group: 'triceps', count: 2 }
+    { id: 'klatka',  count: 3, muscles: ['chest_upper', 'chest_middle', 'chest_lower'] },
+    { id: 'barki',   count: 2, muscles: ['shoulder_front', 'shoulder_side'] },
+    { id: 'triceps', count: 2, muscles: ['triceps_long', 'triceps_lat', 'triceps_med'] },
   ],
   pull: [
-    { group: 'plecy',      count: 3 },
-    { group: 'barki',      count: 2 },
-    { group: 'biceps',     count: 2 },
-    { group: 'przedramię', count: 1 }
+    { id: 'plecy',      count: 3, muscles: ['back_lats', 'back_middle', 'back_upper', 'back_lower'] },
+    { id: 'barki',      count: 2, muscles: ['shoulder_rear'] },
+    { id: 'biceps',     count: 2, muscles: ['biceps_long', 'biceps_short', 'biceps_brach'] },
+    { id: 'przedramię', count: 1, muscles: ['forearms'] },
   ],
   legs: [
-    { group: 'czworogłowy', count: 2 },
-    { group: 'hamstring',   count: 2 },
-    { group: 'pośladki',    count: 1 },
-    { group: 'łydki',       count: 1 },
-    { group: 'core',        count: 1 }
+    { id: 'czworogłowy', count: 2, muscles: ['quads'] },
+    { id: 'hamstring',   count: 2, muscles: ['hamstrings'] },
+    { id: 'pośladki',    count: 1, muscles: ['glutes', 'adductors'] },
+    { id: 'łydki',       count: 1, muscles: ['calves'] },
+    { id: 'core',        count: 1, muscles: ['abs', 'obliques', 'core'] },
   ],
   upper_a: [
-    { group: 'klatka',  count: 2 },
-    { group: 'plecy',   count: 2 },
-    { group: 'barki',   count: 1 },
-    { group: 'biceps',  count: 1 },
-    { group: 'triceps', count: 1 }
+    { id: 'klatka',  count: 2 }, { id: 'plecy',   count: 2 },
+    { id: 'barki',   count: 1 }, { id: 'biceps',  count: 1 }, { id: 'triceps', count: 1 },
   ],
   upper_b: [
-    { group: 'klatka',  count: 2 },
-    { group: 'plecy',   count: 2 },
-    { group: 'barki',   count: 1 },
-    { group: 'biceps',  count: 1 },
-    { group: 'triceps', count: 1 }
+    { id: 'klatka',  count: 2 }, { id: 'plecy',   count: 2 },
+    { id: 'barki',   count: 1 }, { id: 'biceps',  count: 1 }, { id: 'triceps', count: 1 },
   ],
   lower_a: [
-    { group: 'czworogłowy', count: 2 },
-    { group: 'hamstring',   count: 2 },
-    { group: 'pośladki',    count: 1 },
-    { group: 'łydki',       count: 1 }
+    { id: 'czworogłowy', count: 2 }, { id: 'hamstring', count: 2 },
+    { id: 'pośladki',    count: 1 }, { id: 'łydki',     count: 1 },
   ],
   lower_b: [
-    { group: 'czworogłowy', count: 2 },
-    { group: 'hamstring',   count: 2 },
-    { group: 'pośladki',    count: 1 },
-    { group: 'łydki',       count: 1 }
+    { id: 'czworogłowy', count: 2 }, { id: 'hamstring', count: 2 },
+    { id: 'pośladki',    count: 1 }, { id: 'łydki',     count: 1 },
   ],
   fbw_a: [
-    { group: 'czworogłowy', count: 1 },
-    { group: 'klatka',      count: 1 },
-    { group: 'plecy',       count: 1 },
-    { group: 'barki',       count: 1 },
-    { group: 'hamstring',   count: 1 },
-    { group: 'biceps',      count: 1 },
-    { group: 'core',        count: 1 }
+    { id: 'czworogłowy', count: 1 }, { id: 'klatka', count: 1 }, { id: 'plecy', count: 1 },
+    { id: 'barki', count: 1 }, { id: 'hamstring', count: 1 }, { id: 'biceps', count: 1 }, { id: 'core', count: 1 },
   ],
   fbw_b: [
-    { group: 'hamstring',   count: 1 },
-    { group: 'klatka',      count: 1 },
-    { group: 'plecy',       count: 1 },
-    { group: 'czworogłowy', count: 1 },
-    { group: 'barki',       count: 1 },
-    { group: 'triceps',     count: 1 },
-    { group: 'core',        count: 1 }
+    { id: 'hamstring', count: 1 }, { id: 'klatka', count: 1 }, { id: 'plecy', count: 1 },
+    { id: 'czworogłowy', count: 1 }, { id: 'barki', count: 1 }, { id: 'triceps', count: 1 }, { id: 'core', count: 1 },
   ],
   fbw_c: [
-    { group: 'czworogłowy', count: 1 },
-    { group: 'klatka',      count: 1 },
-    { group: 'plecy',       count: 1 },
-    { group: 'pośladki',    count: 1 },
-    { group: 'barki',       count: 1 },
-    { group: 'biceps',      count: 1 },
-    { group: 'łydki',       count: 1 }
-  ]
+    { id: 'czworogłowy', count: 1 }, { id: 'klatka', count: 1 }, { id: 'plecy', count: 1 },
+    { id: 'pośladki', count: 1 }, { id: 'barki', count: 1 }, { id: 'biceps', count: 1 }, { id: 'łydki', count: 1 },
+  ],
 };
+
+// Generowane z WORKOUT_SCHEMA — mapowanie głów mięśniowych na partie
+const MUSCLE_TO_GROUP = {};
+Object.values(WORKOUT_SCHEMA).forEach(groups => {
+  groups.forEach(g => {
+    if (g.muscles) g.muscles.forEach(m => { MUSCLE_TO_GROUP[m] = g.id; });
+  });
+});
+
+// Generowane z WORKOUT_SCHEMA — kolejność partii per typ treningu
+const GROUP_ORDER = {};
+Object.entries(WORKOUT_SCHEMA).forEach(([type, groups]) => {
+  GROUP_ORDER[type] = groups.map(g => g.id);
+});
+
+// Generowane z WORKOUT_SCHEMA — grupowanie po indeksie dla planów AI
+const INDEX_GROUPS = {};
+Object.entries(WORKOUT_SCHEMA).forEach(([type, groups]) => {
+  INDEX_GROUPS[type] = groups.map(g => ({ group: g.id, count: g.count }));
+});
 
 const GROUP_LABELS = {
   'klatka':    { name: 'Klatka piersiowa', icon: 'ti-shirt' },
@@ -1930,14 +1891,26 @@ function syncBottomNav(viewId) {
   if (id) { const el = document.getElementById(id); if (el) el.classList.add('active'); }
 }
 
+// Etykiety typów treningów — jedno źródło prawdy zamiast dwóch funkcji
+const TYPE_LABELS = {
+  push:    { full: 'Push',                  short: 'Push' },
+  pull:    { full: 'Pull',                  short: 'Pull' },
+  legs:    { full: 'Legs',                  short: 'Legs' },
+  upper_a: { full: 'Upper · Siłowy',        short: 'Siłowy' },
+  upper_b: { full: 'Upper · Objętościowy',  short: 'Objętościowy' },
+  lower_a: { full: 'Lower · Quad',          short: 'Quad' },
+  lower_b: { full: 'Lower · Hinge',         short: 'Hinge' },
+  fbw_a:   { full: 'FBW · Przysiad',        short: 'Przysiad' },
+  fbw_b:   { full: 'FBW · Martwy',          short: 'Martwy' },
+  fbw_c:   { full: 'FBW · Hip Thrust',      short: 'Hip Thrust' },
+};
+
 function getTypeLabel(type) {
-  const labels = {
-    push: 'Push', pull: 'Pull', legs: 'Legs',
-    upper_a: 'Upper · Siłowy', upper_b: 'Upper · Objętościowy',
-    lower_a: 'Lower · Quad', lower_b: 'Lower · Hinge',
-    fbw_a: 'FBW · Przysiad', fbw_b: 'FBW · Martwy', fbw_c: 'FBW · Hip Thrust'
-  };
-  return labels[type] || type;
+  return (TYPE_LABELS[type] && TYPE_LABELS[type].full) || type;
+}
+
+function getTypeShortLabel(type) {
+  return (TYPE_LABELS[type] && TYPE_LABELS[type].short) || type;
 }
 
 // ============ NEXT WORKOUT SUGGESTION ============
@@ -1994,16 +1967,6 @@ function updateNextSuggestion(mode) {
       switchTab(suggestion.type);
     }
   }, 50);
-}
-
-function getTypeShortLabel(type) {
-  const labels = {
-    push: 'Push', pull: 'Pull', legs: 'Legs',
-    upper_a: 'Siłowy', upper_b: 'Objętościowy',
-    lower_a: 'Quad', lower_b: 'Hinge',
-    fbw_a: 'Przysiad', fbw_b: 'Martwy', fbw_c: 'Hip Thrust'
-  };
-  return labels[type] || type;
 }
 
 function updateEmptyState() {
@@ -4017,19 +3980,19 @@ function shouldShowBackupReminder() {
   // Jeśli niedawno odłożono — sprawdź czy minął tydzień
   if (s.lastDismissed) {
     const daysSinceDismiss = (now - s.lastDismissed) / dayMs;
-    if (daysSinceDismiss < BACKUP_DISMISS_DAYS) return false;
+    if (daysSinceDismiss < CFG.BACKUP_DISMISS_DAYS) return false;
   }
 
   // Pierwszy backup: sprawdź czy minęły 3 tygodnie od pierwszego treningu
   if (!s.lastBackup) {
     const startTimestamp = s.firstWorkout || profile.history[profile.history.length - 1]?.timestamp || now;
     const daysSinceStart = (now - startTimestamp) / dayMs;
-    return daysSinceStart >= BACKUP_INTERVAL_DAYS;
+    return daysSinceStart >= CFG.BACKUP_INTERVAL_DAYS;
   }
 
   // Kolejne backupy: 3 tygodnie od ostatniego
   const daysSinceBackup = (now - s.lastBackup) / dayMs;
-  return daysSinceBackup >= BACKUP_INTERVAL_DAYS;
+  return daysSinceBackup >= CFG.BACKUP_INTERVAL_DAYS;
 }
 
 function getBackupContext() {
@@ -4406,7 +4369,7 @@ function speak(text) {
 }
 
 if ('speechSynthesis' in window) {
-  window.speechSynthesis.onvoiceschanged = () => {};
+  // Wymuś załadowanie listy głosów asynchronicznie (niektóre przeglądarki ładują lazy)
   window.speechSynthesis.getVoices();
 }
 
@@ -4739,7 +4702,7 @@ function parseCsvData(text) {
     const durationStr = cells[8] || '';
     const target = cells[9] || '';
 
-    if (!date || !exName || !['push', 'pull', 'legs', 'press'].includes(type)) return;
+    if (!date || !exName || !['push', 'pull', 'legs'].includes(type)) return;
 
     const key = date + '|' + type;
     if (!workoutMap.has(key)) {
@@ -4749,7 +4712,7 @@ function parseCsvData(text) {
       const duration = parseDurationStr(durationStr);
       workoutMap.set(key, {
         id: 'w_csv_' + ts + '_' + Math.random().toString(36).slice(2, 7),
-        type: type === 'press' ? 'legs' : type, // Migracja starych zapisów
+        type: type,
         timestamp: ts,
         date: date,
         exercises: [],
