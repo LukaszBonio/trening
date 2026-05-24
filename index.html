@@ -2744,6 +2744,7 @@ function renderCurrentMuscleGroup() {
           <span class="input-label">Powtórzenia</span>
           <div class="reps-input-wrap">
             <input type="number" class="reps-input" id="reps_${i}" min="0" max="999"
+              inputmode="numeric" pattern="[0-9]*"
               oninput="updateTotal(${i})" placeholder="0" aria-label="Powtórzenia">
             <div class="reps-stepper">
               <button class="reps-step" onclick="stepReps(${i}, 1)" aria-label="Zwiększ"><i class="ti ti-chevron-up" style="font-size:11px"></i></button>
@@ -2755,6 +2756,7 @@ function renderCurrentMuscleGroup() {
           <span class="input-label">Ciężar</span>
           <div class="kg-input-wrap">
             <input type="number" class="kg-input" id="kg_${i}" min="0" max="999" step="0.5"
+              inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*"
               oninput="updateTotal(${i})" placeholder="0" aria-label="Kilogramy">
             <span class="kg-unit">kg</span>
           </div>
@@ -3092,6 +3094,8 @@ function deleteEntry(id) {
 }
 
 // ============ HISTORY ============
+const VALID_WORKOUT_TYPES = ['push','pull','legs','upper_a','upper_b','lower_a','lower_b','fbw_a','fbw_b','fbw_c'];
+
 function refreshHistory() {
   const p = getCurrentProfile();
   const list = document.getElementById('historyList');
@@ -3099,13 +3103,16 @@ function refreshHistory() {
     list.innerHTML = '<div class="empty" style="padding: 1rem;"><p style="font-size: 13px;">Brak treningów w historii</p></div>';
     return;
   }
-  list.innerHTML = p.history.slice(0, 30).map(e => `
+  list.innerHTML = p.history.slice(0, 30).map(e => {
+    // Sanityzuj e.type — używany jako CSS class, musi być z whitelisty
+    const safeType = VALID_WORKOUT_TYPES.includes(e.type) ? e.type : 'push';
+    return `
     <div class="history-entry">
       <div class="history-meta">
         <span class="history-date-full">${formatHistoryDate(e.date, e.timestamp)}</span>
         <div>
-          <span class="history-badge ${e.type}">${getTypeLabel(e.type)}</span>
-          <button class="history-del" onclick="deleteEntry('${e.id}')" aria-label="Usuń"><i class="ti ti-trash" style="font-size:14px"></i></button>
+          <span class="history-badge ${safeType}">${getTypeLabel(safeType)}</span>
+          <button class="history-del" onclick="deleteEntry('${escapeHtml(e.id)}')" aria-label="Usuń"><i class="ti ti-trash" style="font-size:14px"></i></button>
         </div>
       </div>
       <div class="history-stats">
@@ -3115,8 +3122,8 @@ function refreshHistory() {
       </div>
       ${e.note ? `<div style="font-size:11px;color:var(--text-muted);margin-top:6px;padding:6px 10px;background:var(--bg-elev2);border-radius:6px;border-left:2px solid var(--accent);">📝 ${escapeHtml(e.note)}</div>` : ''}
       <div class="history-exs">${e.exercises.map(x => x.reps > 0 ? `${escapeHtml(x.name)} <span style="color:var(--accent)">(${x.total} rep${x.kg > 0 ? ' · ' + x.kg + ' kg' : ''})</span>` : `<span style="opacity:0.5">${escapeHtml(x.name)}</span>`).join(' · ')}</div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 // ============ STATS ============
@@ -3955,13 +3962,17 @@ function renderCoachAnalysis(analysis) {
   const tagLabels = { warning: 'Uwaga', progress: 'Postęp', tip: 'Wskazówka', success: 'Sukces' };
   const insightClass = { warning: 'priority', progress: '', tip: '', success: 'success' };
 
+  const ALLOWED_INSIGHT_TYPES = ['warning', 'progress', 'tip', 'success'];
+
   let html = '';
   analysis.insights.forEach(ins => {
-    const cls = insightClass[ins.type] || '';
-    const tag = tagLabels[ins.type] || 'Info';
+    // Sanityzuj type — używany jako CSS class, musi być z whitelisty
+    const safeType = ALLOWED_INSIGHT_TYPES.includes(ins.type) ? ins.type : 'tip';
+    const cls = insightClass[safeType] || '';
+    const tag = tagLabels[safeType] || 'Info';
     html += `
       <div class="coach-insight ${cls}">
-        <span class="coach-insight-tag ${ins.type}">${tag}</span>
+        <span class="coach-insight-tag ${safeType}">${tag}</span>
         <strong>${escapeHtml(ins.title)}</strong>
         <div style="margin-top: 4px;">${escapeHtml(ins.message)}</div>
       </div>`;
@@ -4511,6 +4522,7 @@ if ('speechSynthesis' in window) {
 
     // onEnd usuwa listenery z window po zakończeniu dragu
     function onEnd() {
+      if (!isDragging) return; // guard przed wielokrotnym wywołaniem
       isDragging = false;
       fab.style.cursor = 'grab';
       fab.style.transition = '';
@@ -4518,7 +4530,11 @@ if ('speechSynthesis' in window) {
       saveFabPos(rect.left, rect.top);
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
+      window.removeEventListener('blur', onEnd);
     }
+
+    // Fallback — puścił mysz poza oknem przeglądarki lub zmienił zakładkę
+    window.addEventListener('blur', onEnd);
 
     fab.style.cursor = 'grab';
   }
@@ -5105,7 +5121,10 @@ function saveImportedWorkout(parsed) {
     });
 
   const totalReps = exercises.reduce((s, e) => s + e.total, 0);
-  const duration = parsed.duration_seconds || 0;
+  // Klampuj duration — musi być liczbą ≥0, max 24h w sekundach
+  const duration = Math.min(Math.max(parseInt(parsed.duration_seconds) || 0, 0), 86400);
+  // note musi być stringiem
+  const note = typeof parsed.note === 'string' ? parsed.note.slice(0, 500) : '';
   const now = Date.now();
 
   const entry = {
@@ -5119,7 +5138,7 @@ function saveImportedWorkout(parsed) {
     exercises: exercises,
     totalReps: totalReps,
     duration: duration,
-    note: parsed.note || ''
+    note: note
   };
 
   updateCurrentProfile(p => {
