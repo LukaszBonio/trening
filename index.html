@@ -1679,48 +1679,94 @@ let _profilesCache = null;
 function invalidateProfilesCache() { _profilesCache = null; }
 
 // Parsuje, waliduje i (opcjonalnie) migruje profile. Wynik trafia do cache.
+// ============ SCHEMA VERSIONING ============
+// Wersja 1 — stary format: localStorage trzymał bezpośrednio tablicę profili []
+// Wersja 2 — nowy format: { schemaVersion: 2, profiles: [...] }
+//             migracja V1→V2: opakowanie tablicy w obiekt + formalna migracja pola muscle
+// Przy dodawaniu nowej zmiany: ++CURRENT_SCHEMA_VERSION + nowa funkcja migrateVxtoVy()
+const CURRENT_SCHEMA_VERSION = 2;
+
+function migrateV1toV2(profiles) {
+  // Dodaj pole muscle do ćwiczeń które go nie mają (sentinel: undefined → null lub wartość)
+  profiles.forEach(profile => {
+    if (!Array.isArray(profile.history)) return;
+    profile.history.forEach(workout => {
+      if (!Array.isArray(workout.exercises)) return;
+      workout.exercises.forEach(ex => {
+        if (ex.muscle === undefined) {
+          ex.muscle = window.TPDB ? window.TPDB.detectMuscle(ex.name) : null;
+        }
+      });
+    });
+  });
+  return profiles;
+}
+
+// Uruchom wszystkie potrzebne migracje po kolei i zwróć zaktualizowane dane
+function runMigrations(raw) {
+  let { schemaVersion = 1, profiles } = raw;
+
+  if (schemaVersion < 2) {
+    profiles = migrateV1toV2(profiles);
+    schemaVersion = 2;
+  }
+  // Kolejne migracje dodawaj tutaj:
+  // if (schemaVersion < 3) { profiles = migrateV2toV3(profiles); schemaVersion = 3; }
+
+  return { schemaVersion, profiles };
+}
+
 function _loadProfilesFromStorage() {
   try {
     const raw = localStorage.getItem(STORAGE_PROFILES);
     if (!raw) return DEFAULT_PROFILE();
-    const p = JSON.parse(raw);
-    if (!Array.isArray(p) || !p.length) return DEFAULT_PROFILE();
 
-    let migrated = false;
-    const processed = p.map(profile => {
-      const mapped = {
-        id: typeof profile?.id === 'string' && profile.id ? profile.id : 'p_' + Date.now(),
-        name: typeof profile?.name === 'string' && profile.name ? profile.name : 'Użytkownik',
-        goal: typeof profile?.goal === 'string' ? profile.goal : 'reduction',
-        goalSetAt: typeof profile?.goalSetAt === 'number' ? profile.goalSetAt : Date.now(),
-        askGoalEveryTime: typeof profile?.askGoalEveryTime === 'boolean' ? profile.askGoalEveryTime : true,
-        history: Array.isArray(profile?.history)
-          ? profile.history.filter(w =>
-              w && typeof w === 'object' &&
-              typeof w.timestamp === 'number' &&
-              typeof w.type === 'string' &&
-              Array.isArray(w.exercises)
-            )
-          : []
-      };
+    const parsed = JSON.parse(raw);
 
-      // Retroactive muscle migration — używa undefined (nigdy nie ustawiane) jako sentinel.
-      // null oznacza "sprawdzone, nie rozpoznano" i nie wymaga retry.
-      mapped.history.forEach(workout => {
-        workout.exercises.forEach(ex => {
-          if (ex.muscle === undefined && window.TPDB) {
-            ex.muscle = window.TPDB.detectMuscle(ex.name);
-            migrated = true;
-          }
-        });
-      });
-      return mapped;
-    });
-
-    if (migrated) {
-      try { localStorage.setItem(STORAGE_PROFILES, JSON.stringify(processed)); } catch {}
+    // Wykryj format — stary (tablica) lub nowy (obiekt z schemaVersion)
+    let schemaVersion, profiles;
+    if (Array.isArray(parsed)) {
+      // Format V1 — stara tablica profili bezpośrednio
+      schemaVersion = 1;
+      profiles = parsed;
+    } else if (parsed && typeof parsed === 'object' && Array.isArray(parsed.profiles)) {
+      // Format V2+ — obiekt z schemaVersion
+      schemaVersion = parsed.schemaVersion || 1;
+      profiles = parsed.profiles;
+    } else {
+      return DEFAULT_PROFILE();
     }
-    return processed;
+
+    if (!profiles.length) return DEFAULT_PROFILE();
+
+    // Walidacja i normalizacja profili
+    const normalized = profiles.map(profile => ({
+      id: typeof profile?.id === 'string' && profile.id ? profile.id : 'p_' + Date.now(),
+      name: typeof profile?.name === 'string' && profile.name ? profile.name : 'Użytkownik',
+      goal: typeof profile?.goal === 'string' ? profile.goal : 'reduction',
+      goalSetAt: typeof profile?.goalSetAt === 'number' ? profile.goalSetAt : Date.now(),
+      askGoalEveryTime: typeof profile?.askGoalEveryTime === 'boolean' ? profile.askGoalEveryTime : true,
+      history: Array.isArray(profile?.history)
+        ? profile.history.filter(w =>
+            w && typeof w === 'object' &&
+            typeof w.timestamp === 'number' &&
+            typeof w.type === 'string' &&
+            Array.isArray(w.exercises)
+          )
+        : []
+    }));
+
+    // Uruchom migracje jeśli dane są w starszym formacie
+    let finalData = { schemaVersion, profiles: normalized };
+    if (schemaVersion < CURRENT_SCHEMA_VERSION) {
+      finalData = runMigrations(finalData);
+      // Zapisz zaktualizowane dane z nowym schemaVersion
+      try {
+        localStorage.setItem(STORAGE_PROFILES, JSON.stringify(finalData));
+      } catch {}
+    }
+
+    return finalData.profiles;
   } catch (e) {
     console.warn('getProfiles: błąd deserializacji, zwracam domyślny profil', e);
     return DEFAULT_PROFILE();
@@ -1732,9 +1778,14 @@ function getProfiles() {
   return _profilesCache;
 }
 function saveProfiles(p) {
-  _profilesCache = p; // utrzymaj cache zsynchronizowany
-  try { localStorage.setItem(STORAGE_PROFILES, JSON.stringify(p)); }
-  catch (e) { console.warn('saveProfiles: zapis nie powiódł się', e); }
+  _profilesCache = p;
+  // Zapisz zawsze z aktualnym schemaVersion
+  try {
+    localStorage.setItem(STORAGE_PROFILES, JSON.stringify({
+      schemaVersion: CURRENT_SCHEMA_VERSION,
+      profiles: p
+    }));
+  } catch (e) { console.warn('saveProfiles: zapis nie powiódł się', e); }
 }
 function getCurrentProfileId() { return localStorage.getItem(STORAGE_CURRENT) || 'default'; }
 function setCurrentProfileId(id) { localStorage.setItem(STORAGE_CURRENT, id); }
