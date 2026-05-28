@@ -2518,7 +2518,7 @@ Odpowiedz TYLKO w formacie JSON:
 
     const clean = await callClaude({
       prompt,
-      maxTokens: 1024,
+      maxTokens: 2048,
       signal: generateAbortController.signal
     });
     const parsed = parseClaudeJSON(clean);
