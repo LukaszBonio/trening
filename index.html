@@ -233,6 +233,34 @@ body { background-image: radial-gradient(circle at 0% 0%, rgba(212,255,58,0.04) 
   transition: border-color 0.15s, color 0.15s;
 }
 .eq-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+.sub-btn {
+  display: inline-flex; align-items: center; gap: 3px;
+  margin-top: 3px; padding: 2px 7px; border-radius: 10px;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--text-muted); font-size: 10px; cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.sub-btn:hover { border-color: var(--warning, #f59e0b); color: var(--warning, #f59e0b); }
+.sub-panel {
+  display: none; grid-column: span 4;
+  background: var(--bg-elev2, var(--bg-hover)); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 10px 12px; margin-top: 4px;
+  animation: slideIn 0.2s ease;
+}
+.sub-panel.open { display: block; }
+.sub-panel-title { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; }
+.sub-list { display: flex; flex-direction: column; gap: 6px; }
+.sub-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 10px; border-radius: 8px; background: var(--bg-elev);
+  border: 1px solid var(--border); cursor: pointer; transition: border-color 0.15s, background 0.15s;
+}
+.sub-item:hover { border-color: var(--accent); background: var(--bg-hover); }
+.sub-item-name { font-size: 13px; color: var(--text); font-weight: 500; }
+.sub-item-meta { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+.sub-item-btn { font-size: 11px; padding: 3px 8px; border-radius: 8px; border: 1px solid var(--accent); color: var(--accent); background: transparent; cursor: pointer; white-space: nowrap; }
+.sub-item-btn:hover { background: var(--accent); color: #fff; }
+.sub-active-badge { font-size: 10px; padding: 1px 6px; border-radius: 8px; background: rgba(74,222,128,0.15); color: var(--success, #22c55e); border: 1px solid var(--success, #22c55e); margin-left: 6px; }
 .reps-input { width: 50px; padding: 6px 0; border: none; background: transparent; color: var(--text); font-family: inherit; font-size: 14px; font-weight: 500; text-align: center; outline: none; }
 .reps-input::-webkit-outer-spin-button, .reps-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .reps-input[type=number] { -moz-appearance: textfield; }
@@ -815,7 +843,7 @@ body { background-image: radial-gradient(circle at 0% 0%, rgba(212,255,58,0.04) 
 @media (max-width: 600px) {
   .app { padding: 1rem; }
   .exercise-card { grid-template-columns: 28px 1fr; row-gap: 8px; }
-  .exercise-card .inputs-group, .exercise-card .total-display { grid-column: span 2; }
+  .exercise-card .inputs-group, .exercise-card .total-display, .exercise-card .sub-panel { grid-column: span 2; }
   .total-display { text-align: left; }
   .header { flex-wrap: wrap; gap: 12px; }
 }
@@ -2475,8 +2503,13 @@ ${lastNote ? `- WAŻNE: Użytkownik po ostatnim treningu napisał: "${lastNote}"
   * jedna spójna nazwa po polsku — bez skrótów, bez mieszania języków (wyjątek: face pull, RDL, hip thrust — przyjęte nazwy)
   * WAŻNE: używaj DOKŁADNIE tych samych nazw co w historii powyżej, gdy proponujesz powtórzenie ćwiczenia (np. jeśli w historii jest "Wyciskanie sztangi na ławce poziomej" — użyj tej nazwy, nie skróconej formy)
 
+ZAMIENNIKI ĆWICZEŃ:
+Do każdego ćwiczenia dodaj pole "substitutes" — tablicę 2-3 zamienników angażujących tę samą partię mięśniową, ale z innym sprzętem (np. jeśli ćwiczenie ze sztangą — zamienniki na hantlach i maszynie; jeśli na maszynie — zamienniki na wolnych ciężarach).
+Każdy zamiennik: {"name": "...", "note": "..."} gdzie note to max 5 słów dlaczego dobry zamiennik.
+Nazwy zamienników — te same zasady nazewnictwa co wyżej (sprzęt w nazwie, po polsku).
+
 Odpowiedz TYLKO w formacie JSON:
-{"exercises":[{"name":"Wyciskanie sztangi na ławce poziomej","reps":"6-8","sets":3,"tip":"łopatki ściągnięte"}, ...]}`;
+{"exercises":[{"name":"Wyciskanie sztangi na ławce poziomej","reps":"6-8","sets":3,"tip":"łopatki ściągnięte","substitutes":[{"name":"Wyciskanie hantli na ławce poziomej","note":"ta sama partia, hantle"},{"name":"Wyciskanie na maszynie","note":"stabilne, mniej stawów"}]}, ...]}`;
 
   try {
     // Przerwij poprzedni request jeśli trwa
@@ -2500,11 +2533,18 @@ Odpowiedz TYLKO w formacie JSON:
       if (!ex || typeof ex !== 'object' || !ex.name || typeof ex.name !== 'string' || !ex.name.trim()) {
         throw new Error(`Ćwiczenie #${i + 1} nie ma nazwy — spróbuj ponownie`);
       }
+      const substitutes = Array.isArray(ex.substitutes)
+        ? ex.substitutes
+            .filter(s => s && typeof s.name === 'string' && s.name.trim())
+            .map(s => ({ name: s.name.trim(), note: typeof s.note === 'string' ? s.note.trim() : '' }))
+            .slice(0, 3)
+        : [];
       return {
         name: ex.name.trim(),
         reps: (typeof ex.reps === 'string' && ex.reps.trim()) ? ex.reps.trim() : '8-12',
         sets: Math.min(Math.max(parseInt(ex.sets) || 3, 1), 10),
         tip:  typeof ex.tip === 'string' ? ex.tip.trim() : '',
+        substitutes,
       };
     });
     currentSource = 'ai';
@@ -2742,6 +2782,32 @@ function toggleEquipment(i, exerciseName) {
   if (hint) hint.textContent = getLastWeightHint(exerciseName);
 }
 
+function toggleSubPanel(i) {
+  const panel = document.getElementById('subPanel_' + i);
+  const btn = document.getElementById('subBtn_' + i);
+  if (!panel) return;
+  const isOpen = panel.classList.toggle('open');
+  if (btn) btn.style.color = isOpen ? 'var(--warning, #f59e0b)' : '';
+}
+
+function applySubstitute(origIdx, subIdx) {
+  const ex = currentExercises[origIdx];
+  if (!ex || !ex.substitutes || !ex.substitutes[subIdx]) return;
+  const sub = ex.substitutes[subIdx];
+
+  // Zapisz oryginalne ćwiczenie jako substituteOf
+  if (!ex.substituteOf) {
+    currentExercises[origIdx].substituteOf = ex.name;
+  }
+  // Zamień nazwę i wyczyść substitutes (nie zagnieżdżamy zamienników)
+  currentExercises[origIdx].name = sub.name;
+  currentExercises[origIdx].substitutes = [];
+
+  // Zaktualizuj UI karty bez pełnego rerenderowania
+  renderCurrentMuscleGroup();
+  showToast('Zamieniono na: ' + sub.name, 'success');
+}
+
 function renderCurrentMuscleGroup() {
   const list = document.getElementById('exerciseList');
   if (!list || !exerciseGroups.length) return;
@@ -2789,6 +2855,7 @@ function renderCurrentMuscleGroup() {
         </div>
         <div class="ex-detail">${ex.sets} serie × <span class="reps-target">${escapeHtml(ex.reps)}</span>${ex.tip ? ' · <i style="opacity:0.7">' + escapeHtml(ex.tip) + '</i>' : ''}</div>
         <button class="eq-toggle-btn" id="eqToggle_${i}" onclick="toggleEquipment(${i}, '${escapeHtml(ex.name).replace(/'/g, "\\'")}')" title="Zmień sprzęt">${eqEmoji} ${eqLabel}</button>
+        ${ex.substitutes && ex.substitutes.length ? `<button class="sub-btn" id="subBtn_${i}" onclick="toggleSubPanel(${i})" title="Zamień ćwiczenie"><i class="ti ti-arrows-exchange" style="font-size:10px"></i> zamień</button>` : ''}
       </div>
       <div class="inputs-group">
         <div class="input-block">
@@ -2815,6 +2882,20 @@ function renderCurrentMuscleGroup() {
         </div>
       </div>
       <div class="total-display" id="total_${i}">— rep</div>
+      ${ex.substitutes && ex.substitutes.length ? `
+      <div class="sub-panel" id="subPanel_${i}">
+        <div class="sub-panel-title">Wybierz zamiennik — zastąpi <strong>${escapeHtml(ex.name)}</strong>:</div>
+        <div class="sub-list">
+          ${ex.substitutes.map((s, si) => `
+          <div class="sub-item" onclick="applySubstitute(${i}, ${si})">
+            <div>
+              <div class="sub-item-name">${escapeHtml(s.name)}</div>
+              <div class="sub-item-meta">${s.note ? escapeHtml(s.note) : ''}</div>
+            </div>
+            <button class="sub-item-btn" onclick="event.stopPropagation();applySubstitute(${i}, ${si})">Zamień</button>
+          </div>`).join('')}
+        </div>
+      </div>` : ''}
     </div>
   `;
   }).join('');
@@ -3054,7 +3135,8 @@ function saveWorkout() {
       kg,
       orm,
       muscle: window.TPDB ? window.TPDB.detectMuscle(ex.name) : null,
-      equipment: getEquipmentType(ex.name) // barbell/dumbbell/machine/cable/bodyweight/null
+      equipment: getEquipmentType(ex.name), // barbell/dumbbell/machine/cable/bodyweight/null
+      ...(ex.substituteOf ? { substituteOf: ex.substituteOf } : {})
     };
   });
   const totalReps = exs.reduce((s, e) => s + e.total, 0);
