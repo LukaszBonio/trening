@@ -1383,7 +1383,7 @@ const CFG = {
   AI_HISTORY_MAX: 50,
   AI_SESSIONS_PER_EXERCISE: 10,
   IMPORT_MAX_CHARS: 4000,
-  DRAFT_TTL_MS: 24 * 60 * 60 * 1000,
+  DRAFT_TTL_MS: 72 * 60 * 60 * 1000, // 72h — plan powinien przeżyć weekend
   DAY_MS: 86400000,
   BACKUP_INTERVAL_DAYS: 21,   // 3 tygodnie
   BACKUP_DISMISS_DAYS: 7,     // jeśli odłożone — przypomnij za tydzień
@@ -3578,7 +3578,19 @@ function restoreDraft() {
     currentType = draft.type;
     currentExercises = draft.exercises;
     currentSource = draft.source || null;
-    // Przełącz zakładkę
+    // Przełącz na widok planu jeśli nie jest aktywny
+    const activePlanView = document.getElementById('view-plan');
+    if (activePlanView && !activePlanView.classList.contains('active')) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      activePlanView.classList.add('active');
+      document.querySelectorAll('.bnav-item').forEach(b => b.classList.remove('active'));
+      const bnavPlan = document.getElementById('bnav-plan');
+      if (bnavPlan) bnavPlan.classList.add('active');
+      document.querySelectorAll('.sidebar-link').forEach(b => b.classList.remove('active'));
+      const sidebarPlan = document.querySelector('.sidebar-link[onclick*="view-plan"]');
+      if (sidebarPlan) sidebarPlan.classList.add('active');
+    }
+    // Przełącz zakładkę typu treningu
     document.querySelectorAll('.tab').forEach(t => {
       t.classList.toggle('active', t.dataset.type === currentType);
     });
@@ -5376,7 +5388,7 @@ updateEmptyState();
 setTimeout(() => {
   const restored = restoreDraft();
   if (restored) {
-    showToast('Przywrócono poprzedni trening', 'success');
+    showToast('Przywrócono poprzedni trening 💪', 'success');
   }
 }, 100);
 </script>
