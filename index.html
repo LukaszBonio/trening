@@ -122,6 +122,21 @@ body { background-image: radial-gradient(circle at 0% 0%, rgba(212,255,58,0.04) 
 .empty-state-step-text .tag { display: inline-block; padding: 1px 7px; border-radius: 100px; background: var(--bg-elev-2); border: 1px solid var(--border); font-size: 11px; color: var(--text-muted); font-family: inherit; }
 .empty-state-divider { height: 0.5px; background: var(--border); margin: 1rem 0; }
 .empty-state-offline { font-size: 11px; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
+.draft-restore-banner {
+  display: none; margin-bottom: 12px;
+  background: var(--bg-elev); border: 1px solid var(--accent);
+  border-left: 3px solid var(--accent); border-radius: var(--radius);
+  padding: 12px 14px; animation: slideIn 0.3s ease;
+}
+.draft-restore-banner.visible { display: block; }
+.draft-restore-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.draft-restore-title { font-size: 13px; font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 6px; }
+.draft-restore-meta { font-size: 11px; color: var(--text-muted); display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.draft-restore-meta span { display: flex; align-items: center; gap: 3px; }
+.draft-restore-exercises { font-size: 11px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.6; }
+.draft-restore-exercises strong { color: var(--text); }
+.draft-restore-actions { display: flex; gap: 8px; }
+.draft-restore-actions .btn { flex: 1; font-size: 12px; padding: 7px 10px; }
 
 /* ===== NEXT WORKOUT SUGGESTION ===== */
 .next-suggestion {
@@ -1017,6 +1032,19 @@ body { background-image: radial-gradient(circle at 0% 0%, rgba(212,255,58,0.04) 
     <div class="empty-state-offline">
       <i class="ti ti-key" style="font-size:13px"></i>
       Klucz API znajdziesz na <strong style="color:var(--text-muted)">console.anthropic.com</strong> → Settings → API Keys
+    </div>
+  </div>
+
+    <!-- DRAFT RESTORE BANNER -->
+  <div class="draft-restore-banner" id="draftRestoreBanner">
+    <div class="draft-restore-header">
+      <div class="draft-restore-title"><i class="ti ti-player-play"></i> Niedokończony trening</div>
+    </div>
+    <div class="draft-restore-meta" id="draftRestoreMeta"></div>
+    <div class="draft-restore-exercises" id="draftRestoreExercises"></div>
+    <div class="draft-restore-actions">
+      <button class="btn btn-primary" onclick="confirmRestoreDraft()"><i class="ti ti-player-play"></i> Wróć do treningu</button>
+      <button class="btn btn-ghost" onclick="dismissDraftBanner()"><i class="ti ti-trash"></i> Odrzuć</button>
     </div>
   </div>
 
@@ -3528,6 +3556,7 @@ function saveDraft() {
       source: currentSource,
       inputs,
       muscleGroupIndex: currentMuscleGroupIndex,
+      workoutStartTime: workoutStartTime || null,
       ts: Date.now()
     }));
   } catch(e) {}
@@ -3565,6 +3594,69 @@ function _validateDraft(d) {
   if (!d.exercises.every(ex => ex && typeof ex === 'object' && typeof ex.name === 'string' && ex.name.trim())) return false;
   if (d.inputs !== undefined && !Array.isArray(d.inputs)) return false;
   return true;
+}
+
+function _formatDraftDuration(startTime) {
+  if (!startTime) return null;
+  const secs = Math.floor((Date.now() - startTime) / 1000);
+  if (secs < 60) return secs + 's';
+  const m = Math.floor(secs / 60), s = secs % 60;
+  if (m < 60) return m + 'min ' + (s > 0 ? s + 's' : '');
+  const h = Math.floor(m / 60), rm = m % 60;
+  return h + 'h ' + (rm > 0 ? rm + 'min' : '');
+}
+
+function showDraftBanner() {
+  try {
+    const raw = localStorage.getItem(STORAGE_DRAFT);
+    if (!raw) return;
+    const draft = JSON.parse(raw);
+    if (!_validateDraft(draft)) return;
+    if (Date.now() - draft.ts > CFG.DRAFT_TTL_MS) return;
+
+    // Wypełnij meta (czas, typ, liczba ćwiczeń)
+    const meta = document.getElementById('draftRestoreMeta');
+    const typeLabel = draft.type ? draft.type.toUpperCase() : '—';
+    const exCount = draft.exercises ? draft.exercises.length : 0;
+    const duration = _formatDraftDuration(draft.workoutStartTime);
+    const ago = Math.round((Date.now() - draft.ts) / 60000);
+    const agoText = ago < 60 ? ago + ' min temu' : Math.floor(ago/60) + 'h temu';
+    meta.innerHTML = `
+      <span><i class="ti ti-barbell" style="font-size:11px"></i> ${typeLabel}</span>
+      <span><i class="ti ti-list" style="font-size:11px"></i> ${exCount} ćwiczeń</span>
+      ${duration ? `<span><i class="ti ti-clock" style="font-size:11px"></i> ${duration}</span>` : ''}
+      <span><i class="ti ti-history" style="font-size:11px"></i> ${agoText}</span>
+    `;
+
+    // Wypełnij listę ćwiczeń z ciężarami
+    const exDiv = document.getElementById('draftRestoreExercises');
+    const inputs = Array.isArray(draft.inputs) ? draft.inputs : [];
+    const lines = draft.exercises.slice(0, 5).map((ex, i) => {
+      const inp = inputs[i];
+      const kg = inp && _hasDraftValue(inp.kg) ? inp.kg + ' kg' : '';
+      const reps = inp && _hasDraftValue(inp.reps) ? inp.reps + ' powt' : '';
+      const detail = [kg, reps].filter(Boolean).join(' × ');
+      return `<strong>${ex.name}</strong>${detail ? ' — ' + detail : ''}`;
+    });
+    if (draft.exercises.length > 5) lines.push(`<em>+ ${draft.exercises.length - 5} więcej...</em>`);
+    exDiv.innerHTML = lines.join('<br>');
+
+    // Pokaż baner
+    const banner = document.getElementById('draftRestoreBanner');
+    if (banner) banner.classList.add('visible');
+  } catch(e) {}
+}
+
+function confirmRestoreDraft() {
+  const banner = document.getElementById('draftRestoreBanner');
+  if (banner) banner.classList.remove('visible');
+  restoreDraft();
+}
+
+function dismissDraftBanner() {
+  const banner = document.getElementById('draftRestoreBanner');
+  if (banner) banner.classList.remove('visible');
+  clearDraft();
 }
 
 function restoreDraft() {
@@ -3628,7 +3720,17 @@ function restoreDraft() {
     document.getElementById('saveBtn').disabled = false;
     document.getElementById('genBtnText').textContent = 'Nowy plan';
     showRestTimerBar();
-    startWorkoutTimer();
+    // Przywróć czas startu treningu jeśli był zapisany
+    if (draft.workoutStartTime) {
+      workoutStartTime = draft.workoutStartTime;
+      const badge = document.getElementById('workoutTimerBadge');
+      if (badge) badge.style.display = 'flex';
+      if (workoutTimerInterval) clearInterval(workoutTimerInterval);
+      workoutTimerInterval = setInterval(updateWorkoutTimer, 1000);
+      updateWorkoutTimer();
+    } else {
+      startWorkoutTimer();
+    }
     initWorkoutDateInput();
     const _dBtnR = document.getElementById('discardBtn');
     if (_dBtnR) _dBtnR.style.display = 'flex';
@@ -5384,12 +5486,9 @@ checkBackupReminder();
 updateGoalBadge();
 updateNextSuggestion('ppl');
 updateEmptyState();
-// Przywróć draft PO załadowaniu UI — opóźnienie zapewnia że DOM jest gotowy
+// Pokaż baner draftu PO załadowaniu UI — użytkownik sam decyduje czy wrócić
 setTimeout(() => {
-  const restored = restoreDraft();
-  if (restored) {
-    showToast('Przywrócono poprzedni trening 💪', 'success');
-  }
+  showDraftBanner();
 }, 100);
 </script>
 
