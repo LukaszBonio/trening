@@ -2673,7 +2673,7 @@ function getLastSessions(exerciseName, n = 5) {
   const sessions = [];
   for (const w of p.history) {
     if (!w.exercises) continue;
-    const ex = w.exercises.find(e => e.name && e.name.toLowerCase() === exerciseName.toLowerCase());
+    const ex = w.exercises.find(e => e.name && (e.name.toLowerCase() === exerciseName.toLowerCase() || (e.substituteOf && e.substituteOf.toLowerCase() === exerciseName.toLowerCase())));
     if (ex && (ex.kg > 0 || ex.reps > 0)) {
       sessions.push({ kg: ex.kg || 0, reps: ex.reps || 0, timestamp: w.timestamp });
       if (sessions.length >= n) break;
@@ -3935,15 +3935,20 @@ function renderExerciseStats() { renderMuscleAnalysis(); }
 function getExerciseHistory(name) {
   const p = getCurrentProfile();
   return p.history.flatMap(w => w.exercises
-    .filter(ex => ex.name === name && ex.kg > 0 && ex.reps > 0)
-    .map(ex => ({ timestamp: w.timestamp, date: w.date, kg: ex.kg, reps: ex.reps, total: ex.total, volume: Math.round(ex.kg * ex.total * 10) / 10 }))
+    // Uwzględnij ćwiczenie jeśli nazwa pasuje LUB jeśli jest zamiennikiem oryginału o tej nazwie
+    .filter(ex => (ex.name === name || ex.substituteOf === name) && ex.kg > 0 && ex.reps > 0)
+    .map(ex => ({ timestamp: w.timestamp, date: w.date, kg: ex.kg, reps: ex.reps, total: ex.total, volume: Math.round(ex.kg * ex.total * 10) / 10, substituteOf: ex.substituteOf || null }))
   ).sort((a, b) => a.timestamp - b.timestamp);
 }
 function getAllUniqueExercises() {
   const p = getCurrentProfile();
   const map = new Map();
   p.history.forEach(w => w.exercises.forEach(ex => {
-    if (ex.kg > 0 && ex.reps > 0) map.set(ex.name, (map.get(ex.name) || 0) + 1);
+    if (ex.kg > 0 && ex.reps > 0) {
+      // Grupuj zamienniki razem z oryginałem
+      const key = ex.substituteOf || ex.name;
+      map.set(key, (map.get(key) || 0) + 1);
+    }
   }));
   return Array.from(map.entries()).sort((a,b)=>b[1]-a[1]).map(([name,count])=>({name,count}));
 }
