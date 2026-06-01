@@ -2532,7 +2532,9 @@ ${lastNote ? `- WAŻNE: Użytkownik po ostatnim treningu napisał: "${lastNote}"
   * WAŻNE: używaj DOKŁADNIE tych samych nazw co w historii powyżej, gdy proponujesz powtórzenie ćwiczenia (np. jeśli w historii jest "Wyciskanie sztangi na ławce poziomej" — użyj tej nazwy, nie skróconej formy)
 
 ZAMIENNIKI ĆWICZEŃ:
-Do każdego ćwiczenia dodaj pole "substitutes" — tablicę 2-3 zamienników angażujących tę samą partię mięśniową, ale z innym sprzętem (np. jeśli ćwiczenie ze sztangą — zamienniki na hantlach i maszynie; jeśli na maszynie — zamienniki na wolnych ciężarach).
+Do każdego ćwiczenia dodaj pole "substitutes" — tablicę 2-3 zamienników.
+WAŻNE: zamienniki MUSZĄ angażować DOKŁADNIE tę samą podgrupę mięśniową (np. klatka środkowa → tylko klatka środkowa, NIE klatka górna; biceps → tylko biceps, NIE przedramiona).
+Zamienniki powinny używać innego sprzętu (np. sztanga → hantle lub maszyna; maszyna → wolne ciężary).
 Każdy zamiennik: {"name": "...", "note": "..."} gdzie note to max 5 słów dlaczego dobry zamiennik.
 Nazwy zamienników — te same zasady nazewnictwa co wyżej (sprzęt w nazwie, po polsku).
 
@@ -2831,8 +2833,19 @@ function applySubstitute(origIdx, subIdx) {
   currentExercises[origIdx].name = sub.name;
   currentExercises[origIdx].substitutes = [];
 
-  // Zaktualizuj UI karty bez pełnego rerenderowania
+  // Zsynchronizuj kopię w exerciseGroups — bez tego renderCurrentMuscleGroup czyta starą nazwę
+  for (const g of exerciseGroups) {
+    const found = g.exercises.find(e => e._origIdx === origIdx);
+    if (found) {
+      found.name = sub.name;
+      found.substitutes = [];
+      if (!found.substituteOf) found.substituteOf = ex.substituteOf || ex.name;
+      break;
+    }
+  }
+
   renderCurrentMuscleGroup();
+  saveDraft();
   showToast('Zamieniono na: ' + sub.name, 'success');
 }
 
@@ -3559,7 +3572,8 @@ function saveDraft() {
       workoutStartTime: workoutStartTime || null,
       ts: Date.now()
     }));
-  } catch(e) {}
+    console.log('[Draft] Zapisano draft:', currentExercises.length, 'ćwiczeń');
+  } catch(e) { console.error('[Draft] Błąd zapisu:', e); }
 }
 
 // Debounce — odpala fn dopiero po `wait` ms ciszy. Używane dla hot-paths z input/oninput.
@@ -3609,10 +3623,11 @@ function _formatDraftDuration(startTime) {
 function showDraftBanner() {
   try {
     const raw = localStorage.getItem(STORAGE_DRAFT);
-    if (!raw) return;
+    if (!raw) { console.log('[Draft] Brak draftu w localStorage'); return; }
     const draft = JSON.parse(raw);
-    if (!_validateDraft(draft)) return;
-    if (Date.now() - draft.ts > CFG.DRAFT_TTL_MS) return;
+    if (!_validateDraft(draft)) { console.warn('[Draft] Draft nie przeszedł walidacji'); clearDraft(); return; }
+    if (Date.now() - draft.ts > CFG.DRAFT_TTL_MS) { console.warn('[Draft] Draft wygasł (TTL)'); clearDraft(); return; }
+    console.log('[Draft] Znaleziono draft:', draft.exercises.length, 'ćwiczeń, typ:', draft.type);
 
     // Wypełnij meta (czas, typ, liczba ćwiczeń)
     const meta = document.getElementById('draftRestoreMeta');
@@ -3643,8 +3658,11 @@ function showDraftBanner() {
 
     // Pokaż baner
     const banner = document.getElementById('draftRestoreBanner');
-    if (banner) banner.classList.add('visible');
-  } catch(e) {}
+    if (banner) {
+      banner.classList.add('visible');
+      console.log('[Draft] Baner przywracania widoczny');
+    }
+  } catch(e) { console.error('[Draft] Błąd showDraftBanner:', e); }
 }
 
 function confirmRestoreDraft() {
@@ -5486,6 +5504,22 @@ checkBackupReminder();
 updateGoalBadge();
 updateNextSuggestion('ppl');
 updateEmptyState();
+// Zapisz draft tuż przed zamknięciem karty/przeglądarki
+window.addEventListener('beforeunload', () => {
+  if (currentExercises && currentExercises.length) {
+    saveDraft();
+    console.log('[Draft] Zapisano draft przed zamknięciem');
+  }
+});
+
+// Zapisz draft gdy aplikacja przechodzi w tło (mobile)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden' && currentExercises && currentExercises.length) {
+    saveDraft();
+    console.log('[Draft] Zapisano draft (visibilitychange → hidden)');
+  }
+});
+
 // Pokaż baner draftu PO załadowaniu UI — użytkownik sam decyduje czy wrócić
 setTimeout(() => {
   showDraftBanner();
