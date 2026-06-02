@@ -276,6 +276,79 @@ body { background-image: radial-gradient(circle at 0% 0%, rgba(212,255,58,0.04) 
 .sub-item-btn { font-size: 11px; padding: 3px 8px; border-radius: 8px; border: 1px solid var(--accent); color: var(--accent); background: transparent; cursor: pointer; white-space: nowrap; }
 .sub-item-btn:hover { background: var(--accent); color: #fff; }
 .sub-active-badge { font-size: 10px; padding: 1px 6px; border-radius: 8px; background: rgba(74,222,128,0.15); color: var(--success, #22c55e); border: 1px solid var(--success, #22c55e); margin-left: 6px; }
+
+/* ============ CARD MODE ============ */
+.card-mode-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; z-index:900; background:var(--bg); overflow-y:auto; flex-direction:column; }
+.card-mode-overlay.active { display:flex; }
+.card-progress { display:flex; gap:5px; padding:12px 16px 8px; align-items:center; }
+.card-progress-dot { flex:1; height:4px; border-radius:2px; background:var(--border); transition:background 0.3s; }
+.card-progress-dot.done { background:var(--accent); }
+.card-progress-dot.current { background:var(--warning, #f59e0b); }
+.card-progress-label { font-size:11px; color:var(--text-muted); margin-left:8px; white-space:nowrap; }
+.card-container { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:16px; overflow:hidden; position:relative; }
+.card-slide { width:100%; max-width:400px; animation:cardSlideIn 0.25s ease; }
+@keyframes cardSlideIn { from { opacity:0; transform:translateX(40px); } to { opacity:1; transform:translateX(0); } }
+@keyframes cardSlideBack { from { opacity:0; transform:translateX(-40px); } to { opacity:1; transform:translateX(0); } }
+.card-slide.back { animation:cardSlideBack 0.25s ease; }
+.card-ex-name { font-size:20px; font-weight:700; color:var(--text); margin-bottom:4px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.card-ex-tip { font-size:12px; color:var(--text-muted); font-style:italic; margin-bottom:12px; }
+.card-set-label { font-size:15px; font-weight:600; color:var(--accent); margin-bottom:16px; text-align:center; }
+.card-inputs { display:flex; gap:16px; margin-bottom:16px; }
+.card-input-block { flex:1; display:flex; flex-direction:column; align-items:center; }
+.card-input-label { font-size:11px; color:var(--text-muted); margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px; }
+.card-input { width:100%; text-align:center; font-size:28px; font-weight:700; padding:14px 8px; border-radius:var(--radius); border:2px solid var(--border); background:var(--bg-elev); color:var(--text); transition:border-color 0.2s; }
+.card-input:focus { border-color:var(--accent); outline:none; }
+.card-input::placeholder { color:var(--text-dim); }
+.card-last-hint { font-size:11px; color:var(--text-muted); text-align:center; margin-bottom:16px; }
+.card-actions { display:flex; gap:10px; width:100%; }
+.card-btn-done { flex:2; padding:16px; font-size:16px; font-weight:700; border:none; border-radius:var(--radius); background:var(--accent); color:#000; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:transform 0.1s,opacity 0.1s; }
+.card-btn-done:active { transform:scale(0.97); }
+.card-btn-back { flex:1; padding:16px; font-size:14px; border:1px solid var(--border); border-radius:var(--radius); background:transparent; color:var(--text-muted); cursor:pointer; transition:border-color 0.2s; }
+.card-btn-back:hover { border-color:var(--accent); }
+.card-sub-row { margin-bottom:12px; }
+.card-sub-btn { font-size:12px; padding:4px 10px; border-radius:10px; border:1px solid var(--border); background:transparent; color:var(--text-muted); cursor:pointer; }
+.card-sub-btn:hover { border-color:var(--warning,#f59e0b); color:var(--warning,#f59e0b); }
+.card-yt-link { font-size:12px; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:3px; }
+
+/* CARD TIMER */
+.card-timer { width:100%; max-width:400px; text-align:center; animation:cardSlideIn 0.25s ease; }
+.card-timer-display { font-size:64px; font-weight:700; color:var(--text); font-variant-numeric:tabular-nums; margin-bottom:8px; }
+.card-timer-bar { width:100%; height:6px; border-radius:3px; background:var(--border); margin-bottom:16px; overflow:hidden; }
+.card-timer-bar-fill { height:100%; border-radius:3px; background:var(--accent); transition:width 0.5s linear; }
+.card-timer-presets { display:flex; gap:8px; justify-content:center; margin-bottom:20px; }
+.card-timer-preset { padding:6px 14px; border-radius:16px; border:1px solid var(--border); background:transparent; color:var(--text-muted); font-size:13px; cursor:pointer; transition:all 0.15s; }
+.card-timer-preset.active { border-color:var(--accent); color:var(--accent); background:rgba(212,255,0,0.08); }
+.card-timer-next { font-size:13px; color:var(--text-muted); margin-bottom:20px; }
+.card-timer-next strong { color:var(--text); }
+.card-timer-skip { padding:12px 24px; font-size:14px; font-weight:600; border:1px solid var(--accent); border-radius:var(--radius); background:transparent; color:var(--accent); cursor:pointer; transition:background 0.15s; }
+.card-timer-skip:hover { background:rgba(212,255,0,0.1); }
+
+/* CARD SUMMARY */
+.card-summary { width:100%; max-width:440px; padding:20px 0; animation:cardSlideIn 0.3s ease; }
+.card-summary-title { font-size:22px; font-weight:700; color:var(--accent); text-align:center; margin-bottom:4px; }
+.card-summary-duration { font-size:14px; color:var(--text-muted); text-align:center; margin-bottom:16px; }
+.card-summary-list { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
+.card-summary-item { background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius); padding:10px 12px; }
+.card-summary-ex-name { font-size:13px; font-weight:600; color:var(--text); margin-bottom:3px; }
+.card-summary-sets { font-size:12px; color:var(--text-muted); }
+.card-summary-total { text-align:center; font-size:15px; color:var(--text); padding:12px; background:var(--bg-elev); border-radius:var(--radius); border:1px solid var(--border); margin-bottom:16px; }
+.card-summary-total strong { color:var(--accent); }
+.card-summary-save { width:100%; padding:16px; font-size:16px; font-weight:700; border:none; border-radius:var(--radius); background:var(--accent); color:#000; cursor:pointer; }
+
+/* CARD LONG PRESS MENU */
+.card-nav-menu { display:none; position:fixed; bottom:0; left:0; right:0; z-index:950; background:var(--bg-elev); border-top:1px solid var(--border); border-radius:16px 16px 0 0; max-height:60vh; overflow-y:auto; padding:12px 0; animation:slideUp 0.2s ease; }
+.card-nav-menu.open { display:block; }
+@keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+.card-nav-menu-title { font-size:12px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; padding:4px 16px 8px; }
+.card-nav-menu-item { display:flex; justify-content:space-between; align-items:center; padding:10px 16px; cursor:pointer; transition:background 0.15s; }
+.card-nav-menu-item:hover { background:var(--bg-hover); }
+.card-nav-menu-item.current { background:rgba(212,255,0,0.08); border-left:3px solid var(--accent); }
+.card-nav-menu-item-name { font-size:13px; color:var(--text); font-weight:500; }
+.card-nav-menu-item-detail { font-size:11px; color:var(--text-muted); }
+.card-nav-menu-backdrop { display:none; position:fixed; top:0; left:0; right:0; bottom:0; z-index:940; background:rgba(0,0,0,0.5); }
+.card-nav-menu-backdrop.open { display:block; }
+
+.card-start-btn { width:100%; padding:14px; font-size:15px; font-weight:700; border:none; border-radius:var(--radius); background:var(--accent); color:#000; cursor:pointer; margin-top:10px; display:flex; align-items:center; justify-content:center; gap:8px; }
 .reps-input { width: 50px; padding: 6px 0; border: none; background: transparent; color: var(--text); font-family: inherit; font-size: 14px; font-weight: 500; text-align: center; outline: none; }
 .reps-input::-webkit-outer-spin-button, .reps-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .reps-input[type=number] { -moz-appearance: textfield; }
@@ -1149,6 +1222,9 @@ body { background-image: radial-gradient(circle at 0% 0%, rgba(212,255,58,0.04) 
   </div>
 
   <div class="save-bar">
+    <button class="card-start-btn" id="startCardModeBtn" onclick="enterCardMode()" style="display:none;">
+      <i class="ti ti-player-play"></i>Rozpocznij trening
+    </button>
     <button class="btn btn-danger" id="discardBtn" onclick="discardWorkout()" style="display:none;">
       <i class="ti ti-x"></i>Zakończ bez zapisywania
     </button>
@@ -1345,8 +1421,30 @@ Notatka: dobra forma"></textarea>
       <input type="checkbox" id="goalAskCheckbox" style="accent-color: var(--accent);">
       Pytaj przy każdym generowaniu planu
     </label>
+    <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);">
+      <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">Tryb treningu</div>
+      <div style="display: flex; gap: 6px;">
+        <button class="card-timer-preset" id="modeCards" onclick="setWorkoutMode('cards')" style="flex:1; font-size:12px;">
+          <i class="ti ti-cards"></i> Krok po kroku
+        </button>
+        <button class="card-timer-preset" id="modeList" onclick="setWorkoutMode('list')" style="flex:1; font-size:12px;">
+          <i class="ti ti-list"></i> Lista
+        </button>
+      </div>
+    </div>
     <button class="btn btn-primary" onclick="confirmGoal()" style="width: 100%; margin-top: 16px;">Zatwierdź cel</button>
   </div>
+</div>
+
+<!-- CARD MODE OVERLAY -->
+<div class="card-mode-overlay" id="cardModeOverlay">
+  <div class="card-progress" id="cardProgress"></div>
+  <div class="card-container" id="cardContainer"></div>
+</div>
+<div class="card-nav-menu-backdrop" id="cardNavBackdrop" onclick="closeCardNavMenu()"></div>
+<div class="card-nav-menu" id="cardNavMenu">
+  <div class="card-nav-menu-title">Przejdź do serii</div>
+  <div id="cardNavMenuList"></div>
 </div>
 
 <div class="save-reminder" id="saveReminder">
@@ -1471,11 +1569,11 @@ let currentExercises = [];
 let currentSource = null; // 'ai' lub null (offline)
 let isLoading = false;
 const GOALS_DATA = {
-  reduction: { name: 'Redukcja', reps: '12-15', sets: '3', rest: 60, restText: '45-60s', desc: 'Wyższa intensywność, krótsze przerwy', icon: '🔥' },
-  sculpt: { name: 'Rzeźba', reps: '12-15', sets: '3-4', rest: 60, restText: '45-60s', desc: 'Skupienie na detalach i czuciu mięśniowym', icon: '🗿' },
-  mass: { name: 'Masa', reps: '8-12', sets: '3-4', rest: 90, restText: '60-90s', desc: 'Hipertrofia, optymalny czas pod napięciem', icon: '💪' },
-  strength: { name: 'Siła', reps: '3-5', sets: '4-5', rest: 180, restText: '3-5 min', desc: 'Niskie zakresy, długie przerwy', icon: '🏋️' },
-  endurance: { name: 'Kondycja', reps: '15-20', sets: '3', rest: 45, restText: '30-45s', desc: 'Bardzo krótkie przerwy, wytrzymałość', icon: '🏃' }
+  reduction: { name: 'Redukcja', reps: '12-15', sets: '3', rest: 60, restExercise: 90, restText: '45-60s', desc: 'Wyższa intensywność, krótsze przerwy', icon: '🔥' },
+  sculpt: { name: 'Rzeźba', reps: '12-15', sets: '3-4', rest: 60, restExercise: 90, restText: '45-60s', desc: 'Skupienie na detalach i czuciu mięśniowym', icon: '🗿' },
+  mass: { name: 'Masa', reps: '8-12', sets: '3-4', rest: 90, restExercise: 120, restText: '60-90s', desc: 'Hipertrofia, optymalny czas pod napięciem', icon: '💪' },
+  strength: { name: 'Siła', reps: '3-5', sets: '4-5', rest: 120, restExercise: 180, restText: '3-5 min', desc: 'Niskie zakresy, długie przerwy', icon: '🏋️' },
+  endurance: { name: 'Kondycja', reps: '15-20', sets: '3', rest: 45, restExercise: 60, restText: '30-45s', desc: 'Bardzo krótkie przerwy, wytrzymałość', icon: '🏃' }
 };
 let pendingGenerate = false;
 let chart = null;
@@ -1718,13 +1816,14 @@ function saveTimerPrefs() {
 
 // ============ PROFILES ============
 // Fabryka profilu — JEDNO miejsce gdzie definiujemy schemat domyślnego profilu
-function makeProfile({ id, name, goal = 'reduction', askGoalEveryTime = true } = {}) {
+function makeProfile({ id, name, goal = 'reduction', askGoalEveryTime = true, workoutMode = 'cards' } = {}) {
   return {
     id: id || ('p_' + Date.now()),
     name: name || 'Użytkownik',
     goal,
     goalSetAt: Date.now(),
     askGoalEveryTime,
+    workoutMode, // 'cards' | 'list'
     history: []
   };
 }
@@ -1802,6 +1901,7 @@ function _loadProfilesFromStorage() {
       goal: typeof profile?.goal === 'string' ? profile.goal : 'reduction',
       goalSetAt: typeof profile?.goalSetAt === 'number' ? profile.goalSetAt : Date.now(),
       askGoalEveryTime: typeof profile?.askGoalEveryTime === 'boolean' ? profile.askGoalEveryTime : true,
+      workoutMode: (profile?.workoutMode === 'list' || profile?.workoutMode === 'cards') ? profile.workoutMode : 'cards',
       history: Array.isArray(profile?.history)
         ? profile.history.filter(w =>
             w && typeof w === 'object' &&
@@ -2260,7 +2360,9 @@ function generateOfflinePlan() {
   reminderDismissed = false;
   document.getElementById('saveReminder').classList.remove('show');
   document.getElementById('saveBtn').disabled = false;
-  showRestTimerBar();
+  showStartCardBtn();
+  const _profOff = getCurrentProfile();
+  if (_profOff.workoutMode !== 'cards') { showRestTimerBar(); }
   startWorkoutTimer();
   initWorkoutDateInput();
   const _dBtn2 = document.getElementById('discardBtn');
@@ -2286,6 +2388,10 @@ function openGoalModal(isFromGenerate = false) {
     </div>
   `).join('');
   document.getElementById('goalAskCheckbox').checked = profile.askGoalEveryTime !== false;
+  // Workout mode toggle
+  const wm = profile.workoutMode || 'cards';
+  document.getElementById('modeCards')?.classList.toggle('active', wm === 'cards');
+  document.getElementById('modeList')?.classList.toggle('active', wm === 'list');
   window.tempSelectedGoal = profile.goal || 'reduction';
   document.getElementById('goalModal').classList.add('active');
 }
@@ -2585,7 +2691,10 @@ Odpowiedz TYLKO w formacie JSON:
     reminderDismissed = false;
     document.getElementById('saveReminder').classList.remove('show');
     document.getElementById('saveBtn').disabled = false;
-    showRestTimerBar();
+    showStartCardBtn();
+    // W trybie lista — pokaż FAB timer jak wcześniej
+    const _prof = getCurrentProfile();
+    if (_prof.workoutMode !== 'cards') { showRestTimerBar(); }
     startWorkoutTimer();
     setRestPreset(goalData.rest);
     initWorkoutDateInput();
@@ -3120,10 +3229,13 @@ function discardWorkout() {
   if (!currentExercises.length) return;
   if (!confirm('Zakończyć trening bez zapisywania?\nWpisane wartości zostaną utracone.')) return;
   // Wyczyść plan bez zapisu
+  if (cardActive) exitCardMode();
   stopWorkoutTimer();
   stopRestTimer();
   hideRestTimerBar();
   clearDraft();
+  const _scb = document.getElementById('startCardModeBtn');
+  if (_scb) _scb.style.display = 'none';
   currentExercises = [];
   renderExercises([]);
   const prog = document.getElementById('exercisesProgress');
@@ -3295,7 +3407,14 @@ function refreshHistory() {
         ${e.duration ? `<span><strong>${formatDuration(e.duration)}</strong></span>` : ''}
       </div>
       ${e.note ? `<div style="font-size:11px;color:var(--text-muted);margin-top:6px;padding:6px 10px;background:var(--bg-elev2);border-radius:6px;border-left:2px solid var(--accent);">📝 ${escapeHtml(e.note)}</div>` : ''}
-      <div class="history-exs">${e.exercises.map(x => x.reps > 0 ? `${escapeHtml(x.name)} <span style="color:var(--accent)">(${x.total} rep${x.kg > 0 ? ' · ' + x.kg + ' kg' : ''})</span>` : `<span style="opacity:0.5">${escapeHtml(x.name)}</span>`).join(' · ')}</div>
+      <div class="history-exs">${e.exercises.map(x => {
+        if (x.reps <= 0 && (!x.setsData || !x.setsData.length)) return '<span style="opacity:0.5">' + escapeHtml(x.name) + '</span>';
+        if (x.setsData && x.setsData.length) {
+          const setsStr = x.setsData.map(s => s.kg + 'kg×' + s.reps).join(', ');
+          return escapeHtml(x.name) + ' <span style="color:var(--accent)">(' + setsStr + ')</span>';
+        }
+        return escapeHtml(x.name) + ' <span style="color:var(--accent)">(' + x.total + ' rep' + (x.kg > 0 ? ' · ' + x.kg + ' kg' : '') + ')</span>';
+      }).join(' · ')}</div>
     </div>`;
   }).join('');
 }
@@ -3570,6 +3689,10 @@ function saveDraft() {
       inputs,
       muscleGroupIndex: currentMuscleGroupIndex,
       workoutStartTime: workoutStartTime || null,
+      cardActive: cardActive || false,
+      cardExIdx: cardExIdx || 0,
+      cardSetIdx: cardSetIdx || 0,
+      cardSetsData: cardSetsData || [],
       ts: Date.now()
     }));
     console.log('[Draft] Zapisano draft:', currentExercises.length, 'ćwiczeń');
@@ -3755,6 +3878,22 @@ function restoreDraft() {
     const _nsR = document.getElementById('workoutNoteSection');
     if (_nsR) _nsR.classList.add('visible');
     setTimeout(checkAllFilled, 500);
+    showStartCardBtn();
+    // Przywróć card mode jeśli był aktywny
+    if (draft.cardActive && draft.cardSetsData && draft.cardSetsData.length) {
+      cardSetsData = draft.cardSetsData;
+      cardExIdx = draft.cardExIdx || 0;
+      cardSetIdx = draft.cardSetIdx || 0;
+      setTimeout(() => enterCardMode(), 200);
+      // Nadpisz domyślne wartości z zapisanych
+      setTimeout(() => {
+        cardExIdx = draft.cardExIdx || 0;
+        cardSetIdx = draft.cardSetIdx || 0;
+        cardSetsData = draft.cardSetsData;
+        renderCardProgress();
+        renderCard();
+      }, 300);
+    }
     return true;
   } catch(e) {
     console.warn('restoreDraft: błąd przywracania', e);
@@ -4480,6 +4619,523 @@ function formatDuration(seconds) {
   if (min < 60) return `${min} min ${sec.toString().padStart(2, '0')}s`;
   const hr = Math.floor(min / 60);
   return `${hr}h ${(min % 60)}min`;
+}
+
+// ============ CARD MODE (krok po kroku) ============
+let cardActive = false;
+let cardExIdx = 0;       // indeks ćwiczenia w currentExercises
+let cardSetIdx = 0;      // indeks serii (0-based)
+let cardSetsData = [];   // [{exIdx, sets: [{kg,reps},...]}]
+let cardTimerInterval = null;
+let cardTimerRemaining = 0;
+let cardTimerDuration = 90;
+let cardTimerIsExerciseBreak = false; // true = przerwa między ćwiczeniami (dłuższa)
+let cardDirection = 'forward'; // 'forward' | 'back' — dla animacji
+let cardBackLongPressTimer = null;
+
+function getCardGoalData() {
+  const profile = getCurrentProfile();
+  const goalKey = profile.goal || 'reduction';
+  return GOALS_DATA[goalKey] || GOALS_DATA['reduction'];
+}
+
+function setWorkoutMode(mode) {
+  updateCurrentProfile(p => { p.workoutMode = mode; return p; });
+  document.getElementById('modeCards')?.classList.toggle('active', mode === 'cards');
+  document.getElementById('modeList')?.classList.toggle('active', mode === 'list');
+}
+
+function showStartCardBtn() {
+  const btn = document.getElementById('startCardModeBtn');
+  const profile = getCurrentProfile();
+  if (btn) btn.style.display = (profile.workoutMode === 'cards' && currentExercises.length) ? 'flex' : 'none';
+}
+
+function enterCardMode() {
+  if (!currentExercises.length) return;
+  cardActive = true;
+  cardExIdx = 0;
+  cardSetIdx = 0;
+  cardDirection = 'forward';
+  // Inicjuj setsData dla każdego ćwiczenia
+  cardSetsData = currentExercises.map((ex, i) => ({
+    exIdx: i,
+    name: ex.name,
+    sets: Array.from({ length: parseInt(ex.sets) || 3 }, () => ({ kg: '', reps: '' }))
+  }));
+  // Pre-fill seria 1 z historii (getLastSessions)
+  cardSetsData.forEach((exData, i) => {
+    const lastSessions = getLastSessions(currentExercises[i].name, 1);
+    if (lastSessions.length && lastSessions[0].kg > 0) {
+      exData.sets[0].kg = lastSessions[0].kg;
+      exData.sets[0].reps = lastSessions[0].reps;
+    }
+  });
+  document.getElementById('cardModeOverlay').classList.add('active');
+  // Ukryj FAB timer — card mode ma własny
+  const fab = document.getElementById('restTimerFab');
+  if (fab) fab.style.display = 'none';
+  startWorkoutTimer();
+  renderCardProgress();
+  renderCard();
+}
+
+function exitCardMode() {
+  cardActive = false;
+  if (cardTimerInterval) { clearInterval(cardTimerInterval); cardTimerInterval = null; }
+  document.getElementById('cardModeOverlay').classList.remove('active');
+  closeCardNavMenu();
+}
+
+function renderCardProgress() {
+  const el = document.getElementById('cardProgress');
+  if (!el) return;
+  const total = currentExercises.length;
+  const dots = currentExercises.map((_, i) => {
+    const cls = i < cardExIdx ? 'done' : i === cardExIdx ? 'current' : '';
+    return '<div class="card-progress-dot ' + cls + '"></div>';
+  }).join('');
+  el.innerHTML = dots + '<span class="card-progress-label">' + (cardExIdx + 1) + '/' + total + '</span>';
+}
+
+function renderCard() {
+  const container = document.getElementById('cardContainer');
+  if (!container) return;
+  const ex = currentExercises[cardExIdx];
+  if (!ex) return;
+  const totalSets = parseInt(ex.sets) || 3;
+  const setData = cardSetsData[cardExIdx]?.sets[cardSetIdx] || { kg: '', reps: '' };
+  const isFirstSet = cardSetIdx === 0;
+  const slideClass = cardDirection === 'back' ? 'card-slide back' : 'card-slide';
+
+  // Hint z historii
+  const suggestion = getProgressionSuggestion(ex.name);
+  const hintColor = suggestion.type === 'stagnation' ? 'var(--warning, #f59e0b)'
+    : suggestion.type === 'progress' ? 'var(--success, #22c55e)'
+    : suggestion.type === 'regress' ? 'var(--danger, #ef4444)'
+    : 'var(--text-muted)';
+
+  const ytQuery = encodeURIComponent(ex.name + ' technika ćwiczenia');
+  const ytUrl = 'https://www.youtube.com/results?search_query=' + ytQuery;
+
+  let html = '<div class="' + slideClass + '">';
+  html += '<div class="card-ex-name">' + escapeHtml(ex.name);
+  html += ' <a href="' + ytUrl + '" target="_blank" class="card-yt-link" onclick="event.stopPropagation()"><i class="ti ti-brand-youtube"></i>YT</a>';
+  html += '</div>';
+  if (ex.tip) html += '<div class="card-ex-tip">' + escapeHtml(ex.tip) + '</div>';
+
+  // Zamień — tylko seria 1
+  if (isFirstSet && ex.substitutes && ex.substitutes.length) {
+    html += '<div class="card-sub-row"><button class="card-sub-btn" onclick="cardShowSubstitutes()"><i class="ti ti-arrows-exchange" style="font-size:11px"></i> zamień ćwiczenie</button></div>';
+  }
+
+  html += '<div class="card-set-label">Seria ' + (cardSetIdx + 1) + ' / ' + totalSets + '</div>';
+
+  html += '<div class="card-inputs">';
+  html += '<div class="card-input-block"><span class="card-input-label">Powtórzenia</span>';
+  html += '<input type="number" class="card-input" id="cardReps" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="' + (setData.reps || '') + '" autofocus></div>';
+  html += '<div class="card-input-block"><span class="card-input-label">Ciężar (kg)</span>';
+  html += '<input type="number" class="card-input" id="cardKg" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" step="0.5" placeholder="0" value="' + (setData.kg || '') + '"></div>';
+  html += '</div>';
+
+  html += '<div class="card-last-hint" style="color:' + hintColor + '">' + suggestion.text + '</div>';
+
+  html += '<div class="card-actions">';
+  if (cardExIdx > 0 || cardSetIdx > 0) {
+    html += '<button class="card-btn-back" id="cardBackBtn" onmousedown="cardBackStart()" onmouseup="cardBackEnd()" onmouseleave="cardBackEnd()" ontouchstart="cardBackStart()" ontouchend="cardBackEnd()"><i class="ti ti-arrow-left"></i> Wstecz</button>';
+  }
+  html += '<button class="card-btn-done" onclick="cardDone()"><i class="ti ti-check"></i> Gotowe</button>';
+  html += '</div>';
+  html += '</div>';
+
+  container.innerHTML = html;
+  renderCardProgress();
+
+  // Focus na pierwszym pustym inpucie
+  setTimeout(() => {
+    const repsEl = document.getElementById('cardReps');
+    const kgEl = document.getElementById('cardKg');
+    if (repsEl && !repsEl.value) repsEl.focus();
+    else if (kgEl && !kgEl.value) kgEl.focus();
+  }, 50);
+}
+
+function cardDone() {
+  // Zapisz wartości
+  const reps = document.getElementById('cardReps')?.value || '';
+  const kg = document.getElementById('cardKg')?.value || '';
+  if (cardSetsData[cardExIdx]) {
+    cardSetsData[cardExIdx].sets[cardSetIdx] = { kg, reps };
+    // Aktualizuj nazwę jeśli była zmiana (substitute)
+    cardSetsData[cardExIdx].name = currentExercises[cardExIdx].name;
+  }
+
+  const totalSets = parseInt(currentExercises[cardExIdx]?.sets) || 3;
+  const isLastSet = cardSetIdx >= totalSets - 1;
+  const isLastExercise = cardExIdx >= currentExercises.length - 1;
+
+  if (isLastSet && isLastExercise) {
+    // Koniec treningu — pokaż podsumowanie
+    renderCardSummary();
+    return;
+  }
+
+  // Timer — ustal czas
+  const goal = getCardGoalData();
+  if (isLastSet) {
+    // Przerwa między ćwiczeniami (dłuższa)
+    cardTimerDuration = goal.restExercise || 120;
+    cardTimerIsExerciseBreak = true;
+  } else {
+    // Przerwa między seriami
+    cardTimerDuration = goal.rest || 90;
+    cardTimerIsExerciseBreak = false;
+  }
+  cardTimerRemaining = cardTimerDuration;
+
+  // Pre-fill następna seria/ćwiczenie
+  if (!isLastSet) {
+    // Kopiuj dane z bieżącej serii do następnej (jeśli pusta)
+    const nextSet = cardSetsData[cardExIdx]?.sets[cardSetIdx + 1];
+    if (nextSet && !nextSet.kg && !nextSet.reps) {
+      nextSet.kg = kg;
+      nextSet.reps = reps;
+    }
+  } else {
+    // Następne ćwiczenie — pre-fill seria 1 z historii (jeśli nie ma)
+    const nextExData = cardSetsData[cardExIdx + 1];
+    if (nextExData && !nextExData.sets[0].kg && !nextExData.sets[0].reps) {
+      const lastSessions = getLastSessions(currentExercises[cardExIdx + 1].name, 1);
+      if (lastSessions.length && lastSessions[0].kg > 0) {
+        nextExData.sets[0].kg = lastSessions[0].kg;
+        nextExData.sets[0].reps = lastSessions[0].reps;
+      }
+    }
+  }
+
+  cardDirection = 'forward';
+  renderCardTimer();
+}
+
+function cardBack() {
+  // Zapisz bieżące wartości
+  const reps = document.getElementById('cardReps')?.value || '';
+  const kg = document.getElementById('cardKg')?.value || '';
+  if (cardSetsData[cardExIdx]) {
+    cardSetsData[cardExIdx].sets[cardSetIdx] = { kg, reps };
+  }
+
+  cardDirection = 'back';
+  if (cardSetIdx > 0) {
+    cardSetIdx--;
+  } else if (cardExIdx > 0) {
+    cardExIdx--;
+    const totalSets = parseInt(currentExercises[cardExIdx]?.sets) || 3;
+    cardSetIdx = totalSets - 1;
+  }
+  renderCard();
+}
+
+// Long press back → menu nawigacji
+function cardBackStart() {
+  cardBackLongPressTimer = setTimeout(() => {
+    cardBackLongPressTimer = null;
+    openCardNavMenu();
+  }, 500);
+}
+
+function cardBackEnd() {
+  if (cardBackLongPressTimer) {
+    clearTimeout(cardBackLongPressTimer);
+    cardBackLongPressTimer = null;
+    cardBack();
+  }
+}
+
+function openCardNavMenu() {
+  const list = document.getElementById('cardNavMenuList');
+  if (!list) return;
+  let html = '';
+  currentExercises.forEach((ex, ei) => {
+    const totalSets = parseInt(ex.sets) || 3;
+    for (let si = 0; si < totalSets; si++) {
+      const data = cardSetsData[ei]?.sets[si] || {};
+      const isCurrent = ei === cardExIdx && si === cardSetIdx;
+      const detail = data.kg && data.reps ? data.kg + 'kg × ' + data.reps : '';
+      html += '<div class="card-nav-menu-item' + (isCurrent ? ' current' : '') + '" onclick="cardNavTo(' + ei + ',' + si + ')">';
+      html += '<div><span class="card-nav-menu-item-name">' + escapeHtml(ex.name) + '</span>';
+      html += ' <span style="font-size:11px;color:var(--text-dim)">Seria ' + (si + 1) + '/' + totalSets + '</span></div>';
+      if (detail) html += '<span class="card-nav-menu-item-detail">' + detail + '</span>';
+      html += '</div>';
+    }
+  });
+  list.innerHTML = html;
+  document.getElementById('cardNavMenu').classList.add('open');
+  document.getElementById('cardNavBackdrop').classList.add('open');
+}
+
+function closeCardNavMenu() {
+  document.getElementById('cardNavMenu')?.classList.remove('open');
+  document.getElementById('cardNavBackdrop')?.classList.remove('open');
+}
+
+function cardNavTo(exIdx, setIdx) {
+  // Zapisz bieżące wartości
+  const reps = document.getElementById('cardReps')?.value || '';
+  const kg = document.getElementById('cardKg')?.value || '';
+  if (cardSetsData[cardExIdx]) {
+    cardSetsData[cardExIdx].sets[cardSetIdx] = { kg, reps };
+  }
+  cardDirection = (exIdx < cardExIdx || (exIdx === cardExIdx && setIdx < cardSetIdx)) ? 'back' : 'forward';
+  cardExIdx = exIdx;
+  cardSetIdx = setIdx;
+  closeCardNavMenu();
+  renderCard();
+}
+
+// ---- CARD TIMER ----
+function renderCardTimer() {
+  const container = document.getElementById('cardContainer');
+  if (!container) return;
+
+  // Info o następnej serii/ćwiczeniu
+  const totalSets = parseInt(currentExercises[cardExIdx]?.sets) || 3;
+  const isLastSet = cardSetIdx >= totalSets - 1;
+  let nextLabel = '';
+  if (isLastSet && cardExIdx < currentExercises.length - 1) {
+    nextLabel = '<strong>' + escapeHtml(currentExercises[cardExIdx + 1].name) + '</strong> — Seria 1';
+  } else if (!isLastSet) {
+    nextLabel = escapeHtml(currentExercises[cardExIdx].name) + ' — <strong>Seria ' + (cardSetIdx + 2) + '/' + totalSets + '</strong>';
+  }
+
+  const presets = [60, 90, 120, 180];
+  const presetsHtml = presets.map(s =>
+    '<button class="card-timer-preset' + (s === cardTimerDuration ? ' active' : '') + '" onclick="cardTimerSetPreset(' + s + ')">' + (s >= 60 ? Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') : s + 's') + '</button>'
+  ).join('');
+
+  let html = '<div class="card-timer">';
+  html += '<div class="card-timer-display" id="cardTimerDisplay">' + formatTimerDisplay(cardTimerRemaining) + '</div>';
+  html += '<div class="card-timer-bar"><div class="card-timer-bar-fill" id="cardTimerBarFill" style="width:100%"></div></div>';
+  html += '<div class="card-timer-presets">' + presetsHtml + '</div>';
+  if (nextLabel) html += '<div class="card-timer-next">Następna: ' + nextLabel + '</div>';
+  html += '<button class="card-timer-skip" onclick="cardTimerSkip()">Pomiń przerwę <i class="ti ti-chevron-right"></i></button>';
+  html += '</div>';
+
+  container.innerHTML = html;
+  startCardTimer();
+}
+
+function formatTimerDisplay(secs) {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return m + ':' + String(s).padStart(2, '0');
+}
+
+function startCardTimer() {
+  if (cardTimerInterval) clearInterval(cardTimerInterval);
+  const endTime = Date.now() + cardTimerRemaining * 1000;
+  cardTimerInterval = setInterval(() => {
+    cardTimerRemaining = Math.max(0, Math.round((endTime - Date.now()) / 1000));
+    const display = document.getElementById('cardTimerDisplay');
+    if (display) display.textContent = formatTimerDisplay(cardTimerRemaining);
+    const fill = document.getElementById('cardTimerBarFill');
+    if (fill) fill.style.width = (cardTimerRemaining / cardTimerDuration * 100) + '%';
+    if (cardTimerRemaining <= 0) {
+      clearInterval(cardTimerInterval);
+      cardTimerInterval = null;
+      cardTimerFinish();
+    }
+  }, 500);
+}
+
+function cardTimerSetPreset(sec) {
+  if (cardTimerInterval) clearInterval(cardTimerInterval);
+  cardTimerDuration = sec;
+  cardTimerRemaining = sec;
+  // Zapisz preferencję
+  if (cardTimerIsExerciseBreak) {
+    // Przerwa między ćwiczeniami — nie nadpisuj globalnie
+  } else {
+    restPrefs.duration = sec;
+    saveTimerPrefs();
+  }
+  document.querySelectorAll('.card-timer-preset').forEach(b => {
+    b.classList.toggle('active', parseInt(b.textContent) === sec || b.textContent === Math.floor(sec/60) + ':' + String(sec%60).padStart(2,'0'));
+  });
+  renderCardTimer();
+}
+
+function cardTimerSkip() {
+  if (cardTimerInterval) { clearInterval(cardTimerInterval); cardTimerInterval = null; }
+  cardTimerFinish();
+}
+
+function cardTimerFinish() {
+  // Wibracja + dźwięk
+  if (restPrefs.vibrate && navigator.vibrate) navigator.vibrate([200, 100, 200]);
+  if (restPrefs.sound) try { playRestEndSound(); } catch(e) {}
+
+  // Przejdź do następnej serii/ćwiczenia
+  const totalSets = parseInt(currentExercises[cardExIdx]?.sets) || 3;
+  if (cardSetIdx < totalSets - 1) {
+    cardSetIdx++;
+  } else if (cardExIdx < currentExercises.length - 1) {
+    cardExIdx++;
+    cardSetIdx = 0;
+  }
+  cardDirection = 'forward';
+  renderCard();
+}
+
+// ---- CARD SUBSTITUTES ----
+function cardShowSubstitutes() {
+  const ex = currentExercises[cardExIdx];
+  if (!ex || !ex.substitutes || !ex.substitutes.length) return;
+  const container = document.getElementById('cardContainer');
+  const inner = container.querySelector('.card-slide');
+  if (!inner) return;
+
+  // Dodaj panel zamienników poniżej
+  let existing = inner.querySelector('.card-sub-panel');
+  if (existing) { existing.remove(); return; }
+
+  let html = '<div class="card-sub-panel" style="margin-top:12px">';
+  html += '<div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">Zamienniki dla <strong>' + escapeHtml(ex.name) + '</strong>:</div>';
+  ex.substitutes.forEach((s, si) => {
+    html += '<div class="sub-item" onclick="cardApplySubstitute(' + si + ')" style="margin-bottom:4px">';
+    html += '<div><div class="sub-item-name">' + escapeHtml(s.name) + '</div>';
+    if (s.note) html += '<div class="sub-item-meta">' + escapeHtml(s.note) + '</div>';
+    html += '</div><button class="sub-item-btn" onclick="event.stopPropagation();cardApplySubstitute(' + si + ')">Zamień</button></div>';
+  });
+  html += '</div>';
+  inner.insertAdjacentHTML('beforeend', html);
+}
+
+function cardApplySubstitute(subIdx) {
+  const ex = currentExercises[cardExIdx];
+  if (!ex || !ex.substitutes || !ex.substitutes[subIdx]) return;
+  const sub = ex.substitutes[subIdx];
+  if (!ex.substituteOf) currentExercises[cardExIdx].substituteOf = ex.name;
+  currentExercises[cardExIdx].name = sub.name;
+  currentExercises[cardExIdx].substitutes = [];
+  // Sync exerciseGroups
+  for (const g of exerciseGroups) {
+    const found = g.exercises.find(e => e._origIdx === cardExIdx);
+    if (found) { found.name = sub.name; found.substitutes = []; break; }
+  }
+  if (cardSetsData[cardExIdx]) cardSetsData[cardExIdx].name = sub.name;
+  showToast('Zamieniono na: ' + sub.name, 'success');
+  renderCard();
+}
+
+// ---- CARD SUMMARY ----
+function renderCardSummary() {
+  if (cardTimerInterval) { clearInterval(cardTimerInterval); cardTimerInterval = null; }
+  const container = document.getElementById('cardContainer');
+  if (!container) return;
+  const duration = stopWorkoutTimer();
+  const durStr = duration ? formatDuration(duration) : '';
+
+  let totalVolume = 0;
+  let html = '<div class="card-summary">';
+  html += '<div class="card-summary-title">Trening zakończony! 🎉</div>';
+  if (durStr) html += '<div class="card-summary-duration"><i class="ti ti-clock"></i> ' + durStr + '</div>';
+  html += '<div class="card-summary-list">';
+
+  cardSetsData.forEach((exData, i) => {
+    const ex = currentExercises[i];
+    if (!ex) return;
+    html += '<div class="card-summary-item">';
+    html += '<div class="card-summary-ex-name">' + escapeHtml(exData.name || ex.name) + '</div>';
+    const setsStr = exData.sets.map((s, si) => {
+      const kg = parseFloat(s.kg) || 0;
+      const reps = parseInt(s.reps) || 0;
+      totalVolume += kg * reps;
+      return kg + 'kg × ' + reps;
+    }).join(', ');
+    html += '<div class="card-summary-sets">' + setsStr + '</div>';
+    html += '</div>';
+  });
+
+  html += '</div>';
+  html += '<div class="card-summary-total">Wolumen: <strong>' + Math.round(totalVolume) + ' kg</strong></div>';
+
+  // Notatka
+  html += '<div style="margin-bottom:12px">';
+  html += '<textarea id="cardWorkoutNote" placeholder="Notatka do treningu (opcjonalna)..." style="width:100%;min-height:60px;padding:10px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg-elev);color:var(--text);font-size:13px;resize:vertical;"></textarea>';
+  html += '</div>';
+
+  html += '<button class="card-summary-save" onclick="saveCardWorkout()"><i class="ti ti-device-floppy"></i> Zapisz trening</button>';
+  html += '</div>';
+
+  container.innerHTML = html;
+  // Ukryj progress dots
+  const prog = document.getElementById('cardProgress');
+  if (prog) prog.innerHTML = '';
+}
+
+function saveCardWorkout() {
+  if (!currentExercises.length || !cardSetsData.length) return;
+
+  const exs = currentExercises.map((ex, i) => {
+    const exData = cardSetsData[i];
+    if (!exData) return null;
+    const setsData = exData.sets.map(s => ({
+      kg: Math.min(Math.max(parseFloat(s.kg) || 0, 0), 9999),
+      reps: Math.min(Math.max(parseInt(s.reps) || 0, 0), 9999)
+    }));
+    // Backward-compatible: kg = max kg, reps = max reps from all sets
+    const bestSet = setsData.reduce((best, s) => (s.kg * s.reps > best.kg * best.reps) ? s : best, { kg: 0, reps: 0 });
+    const totalReps = setsData.reduce((sum, s) => sum + s.reps, 0);
+    const orm = calculate1RM(bestSet.kg, bestSet.reps);
+    return {
+      name: exData.name || ex.name,
+      reps: bestSet.reps,
+      total: totalReps,
+      sets: setsData.length,
+      target: ex.reps,
+      kg: bestSet.kg,
+      orm,
+      setsData, // NOWE — dane per seria
+      muscle: window.TPDB ? window.TPDB.detectMuscle(exData.name || ex.name) : null,
+      equipment: getEquipmentType(exData.name || ex.name),
+      ...(ex.substituteOf ? { substituteOf: ex.substituteOf } : {})
+    };
+  }).filter(Boolean);
+
+  const totalReps = exs.reduce((s, e) => s + e.total, 0);
+  const { timestamp: workoutTimestamp, dateStr: workoutDateStr } = getWorkoutDateFromInput();
+  const workoutNote = document.getElementById('cardWorkoutNote')?.value?.trim() || '';
+  // Duration — odczytaj z badge jeśli timer już zatrzymany
+  let duration = 0;
+  if (workoutStartTime) duration = Math.floor((Date.now() - workoutStartTime) / 1000);
+
+  const entry = {
+    id: 'w_' + workoutTimestamp + '_' + Math.random().toString(36).slice(2, 7),
+    type: currentType,
+    timestamp: workoutTimestamp,
+    date: workoutDateStr,
+    note: workoutNote,
+    exercises: exs,
+    totalReps,
+    duration
+  };
+  updateCurrentProfile(p => { p.history = [entry, ...p.history].slice(0, CFG.HISTORY_MAX); return p; });
+  clearDraft();
+  refreshHistory(); refreshStats(); refreshChart(); refreshMuscleStats(); refreshExerciseSelect();
+  showToast('Trening zapisany! ' + totalReps + ' rep' + (duration ? ' · ' + formatDuration(duration) : ''), 'success');
+  updateEmptyState();
+
+  // Wyczyść i wyjdź z card mode
+  exitCardMode();
+  currentExercises = [];
+  exerciseGroups = [];
+  currentMuscleGroupIndex = 0;
+  renderExercises([]);
+  document.getElementById('saveBtn').disabled = true;
+  const _d = document.getElementById('discardBtn');
+  if (_d) _d.style.display = 'none';
+  showStartCardBtn();
 }
 
 // ============ REST TIMER ============
