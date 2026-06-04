@@ -1,8 +1,10 @@
-# 💪 Trening Pro
+# 💪 Trening PRO
 
 Osobista aplikacja treningowa z generowaniem planów przez AI (Claude), historią treningów, wykresami postępu i analizą partii mięśniowych. Obsługuje trzy systemy treningowe: **Push/Pull/Legs**, **Upper/Lower** i **Full Body**. Działa offline jako PWA — możesz zainstalować ją na telefonie i komputerze.
 
 Plany treningowe generuje Claude — model AI z rozległą wiedzą z zakresu treningu siłowego i fizjologii sportu. Struktura planu (kolejność partii, zakresy powtórzeń, przerwy) dobierana jest zgodnie z Twoim celem treningowym. Claude analizuje historię ostatnich sesji i notatki po treningu, żeby każdy plan był lepiej dopasowany niż poprzedni.
+
+> **Nie wymaga klucza API.** Aplikacja łączy się z AI przez bezpieczny serwer proxy (Cloudflare Worker) — klucz API jest ukryty po stronie serwera.
 
 ---
 
@@ -14,73 +16,67 @@ Plany treningowe generuje Claude — model AI z rozległą wiedzą z zakresu tre
   - **PPL** — Push (klatka, barki, triceps) / Pull (plecy, biceps, przedramię) / Legs (nogi, core)
   - **Upper / Lower** — Siłowy · Objętościowy · Quad · Hinge (split 4-dniowy, zawsze cel masa+siła)
   - **Full Body** — Przysiad · Martwy · Hip Thrust (3 razy w tygodniu, całe ciało)
-- **Sugestia następnego treningu** — aplikacja zapamiętuje ostatni typ i podpowiada co zrobić następnie; sugerowany tab lekko pulsuje
-- **Generowanie planu przez Claude AI** — ćwiczenia pogrupowane klasterowo wg partii mięśniowych, z opisem techniki wykonania
-- **Nawigacja po partiach mięśniowych** — ćwiczenia podzielone na grupy (np. klatka → barki → triceps), przechodź przez nie kolejno przyciskami
+- **Sugestia następnego treningu** — aplikacja zapamiętuje ostatni typ i podpowiada co zrobić następnie
+- **Generowanie planu przez Claude AI** — ćwiczenia pogrupowane wg partii mięśniowych, z opisem techniki
+- **Zamienniki ćwiczeń** — przycisk ⇄ przy każdym ćwiczeniu proponuje 2–3 alternatywy angażujące tę samą partię (np. gdy wyciąg jest zajęty)
 - **Spersonalizowane plany** — Claude analizuje Twoją historię treningów, unika powtarzania tych samych ćwiczeń
 - **Wskazówki techniczne** przy każdym ćwiczeniu
-- **🎬 Linki do YouTube** — przycisk „Pokaż" przy każdym ćwiczeniu otwiera wyszukiwanie techniki
-- **🎯 Cel treningowy** — klikalny badge przy tabach (Redukcja / Masa / Siła / Rzeźba / Kondycja); Upper/Lower zawsze masa+siła (zablokowane)
-- **📦 Plan offline** — 67 gotowych planów bez internetu i bez kosztów API:
-  - 10 × Push, 10 × Pull, 10 × Legs
-  - 3 × Siłowy, 3 × Objętościowy, 3 × Quad, 3 × Hinge
-  - 2 × Przysiad, 2 × Martwy, 2 × Hip Thrust
-  - Inteligentny wybór uzupełniający brakujące partie
+- **🎬 Linki do YouTube** — otwiera wyszukiwanie techniki dla każdego ćwiczenia
+- **🎯 Cel treningowy** — Redukcja / Masa / Siła / Rzeźba / Kondycja
+- **📦 Plan offline** — 67 gotowych planów bez internetu i bez AI
 
-### 📝 Rejestrowanie treningu
+### 📝 Rejestrowanie treningu — tryb krok po kroku
 
-- **Powtórzenia × serie** — wpisujesz liczbę powtórzeń, aplikacja liczy łączną sumę automatycznie
-- **Ciężar w kg** — śledzenie postępu obciążeń
-- **🏷️ Hint ostatniego ciężaru** — pod polem ciężaru wyświetla się ostatnio używane obciążenie (np. `🏋️ ostatnio: 80 kg`); przy pierwszym użyciu ćwiczenia — sugerowany ciężar startowy
-- **💪 Kalkulator 1RM** — szacowany maksymalny ciężar jednopowtórzeniowy (wzory Brzycki i Epley)
-- **⏱️ Stoper czasu treningu** — mierzy czas całej sesji od wygenerowania planu do zapisu
+Po wygenerowaniu planu widzisz kompaktową listę ćwiczeń pogrupowanych po partii mięśniowej. Kliknij **Rozpocznij trening** aby wejść w tryb kart:
+
+- **Jedno ćwiczenie / jedna seria na raz** — minimalne rozproszenie, maksymalny fokus
+- **Pre-fill ciężaru** — seria 1 wczytuje ostatni używany ciężar, kolejne serie kopiują poprzednią
+- **Timer odpoczynku** — automatycznie startuje po serii, czas dobierany wg celu (Redukcja: 60s, Masa: 90s, Siła: 120s)
+- **Zmiana długości przerwy** na ekranie timera (60 / 90 / 120 / 180 s)
+- **Pomiń przerwę** — przejście do następnej serii bez czekania
+- **⇄ Zamień ćwiczenie** — dostępne przy serii 1 każdego ćwiczenia (gdy sprzęt zajęty)
+- **🎬 Link YT** z techniką przy każdym ćwiczeniu
+- **Wstecz** (krótkie kliknięcie = cofnij serię, długie przytrzymanie = menu nawigacji)
+- **Pasek postępu** ćwiczeń na górze
+- **Dane per seria** — każda seria zapisuje osobne kg × powt (np. 80kg×8, 80kg×6, 75kg×5)
+- **Wibracja + dźwięk** gdy timer przerwy się kończy
+- **Ekran podsumowania** — lista wyników, wolumen, notatka, zapis do historii
+
+### 📊 Inne funkcje rejestrowania
+
+- **💪 Kalkulator 1RM** (Brzycki + Epley)
+- **⏱️ Stoper czasu treningu** — od "Rozpocznij" do zapisu
 - **📅 Wybór daty treningu** — możliwość wpisania treningu z poprzedniego dnia
-- **⏰ Timer odpoczynku (FAB)** z presetami 60 s / 90 s / 120 s, SVG pierścień wizualizujący czas
-- **🖐️ Przeciągany timer** — timer można swobodnie przesuwać palcem po ekranie, pozycja zapamiętywana
-- **🎤 Komunikat głosowy po polsku** — informuje o końcu przerwy (Web Speech API)
-- **🔔 Dźwięk dzwonka i wibracja** — konfigurowalne niezależnie
-- **💾 Automatyczny zapis roboczy** — odświeżenie strony przywraca poprzedni trening
-- **⚠️ Przypomnienie o zapisaniu** — pojawia się gdy wszystkie pola są wypełnione
-- **📊 Kołowy progress ring** — pokazuje procentowy postęp wypełnienia ćwiczeń w sesji
-- **✅ Wizualne oznaczenie ukończonych ćwiczeń** — karta zielenieje i przekreśla nazwę po wpisaniu powtórzeń
-- **🚫 Zakończ bez zapisywania** — czyści plan bez wpisu do historii
-- **📝 Notatka do treningu** — pole tekstowe z feedbackiem po sesji; Claude uwzględnia ją przy kolejnym planie tego samego typu
+- **💾 Automatyczny zapis roboczy** — zamknięcie karty → baner przywracania po powrocie
+- **📝 Notatka do treningu** — Claude uwzględnia ją przy kolejnym planie
 
 ### 📊 Analiza i statystyki
 
 - **Statystyki tygodniowe** — liczba treningów, powtórzeń, wartości średnie
 - **Wykres ostatnich 45 dni** — podział na Push / Pull / Legs
-- **🔬 Analiza partii mięśniowych** — wybierz partię główną (np. Biceps), a następnie pod-filtr głowy mięśnia (np. Głowa długa / Głowa krótka / Wszystkie); wykres pokazuje osobną linię dla każdego ćwiczenia należącego do wybranej partii
-- **🔥 Najlepszy 1RM** — historyczny rekord siły dla każdego ćwiczenia w danej partii
-- **🧠 AI Coach** — Claude analizuje historię treningów i wskazuje stagnację, postępy oraz sugestie
-- **💪 Statystyki partii mięśniowych** — podział na klatka górna/środkowa/dolna, biceps, plecy, czworogłowy, hamstring i inne (ostatnie 45 dni)
+- **🔬 Analiza partii mięśniowych** — wybierz partię i pod-filtr głowy mięśnia; wykres per ćwiczenie
+- **🔥 Najlepszy 1RM** — historyczny rekord siły dla każdego ćwiczenia
+- **🧠 AI Coach** — Claude analizuje historię i wskazuje stagnację, postępy i sugestie
+- **Historia z danymi per seria** — widoczne serie (80kg×8, 80kg×6, 75kg×5) dla treningów w trybie kart
 
-### 📥 Import treningu
+### 📥 Import i eksport
 
-- **Import z tekstu (AI)** — wklej opis treningu w dowolnym formacie, Claude rozpozna dane
-- **Import z pliku CSV** — wczytaj wcześniej wyeksportowany plik CSV (bezpłatnie, bez API)
-- **Podgląd przed zapisem** — sprawdź poprawność zanim dane trafią do historii
-- **Obsługa niestandardowej liczby serii** — np. 2×8 zamiast 3×8
-- **Wykrywanie duplikatów** — treningi już obecne w historii nie zostaną dodane ponownie
+- **Import z tekstu (AI)** — wklej opis treningu, Claude rozpozna dane
+- **Import z pliku CSV** — wczytaj wcześniej wyeksportowany CSV (bez AI)
+- **Eksport do CSV i PDF** — kopia zapasowa z pełnymi danymi
+- **Wykrywanie duplikatów** przy imporcie
 
 ### 👥 Profile i dane
 
-- **Wiele profili** — osobne profile dla Ciebie, partnera lub znajomych
-- **Trwała historia** — dane przechowywane lokalnie w przeglądarce
-- **Czytelna data w historii** — format DD.MM.YYYY · HH:MM z oznaczeniem „dziś" i „wczoraj"
-- **Eksport do CSV i PDF** — kopia zapasowa z pełnymi danymi (1RM, czas treningu, ciężary)
+- **Wiele profili** — osobne dane dla każdej osoby
+- **Historia** — ostatnie 200 treningów; przycisk "Pokaż wszystkie"
 - **🛡️ Przypomnienie o kopii zapasowej** co 3 tygodnie
 
-### 📱 Progresywna Aplikacja Webowa (PWA)
+### 📱 PWA
 
-- **Instalacja na telefonie** — działa jak natywna aplikacja
-- **Instalacja na komputerze** — Chrome i Edge
-- **Pełna obsługa trybu offline** (z wyjątkiem generowania planów przez AI i AI Coach)
-- **Automatyczne wykrywanie aktualizacji** — aplikacja wyświetli powiadomienie o nowej wersji
-- **Nawigacja górna na mobile** — pasek nawigacji z ikonami sekcji (Plan / Historia / Stats / Analiza / Coach)
-- **Ekran startowy** z logo i animacją przy uruchomieniu
-- **Ikona na ekranie głównym** i ciemny motyw (dark mode)
-- **Wskaźnik trybu offline** — widoczna informacja o braku połączenia
+- **Instalacja na telefonie i komputerze** — działa jak natywna aplikacja
+- **Pełna obsługa trybu offline** (z wyjątkiem AI)
+- **Automatyczne wykrywanie aktualizacji**
 
 ---
 
@@ -88,7 +84,7 @@ Plany treningowe generuje Claude — model AI z rozległą wiedzą z zakresu tre
 
 ### PPL — Push / Pull / Legs
 
-Klasyczny split 3-dniowy. Cel dobierany przez użytkownika (Redukcja / Masa / Siła / Rzeźba / Kondycja).
+Klasyczny split 3-dniowy. Cel dobierany przez użytkownika.
 
 | Tab | Partie mięśniowe | Ćwiczenia |
 |---|---|---|
@@ -98,22 +94,18 @@ Klasyczny split 3-dniowy. Cel dobierany przez użytkownika (Redukcja / Masa / Si
 
 ### Upper / Lower — split 4-dniowy
 
-Cel zawsze: **masa + siła** (zablokowane — nie można zmienić). Warianty Siłowy i Objętościowy różnią się ćwiczeniami, żeby unikać stagnacji.
+Cel zawsze: **masa + siła**.
 
 | Tab | Skupienie | Ćwiczenia |
 |---|---|---|
-| Siłowy | Klatka + plecy (bazowe sztangowe), barki, biceps, triceps | 7 |
+| Siłowy | Klatka + plecy (bazowe), barki, biceps, triceps | 7 |
 | Objętościowy | Klatka + plecy (hantlowe/maszyny), barki, biceps, triceps | 7 |
-| Quad | Czworogłowy priorytet (przysiad), hamstring, jednostronne, łydki, core | 6 |
-| Hinge | Hip hinge priorytet (martwy ciąg), czworogłowy, pośladki, łydki, core | 6 |
+| Quad | Czworogłowy priorytet, hamstring, jednostronne, łydki, core | 6 |
+| Hinge | Hip hinge priorytet, czworogłowy, pośladki, łydki, core | 6 |
 
 **Układ tygodnia:** Pon — Siłowy · Wt — Quad · Czw — Objętościowy · Pt — Hinge
 
-**Progresja:** górna część +2,5 kg · dolna część +5 kg gdy osiągniesz górny zakres powtórzeń
-
 ### Full Body — 3 razy w tygodniu
-
-Każdy trening angażuje całe ciało. Warianty rotują ćwiczeniami.
 
 | Tab | Główne ruchy | Ćwiczenia |
 |---|---|---|
@@ -125,160 +117,109 @@ Każdy trening angażuje całe ciało. Warianty rotują ćwiczeniami.
 
 ---
 
-## 🎯 Cele treningowe (PPL i Full Body)
+## 🎯 Cele treningowe
 
-| Cel | Powtórzenia | Serie | Przerwy |
-|---|---|---|---|
-| **Redukcja** | 12–15 | 3 | 45–60 s |
-| **Rzeźba** | 12–15 | 3–4 | 45–60 s |
-| **Masa** | 8–12 | 3–4 | 60–90 s |
-| **Siła** | 3–5 | 4–5 | 3–5 min |
-| **Kondycja** | 15–20 | 3 | 30–45 s |
-
-Cel zapisany jest w profilu. Zmieniasz go klikając badge przy tabach — bez żadnych wyskakujących okienek. Upper/Lower zawsze trenuje pod masę+siłę (badge z kłódką, niezmienialny).
+| Cel | Powtórzenia | Serie | Przerwa między seriami | Przerwa między ćwiczeniami |
+|---|---|---|---|---|
+| **Redukcja** | 12–15 | 3 | 60 s | 90 s |
+| **Rzeźba** | 12–15 | 3–4 | 60 s | 90 s |
+| **Masa** | 8–12 | 3–4 | 90 s | 120 s |
+| **Siła** | 3–5 | 4–5 | 120 s | 180 s |
+| **Kondycja** | 15–20 | 3 | 45 s | 60 s |
 
 ---
 
 ## 🚀 Pierwsze uruchomienie
 
 1. Otwórz `https://LukaszBonio.github.io/trening/`
-2. Przy pierwszym uruchomieniu pojawi się karta **„Jak zacząć?"** z 3 krokami — znika po zapisaniu pierwszego treningu
-3. Kliknij ikonę profilu (litera w kółku, prawy górny róg) i wklej klucz API Anthropic (zaczyna się od `sk-ant-...`)
-   - Utwórz klucz na [console.anthropic.com](https://console.anthropic.com) → Settings → API Keys
-   - Wymagane doładowanie konta (minimum 5 USD)
-4. Wybierz system treningowy z dropdownu (PPL / Upper-Lower / Full Body) i konkretny dzień
-5. Kliknij **Generuj plan** — plan pojawi się w ciągu 2–3 sekund
-6. Ćwicz — przechodź przez partie mięśniowe, wpisuj powtórzenia i ciężary, korzystaj z timera
-7. Po ostatniej partii kliknij **Zakończ trening** — dane trafią do historii
+2. Przy pierwszym uruchomieniu pojawi się karta **„Jak zacząć?"** — znika po pierwszym zapisanym treningu
+3. Wybierz system treningowy z dropdownu (PPL / Upper-Lower / Full Body) i konkretny dzień
+4. Kliknij **Nowy plan** — plan pojawi się w ciągu kilku sekund
+5. Przejrzyj ćwiczenia na liście (kliknij ćwiczenie aby rozwinąć szczegóły i zamienniki)
+6. Kliknij **Rozpocznij trening** aby wejść w tryb krok po kroku
+7. Po każdej serii wpisz powtórzenia i ciężar, kliknij **Gotowe** — timer odpoczynku startuje automatycznie
+8. Po wszystkich seriach ostatniego ćwiczenia pojawia się ekran podsumowania → **Zapisz trening**
 
-> Bez klucza API korzystaj z **Planu offline** — działa bez internetu i bez kosztów.
-
----
-
-## 🏋️ Nawigacja po partiach mięśniowych
-
-Po wygenerowaniu planu ćwiczenia są pogrupowane wg partii (np. klatka → barki → triceps dla Push). Aplikacja pokazuje je po jednej grupie na raz:
-
-- Przycisk **Dalej** → przejdź do kolejnej partii (wartości wpisane w poprzedniej są zapamiętane)
-- Przycisk **Poprzednia** → wróć i popraw
-- Na ostatniej partii pojawia się przycisk **Zakończ trening**
+> Bez połączenia z internetem korzystaj z **Planu offline** (przycisk obok "Nowy plan").
 
 ---
 
-## 💡 Sugestia następnego treningu
+## ⇄ Zamienniki ćwiczeń
 
-Aplikacja śledzi kolejność treningów i podpowiada co zrobić następnym razem:
+Gdy sprzęt jest zajęty lub chcesz zmienić ćwiczenie:
 
-- Pod dropdownem pojawia się baner: *„Ostatnio: Push · wczoraj — sugerowany: Pull"*
-- Sugerowany tab lekko pulsuje z żółtą kropką
-- Po kliknięciu sugerowanego taba pulsowanie znika
-- Działa dla wszystkich trybów — PPL, Upper/Lower i Full Body
+**Na liście podglądu (przed startem):**
+1. Kliknij ćwiczenie aby rozwinąć szczegóły
+2. Kliknij jeden z zamienników — zmiana jest natychmiastowa
+
+**W trybie kart (podczas treningu):**
+1. Przycisk **⇄ zamień** widoczny przy serii 1 każdego ćwiczenia
+2. Wybierz zamiennik z listy — trening kontynuuje z nowym ćwiczeniem
+3. W historii zapisuje się co faktycznie zrobiłeś (z adnotacją o zamianie)
+
+> Zamienniki dobierane przez AI angażują **dokładnie tę samą partię mięśniową** co oryginał, ale z innym sprzętem.
 
 ---
 
-## 🔬 Analiza partii mięśniowych
+## 💾 Przywracanie niedokończonego treningu
 
-W zakładce **Analiza** możesz śledzić progresję dla dowolnej partii mięśniowej:
+Jeśli przypadkowo zamkniesz kartę podczas treningu:
 
-1. Wybierz partię główną z listy (np. **Biceps**, **Klatka piersiowa**, **Plecy**)
-2. Opcjonalnie zawęź do konkretnej głowy mięśnia (np. Głowa długa / Głowa krótka / Wszystkie)
-3. Wykres pokazuje osobną kolorową linię dla każdego ćwiczenia należącego do tej partii
-4. Pod wykresem — rekord, ostatni ciężar, szacowany 1RM i trend dla każdego ćwiczenia
+1. Wróć na `https://LukaszBonio.github.io/trening/`
+2. Na górze ekranu pojawi się baner **"Niedokończony trening"** z podglądem:
+   - Typ treningu, liczba ćwiczeń, czas trwania, wpisane ciężary
+3. Kliknij **Wróć do treningu** — wszystko wraca do stanu sprzed zamknięcia (łącznie z timerem)
+4. Lub kliknij **Odrzuć** aby zacząć od nowa
 
-Dostępne partie: Klatka piersiowa, Plecy, Barki, Biceps, Triceps, Czworogłowy, Hamstring, Pośladki, Łydki, Core, Przedramię.
+> Trening jest automatycznie zapisywany co kilka sekund i tuż przed zamknięciem karty. Draft wygasa po 72 godzinach.
 
 ---
 
 ## ⏰ Timer odpoczynku
 
-Timer wyświetla się jako pływający element (FAB) z wizualnym pierścieniem SVG. Możesz go **przesunąć palcem** w dowolne miejsce ekranu — pozycja jest zapamiętywana.
+Timer startuje automatycznie po kliknięciu **Gotowe** w trybie kart:
 
-- **60 s / 90 s / 120 s** — szybkie presety
-- **Start / Pauza** — kliknięcie pierścienia
-- **Głos, dźwięk, wibracja** — konfigurowalne niezależnie
-- Domyślny preset dobierany automatycznie wg wybranego celu treningowego
-
----
-
-## 📅 Wpisywanie treningu z poprzedniego dnia
-
-Jeśli zapomniałeś uruchomić aplikację na siłowni:
-
-1. Wygeneruj plan normalnie
-2. Tuż nad listą ćwiczeń znajdziesz pole **Data treningu**
-3. Kliknij w datę i wybierz właściwy dzień
-4. Pojawi się badge **„zmieniono"** — aplikacja wie że wpisujesz trening wsteczny
-5. Wpisz wyniki i zapisz — trening trafi do historii z właściwą datą
-
----
-
-## 📝 Notatka do treningu
-
-Po wygenerowaniu planu nad przyciskiem „Zakończ trening" pojawia się pole notatki. Możesz wpisać dowolny komentarz:
-
-- *„za dużo ćwiczeń, byłem wykończony"* → Claude wygeneruje mniej ćwiczeń przy kolejnym planie
-- *„za mało, miałem dużo energii"* → Claude doda więcej ćwiczeń
-- *„bolało kolano przy martwym ciągu"* → Claude uniknie ćwiczeń obciążających kolana
-- *„świetna sesja, dobry ciężar"* → Claude utrzyma podobną intensywność
-
-Notatka jest zapisywana razem z treningiem i widoczna w historii. Claude czyta **ostatnią notatkę dla danego typu** (Push / Siłowy / Przysiad itp.) przy każdym kolejnym generowaniu planu.
+- Czas dobierany wg celu (Redukcja: 60s, Masa: 90s, Siła: 120s)
+- Dłuższy timer między ćwiczeniami (automatycznie)
+- Presety **60 / 90 / 120 / 180 s** — kliknij aby zmienić na bieżąco
+- **Pomiń przerwę** — natychmiastowe przejście do następnej serii
+- **Wibracja + dźwięk** po zakończeniu (konfigurowalnie w profilu)
+- **Głos po polsku** — komunikat "Czas na następną serię"
 
 ---
 
 ## 📦 Plan offline
 
-Gdy nie masz dostępu do internetu lub nie chcesz korzystać z API:
+Gdy nie masz dostępu do internetu:
 
 1. Wybierz system i typ treningu
-2. Kliknij przycisk **Plan offline** (obok „Generuj plan")
+2. Kliknij **Plan offline**
 3. Aplikacja wybiera plan z wbudowanej bazy — preferuje ćwiczenia i partie których nie robiłeś w ostatnich 7 dniach
-4. Plan działa tak samo jak plan z AI — timer, zapis, statystyki
 
 Baza zawiera **67 gotowych planów** oraz **276+ ćwiczeń** zmapowanych na 25 głów mięśniowych.
 
-> Plan offline nie wymaga klucza API — działa całkowicie lokalnie, bez kosztów.
-
 ---
 
-## 💪 Kalkulator 1RM — jak to działa
+## 💪 Kalkulator 1RM
 
-**1RM (One-Rep Max)** to szacowany maksymalny ciężar w jednym powtórzeniu. Aplikacja oblicza go jako średnią z dwóch wzorów:
+**1RM (One-Rep Max)** — szacowany maksymalny ciężar w jednym powtórzeniu:
 
 ```
 Brzycki:  1RM = ciężar × (36 / (37 − powtórzenia))
 Epley:    1RM = ciężar × (1 + powtórzenia / 30)
 ```
 
-**Przykład:** Wyciskanie 80 kg × 8 powtórzeń → szacowany 1RM ≈ 99 kg
-
-Kalkulator działa dla zakresu 2–12 powtórzeń. Wynik zaokrąglany do 0,5 kg.
-
----
-
-## 📥 Import z pliku CSV
-
-Jeśli wcześniej wykonałeś eksport historii do CSV, możesz go z powrotem wczytać:
-
-1. Otwórz panel **Historia** → kliknij przycisk **Import**
-2. Wybierz zakładkę **Plik CSV**
-3. Kliknij strefę lub przeciągnij plik CSV bezpośrednio na nią
-4. Aplikacja wyświetli podgląd — ile treningów zostanie dodanych, ile pominiętych
-5. Kliknij **Importuj** — dane trafią do historii
-
-> Import z CSV nie wymaga klucza API — działa całkowicie lokalnie, bez kosztów.
+Wynik = średnia z obu wzorów, zaokrąglona do 0,5 kg. Działa dla 2–12 powtórzeń.
 
 ---
 
 ## 📲 Instalacja jako aplikacja
 
 ### Android (Chrome)
-- Po wejściu na stronę pojawi się baner **„Zainstaluj jako aplikację"**
-- Możesz też wejść w menu Chrome (trzy kropki) → „Zainstaluj aplikację"
+- Menu Chrome (trzy kropki) → "Zainstaluj aplikację"
 
 ### iPhone (Safari)
-- Otwórz stronę w Safari
-- Kliknij przycisk **Udostępnij** (kwadrat ze strzałką skierowaną w górę)
-- Wybierz **Dodaj do ekranu głównego**
+- Safari → Udostępnij → **Dodaj do ekranu głównego**
 
 ### Windows i macOS (Chrome / Edge)
 - W pasku adresu kliknij ikonę instalacji (monitor ze strzałką)
@@ -289,16 +230,13 @@ Jeśli wcześniej wykonałeś eksport historii do CSV, możesz go z powrotem wcz
 
 | Co | Koszt |
 |---|---|
+| Aplikacja | **Bezpłatna** |
 | Hosting (GitHub Pages) | Bezpłatny |
-| Aplikacja | Bezpłatna |
-| Generowanie planu (AI) | ~0,005–0,01 USD (2–4 grosze) |
-| AI Coach | ~0,01–0,02 USD (4–8 groszy) |
-| Import z tekstu (AI) | ~0,005 USD (2 grosze) |
+| AI (Cloudflare Worker proxy) | Bezpłatny do 100k req/dzień |
 | Plan offline | Bezpłatny |
-| Import z pliku CSV | Bezpłatny |
-| Minimum doładowania API | 5 USD |
+| Import z CSV | Bezpłatny |
 
-> 💡 AI Coach analizuje maksymalnie 50 ostatnich treningów, dzięki czemu koszt pojedynczej analizy pozostaje niski niezależnie od długości historii.
+> AI działa przez bezpieczny serwer proxy — nie musisz podawać klucza API.
 
 ---
 
@@ -307,14 +245,16 @@ Jeśli wcześniej wykonałeś eksport historii do CSV, możesz go z powrotem wcz
 - **HTML5, CSS3, Vanilla JavaScript** — bez zewnętrznych frameworków
 - [Chart.js 4.4](https://www.chartjs.org/) — wykresy
 - [jsPDF 2.5](https://github.com/parallax/jsPDF) — eksport do PDF
+- [DOMPurify 3.1](https://github.com/cure53/DOMPurify) — ochrona przed XSS
 - [Tabler Icons](https://tabler-icons.io/) — ikony
-- [canvas-confetti](https://github.com/catdad/canvas-confetti) — animacja po zapisaniu treningu
-- [Claude API](https://www.anthropic.com/) — generowanie planów i analiza AI (model claude-sonnet-4-6)
-- **Web Audio API** — dźwięk dzwonka generowany przez syntezator
-- **Web Speech API** — komunikat głosowy po polsku (synteza mowy)
-- **Vibration API** — wibracja telefonu po zakończeniu przerwy
+- [canvas-confetti](https://github.com/catdad/canvas-confetti) — animacja po zapisaniu
+- [Claude API](https://www.anthropic.com/) — generowanie planów i analiza AI (claude-sonnet-4-6)
+- **Cloudflare Workers** — bezpieczny proxy dla API (klucz ukryty po stronie serwera)
+- **Web Audio API** — dźwięk dzwonka
+- **Web Speech API** — komunikat głosowy po polsku
+- **Vibration API** — wibracja telefonu
 - **localStorage** — trwałe przechowywanie danych lokalnie
-- **Service Worker** — tryb offline, PWA i automatyczne aktualizacje
+- **Service Worker** — tryb offline i automatyczne aktualizacje
 
 ---
 
@@ -325,24 +265,26 @@ trening/
 ├── index.html              # Główny plik aplikacji
 ├── db.js                   # Baza planów offline + słownik głów mięśniowych
 ├── manifest.json           # Konfiguracja PWA
-├── sw.js                   # Service Worker (offline i automatyczne aktualizacje)
-├── icon-192.png            # Ikona aplikacji 192×192 px
-├── icon-512.png            # Ikona aplikacji 512×512 px
-├── icon-maskable-512.png   # Ikona z obszarem bezpiecznym dla Androida
+├── sw.js                   # Service Worker (offline i auto-aktualizacje)
+├── icon-192.png            # Ikona 192×192 px
+├── icon-512.png            # Ikona 512×512 px
+├── icon-maskable-512.png   # Ikona z obszarem bezpiecznym (Android)
 └── README.md               # Ten plik
 ```
+
+> Cloudflare Worker (`worker.js`) jest deployowany osobno na dash.cloudflare.com — nie jest częścią tego repozytorium.
 
 ---
 
 ## 🔒 Prywatność i bezpieczeństwo
 
-- 🔐 **Klucz API** przechowywany wyłącznie lokalnie w przeglądarce (localStorage)
+- 🔐 **Klucz API** przechowywany wyłącznie na serwerze Cloudflare — niewidoczny dla użytkowników
 - 📦 **Historia treningów** zapisywana lokalnie — nie jest nigdzie przesyłana
 - 🚫 **Brak rejestracji, konta, śledzenia aktywności i reklam**
-- 📡 Połączenie z internetem służy **wyłącznie** do komunikacji z Claude API
-- 🛡️ **Walidacja danych** — uszkodzone wpisy w pamięci lokalnej są automatycznie filtrowane, w tym robocze drafty treningu
-- 🔍 **Ochrona przed XSS** — odpowiedzi z AI są bezpiecznie przetwarzane przed wyświetleniem
-- ⚡ **Cache profilu w pamięci** — historia nie jest deserializowana z localStorage przy każdej operacji
+- 📡 Połączenie z internetem służy **wyłącznie** do komunikacji z Cloudflare Worker → Claude API
+- 🛡️ **DOMPurify** — odpowiedzi z AI są sanityzowane przed wyświetleniem
+- 🔍 **Walidacja danych** — uszkodzone wpisy są automatycznie filtrowane
+- ⚡ **CORS whitelist** na Workerze — tylko `lukaszbonio.github.io` może używać proxy
 
 ---
 
@@ -350,34 +292,32 @@ trening/
 
 - Dane są przypisane do **konkretnej przeglądarki na konkretnym urządzeniu**
 - Wyczyszczenie danych przeglądarki spowoduje utratę historii — **rób regularne kopie zapasowe**
-- Zainstalowana PWA ma **oddzielny cache** od przeglądarki — wyczyszczenie cache Chrome nie usuwa danych aplikacji
 - Limit historii: 200 ostatnich treningów na profil
-- Limit tekstu przy imporcie przez AI: 4000 znaków
 - AI Coach analizuje maksymalnie 50 ostatnich treningów
-- Przełączenie zakładki (np. Push → Pull) podczas aktywnego treningu wyświetli potwierdzenie — dane nie zostaną utracone bez zgody
+- Przełączenie zakładki (Push → Pull) podczas aktywnego treningu wyświetli potwierdzenie
 
 ---
 
-## 🐛 Rozwiązywanie problemów
+## 🐛 Zgłaszanie błędów
+
+Kliknij **Zgłoś bug** w menu bocznym (ikona hamburger) — otworzy się email z pre-wypełnionym opisem problemu i informacjami technicznymi.
+
+---
+
+## 🔧 Rozwiązywanie problemów
 
 ### Aplikacja nie aktualizuje się po wgraniu nowej wersji
-1. Poczekaj chwilę — aplikacja sama wykryje aktualizację i wyświetli powiadomienie
-2. Wymuś odświeżenie: **Ctrl+Shift+R** (komputer) lub wyczyść pamięć podręczną Chrome (telefon)
-3. Od wersji SW v10 index.html ładowany jest zawsze z sieci (network-first) — po jednym odświeżeniu masz najnowszą wersję
-4. Odinstaluj aplikację PWA i zainstaluj ją ponownie
-
-### Baner „Zainstaluj" nie pojawia się na Androidzie
-- Upewnij się że używasz Chrome
-- Sprawdź menu Chrome (trzy kropki) → „Zainstaluj aplikację"
-- Baner pojawia się dopiero podczas drugiej wizyty, minimum 5 minut po pierwszej
-
-### Baner „Zainstaluj" nie pojawia się na iPhonie
-To zamierzone ograniczenie Apple — PWA na iOS instaluje się wyłącznie ręcznie:
-Safari → Udostępnij → **Dodaj do ekranu głównego**
+1. Poczekaj — aplikacja sama wykryje aktualizację
+2. Wymuś odświeżenie: **Ctrl+Shift+R** (komputer) lub wyczyść cache Chrome (telefon)
+3. Odinstaluj PWA i zainstaluj ponownie
 
 ### Komunikat głosowy nie działa
-- Sprawdź czy telefon ma zainstalowany polski głos: Ustawienia → Dostępność → Synteza mowy
-- Na iPhonie dźwięk wymaga wcześniejszego dotknięcia ekranu (ograniczenie systemu iOS)
+- Android: Ustawienia → Dostępność → Synteza mowy → dodaj polski głos
+- iOS: dźwięk wymaga wcześniejszego dotknięcia ekranu (ograniczenie iOS)
+
+### Baner „Zainstaluj" nie pojawia się na iPhonie
+To ograniczenie Apple — na iOS instalacja wyłącznie ręcznie:
+Safari → Udostępnij → **Dodaj do ekranu głównego**
 
 ---
 
