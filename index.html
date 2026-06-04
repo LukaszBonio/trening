@@ -348,7 +348,48 @@ body { background-image: radial-gradient(circle at 0% 0%, rgba(212,255,58,0.04) 
 .card-nav-menu-backdrop { display:none; position:fixed; top:0; left:0; right:0; bottom:0; z-index:940; background:rgba(0,0,0,0.5); }
 .card-nav-menu-backdrop.open { display:block; }
 
-.card-start-btn { width:100%; padding:14px; font-size:15px; font-weight:700; border:none; border-radius:var(--radius); background:var(--accent); color:#000; cursor:pointer; margin-top:10px; display:flex; align-items:center; justify-content:center; gap:8px; }
+.card-start-btn { width:100%; padding:14px; font-size:15px; font-weight:700; border:none; border-radius:var(--radius); background:var(--accent); color:#000; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; }
+
+/* ============ COMPACT PLAN VIEW ============ */
+.compact-plan { display:none; flex-direction:column; gap:14px; margin-bottom:16px; }
+.compact-plan.active { display:flex; }
+.compact-plan-header { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; padding:4px 2px 2px; font-weight:500; }
+.compact-muscle-group { display:flex; flex-direction:column; gap:5px; }
+.compact-muscle-label { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.8px; color:var(--text-muted); padding:0 2px 4px; display:flex; align-items:center; gap:6px; }
+.compact-muscle-label::after { content:''; flex:1; height:1px; background:var(--border); }
+.compact-ex-item { background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; transition:border-color .15s; }
+.compact-ex-item.open { border-color:var(--accent); }
+.compact-ex-row { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; cursor:pointer; }
+.compact-ex-row:hover { background:var(--bg-hover); }
+.compact-ex-info { display:flex; flex-direction:column; min-width:0; flex:1; }
+.compact-ex-name { font-size:14px; color:var(--text); font-weight:500; }
+.compact-ex-name.substituted::before { content:'⇄ '; color:var(--warning,#f59e0b); }
+.compact-ex-meta { font-size:11px; color:var(--text-muted); margin-top:1px; }
+.compact-ex-actions { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.compact-ex-swap { font-size:11px; color:var(--text-muted); border:1px solid var(--border); border-radius:14px; padding:3px 10px; background:transparent; cursor:pointer; white-space:nowrap; transition:all .15s; }
+.compact-ex-swap:hover { border-color:var(--warning,#f59e0b); color:var(--warning,#f59e0b); }
+.compact-ex-chevron { font-size:16px; color:var(--text-muted); transition:transform .2s; flex-shrink:0; }
+.compact-ex-item.open .compact-ex-chevron { transform:rotate(180deg); }
+.compact-ex-detail { border-top:1px solid var(--border); padding:10px 12px; background:rgba(0,0,0,0.15); animation:slideIn .2s ease; }
+.compact-ex-tip { font-size:12px; color:var(--text-muted); font-style:italic; margin-bottom:8px; }
+.compact-detail-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+.compact-detail-label { font-size:11px; color:var(--text-muted); }
+.compact-yt-link { font-size:11px; color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:3px; }
+.compact-sub-list { display:flex; flex-direction:column; gap:5px; }
+.compact-sub-item { font-size:12px; padding:7px 10px; background:var(--bg-elev); border-radius:8px; border:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:border-color .15s; gap:8px; }
+.compact-sub-item:hover { border-color:var(--accent); }
+.compact-sub-name { color:var(--text); font-weight:500; }
+.compact-sub-note { font-size:11px; color:var(--text-muted); }
+.compact-empty-state { text-align:center; color:var(--text-muted); font-size:13px; padding:20px; }
+
+/* STICKY START BAR */
+.sticky-start-bar { position:sticky; bottom:0; background:linear-gradient(180deg, rgba(15,15,15,0) 0%, var(--bg) 30%); padding:14px 0 8px; margin:8px 0 0; z-index:50; }
+
+/* BUG REPORT BUTTON */
+.bug-report-btn { display:flex; align-items:center; gap:8px; padding:10px 14px; border-radius:var(--radius); background:transparent; border:1px solid var(--border); color:var(--text-muted); font-size:13px; cursor:pointer; text-decoration:none; transition:all .15s; width:100%; justify-content:flex-start; }
+.bug-report-btn:hover { border-color:var(--danger,#ef4444); color:var(--danger,#ef4444); }
+.sidebar-link.bug-link { color:var(--text-muted); }
+.sidebar-link.bug-link:hover { color:var(--danger,#ef4444); }
 .reps-input { width: 50px; padding: 6px 0; border: none; background: transparent; color: var(--text); font-family: inherit; font-size: 14px; font-weight: 500; text-align: center; outline: none; }
 .reps-input::-webkit-outer-spin-button, .reps-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .reps-input[type=number] { -moz-appearance: textfield; }
@@ -1029,6 +1070,9 @@ body { background-image: radial-gradient(circle at 0% 0%, rgba(212,255,58,0.04) 
       <button class="sidebar-link" onclick="switchView('view-history', this)"><i class="ti ti-history"></i> Historia</button>
       <button class="sidebar-link" onclick="switchView('view-stats', this)"><i class="ti ti-chart-pie"></i> Statystyki i mięśnie</button>
       <button class="sidebar-link" onclick="switchView('view-coach', this)"><i class="ti ti-brain"></i> AI Coach</button>
+      <div style="margin-top:auto;padding-top:16px;border-top:1px solid var(--border)">
+        <a class="sidebar-link bug-link" href="#" onclick="openBugReport();return false;"><i class="ti ti-bug"></i> Zgłoś bug</a>
+      </div>
     </nav>
   </aside>
 
@@ -1200,7 +1244,10 @@ body { background-image: radial-gradient(circle at 0% 0%, rgba(212,255,58,0.04) 
       <span class="wdc-changed" id="workoutDateChangedBadge" style="display:none;">zmieniono</span>
     </div>
 
-    <!-- EXERCISES -->
+    <!-- COMPACT PLAN (tryb kart — przegląd przed startem) -->
+    <div class="compact-plan" id="compactPlan"></div>
+
+    <!-- EXERCISES (tryb lista — wpisywanie inline) -->
     <div class="exercise-list" id="exerciseList">
       <div class="empty">
         <i class="ti ti-barbell"></i>
@@ -1221,10 +1268,13 @@ body { background-image: radial-gradient(circle at 0% 0%, rgba(212,255,58,0.04) 
     </div>
   </div>
 
-  <div class="save-bar">
-    <button class="card-start-btn" id="startCardModeBtn" onclick="enterCardMode()" style="display:none;">
+  <div class="sticky-start-bar" id="stickyStartBar" style="display:none;">
+    <button class="card-start-btn" id="startCardModeBtn" onclick="enterCardMode()">
       <i class="ti ti-player-play"></i>Rozpocznij trening
     </button>
+  </div>
+
+  <div class="save-bar">
     <button class="btn btn-danger" id="discardBtn" onclick="discardWorkout()" style="display:none;">
       <i class="ti ti-x"></i>Zakończ bez zapisywania
     </button>
@@ -2734,6 +2784,7 @@ Odpowiedz TYLKO w formacie JSON:
 
 function renderExercises(exs, source) {
   const list = document.getElementById('exerciseList');
+  const compactPlan = document.getElementById('compactPlan');
   // Aktualizacja paska postępu
   const progress = document.getElementById('exercisesProgress');
   if (progress) {
@@ -2746,6 +2797,8 @@ function renderExercises(exs, source) {
   }
   if (!exs.length) {
     list.innerHTML = '<div class="empty"><i class="ti ti-barbell"></i><p>Wygeneruj plan treningowy klikając "Generuj plan"</p></div>';
+    list.style.display = '';
+    if (compactPlan) { compactPlan.classList.remove('active'); compactPlan.innerHTML = ''; }
     exerciseGroups = [];
     currentMuscleGroupIndex = 0;
     const _saveBtnE = document.getElementById('saveBtn');
@@ -2755,7 +2808,115 @@ function renderExercises(exs, source) {
   // Pogrupuj ćwiczenia wg partii
   exerciseGroups = groupExercisesByMuscle(exs, currentType, source);
   currentMuscleGroupIndex = 0;
-  renderCurrentMuscleGroup();
+
+  // Wybierz tryb wyświetlania: cards → compact, list → stary widok
+  const profile = getCurrentProfile();
+  if (profile.workoutMode === 'cards') {
+    list.style.display = 'none';
+    if (compactPlan) compactPlan.classList.add('active');
+    renderCompactPlan();
+  } else {
+    list.style.display = '';
+    if (compactPlan) { compactPlan.classList.remove('active'); compactPlan.innerHTML = ''; }
+    renderCurrentMuscleGroup();
+  }
+}
+
+// Renderuje kompaktowy widok wszystkich ćwiczeń pogrupowanych po partii (tryb kart, przed startem)
+function renderCompactPlan() {
+  const container = document.getElementById('compactPlan');
+  if (!container || !exerciseGroups.length) return;
+
+  const totalEx = currentExercises.length;
+  let html = '<div class="compact-plan-header">' + (TYPE_LABELS[currentType]?.full || currentType.toUpperCase()) + ' · ' + totalEx + ' ćwiczeń</div>';
+
+  exerciseGroups.forEach(group => {
+    const groupLabel = GROUP_LABELS[group.groupName] || GROUP_LABELS['inne'];
+    html += '<div class="compact-muscle-group">';
+    html += '<div class="compact-muscle-label"><i class="ti ' + groupLabel.icon + '"></i> ' + groupLabel.name + '</div>';
+
+    group.exercises.forEach(ex => {
+      const i = ex._origIdx;
+      const isSubstituted = ex.substituteOf ? true : false;
+      const ytQuery = encodeURIComponent(ex.name + ' technika ćwiczenia');
+      const ytUrl = 'https://www.youtube.com/results?search_query=' + ytQuery;
+
+      html += '<div class="compact-ex-item" id="compactEx_' + i + '">';
+      html += '<div class="compact-ex-row" onclick="toggleCompactDetail(' + i + ')">';
+      html += '<div class="compact-ex-info">';
+      html += '<div class="compact-ex-name' + (isSubstituted ? ' substituted' : '') + '">' + escapeHtml(ex.name) + '</div>';
+      html += '<div class="compact-ex-meta">' + ex.sets + ' ' + (ex.sets === 1 ? 'seria' : ex.sets < 5 ? 'serie' : 'serii') + ' · ' + escapeHtml(ex.reps) + ' powt</div>';
+      html += '</div>';
+      html += '<div class="compact-ex-actions">';
+      if (ex.substitutes && ex.substitutes.length) {
+        html += '<button class="compact-ex-swap" onclick="event.stopPropagation();toggleCompactDetail(' + i + ', true)"><i class="ti ti-arrows-exchange" style="font-size:11px"></i> zamień</button>';
+      }
+      html += '<i class="ti ti-chevron-down compact-ex-chevron"></i>';
+      html += '</div>';
+      html += '</div>';
+
+      // Szczegóły (ukryte początkowo, renderowane od razu dla prostoty animacji)
+      html += '<div class="compact-ex-detail" id="compactDetail_' + i + '" style="display:none">';
+      if (ex.tip) html += '<div class="compact-ex-tip">' + escapeHtml(ex.tip) + '</div>';
+      if (ex.substitutes && ex.substitutes.length) {
+        html += '<div class="compact-detail-top">';
+        html += '<span class="compact-detail-label">Zamienniki:</span>';
+        html += '<a class="compact-yt-link" href="' + ytUrl + '" target="_blank" onclick="event.stopPropagation()"><i class="ti ti-brand-youtube" style="font-size:13px"></i> technika YT</a>';
+        html += '</div>';
+        html += '<div class="compact-sub-list">';
+        ex.substitutes.forEach((s, si) => {
+          html += '<div class="compact-sub-item" onclick="event.stopPropagation();compactApplySubstitute(' + i + ',' + si + ')">';
+          html += '<div><span class="compact-sub-name">' + escapeHtml(s.name) + '</span>';
+          if (s.note) html += '<div class="compact-sub-note">' + escapeHtml(s.note) + '</div>';
+          html += '</div>';
+          html += '<button class="compact-ex-swap" onclick="event.stopPropagation();compactApplySubstitute(' + i + ',' + si + ')">Zamień</button>';
+          html += '</div>';
+        });
+        html += '</div>';
+      } else {
+        html += '<div class="compact-detail-top"><span class="compact-detail-label" style="font-size:11px">Brak zamienników</span>';
+        html += '<a class="compact-yt-link" href="' + ytUrl + '" target="_blank" onclick="event.stopPropagation()"><i class="ti ti-brand-youtube" style="font-size:13px"></i> technika YT</a>';
+        html += '</div>';
+      }
+      html += '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  });
+
+  container.innerHTML = html;
+}
+
+function toggleCompactDetail(i, forceOpen) {
+  const item = document.getElementById('compactEx_' + i);
+  const detail = document.getElementById('compactDetail_' + i);
+  if (!item || !detail) return;
+  const isOpen = item.classList.contains('open');
+  if (forceOpen && isOpen) return; // już otwarte
+  if (isOpen) {
+    item.classList.remove('open');
+    detail.style.display = 'none';
+  } else {
+    item.classList.add('open');
+    detail.style.display = '';
+  }
+}
+
+function compactApplySubstitute(origIdx, subIdx) {
+  const ex = currentExercises[origIdx];
+  if (!ex || !ex.substitutes || !ex.substitutes[subIdx]) return;
+  const sub = ex.substitutes[subIdx];
+  if (!ex.substituteOf) currentExercises[origIdx].substituteOf = ex.name;
+  currentExercises[origIdx].name = sub.name;
+  currentExercises[origIdx].substitutes = [];
+  // Sync z exerciseGroups
+  for (const g of exerciseGroups) {
+    const found = g.exercises.find(e => e._origIdx === origIdx);
+    if (found) { found.name = sub.name; found.substitutes = []; if (!found.substituteOf) found.substituteOf = ex.substituteOf || ex.name; break; }
+  }
+  saveDraft();
+  renderCompactPlan();
+  showToast('Zamieniono na: ' + sub.name, 'success');
 }
 
 // Renderuje TYLKO aktualną partię mięśniową
@@ -3662,6 +3823,30 @@ function exportPDF() {
 function escapeHtml(s) {
   if (s === null || s === undefined) return '';
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function openBugReport() {
+  const profile = getCurrentProfile();
+  const ua = navigator.userAgent || 'nieznane';
+  const appVersion = 'Trening PRO';
+  const body = encodeURIComponent(
+    '--- Opisz tutaj problem ---\n\n\n\n' +
+    '--- Informacje techniczne (nie usuwaj) ---\n' +
+    'Profil: ' + (profile.name || 'brak') + '\n' +
+    'Tryb: ' + (currentType || 'brak') + ' / ' + (profile.workoutMode || 'cards') + '\n' +
+    'Cel: ' + (profile.goal || 'brak') + '\n' +
+    'Treningów: ' + (profile.history?.length || 0) + '\n' +
+    'URL: ' + location.href + '\n' +
+    'User-Agent: ' + ua + '\n' +
+    'Data: ' + new Date().toLocaleString('pl-PL')
+  );
+  const subject = encodeURIComponent('Bug — ' + appVersion);
+  window.location.href = 'mailto:pan.lukasz.bonio@gmail.com?subject=' + subject + '&body=' + body;
+  // Zamknij sidebar jeśli otwarty
+  if (typeof toggleMenu === 'function') {
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar && sidebar.classList.contains('open')) toggleMenu();
+  }
 }
 
 function showToast(msg, type = '') {
@@ -4646,9 +4831,10 @@ function setWorkoutMode(mode) {
 }
 
 function showStartCardBtn() {
-  const btn = document.getElementById('startCardModeBtn');
+  const bar = document.getElementById('stickyStartBar');
   const profile = getCurrentProfile();
-  if (btn) btn.style.display = (profile.workoutMode === 'cards' && currentExercises.length) ? 'flex' : 'none';
+  const shouldShow = (profile.workoutMode === 'cards' && currentExercises.length);
+  if (bar) bar.style.display = shouldShow ? 'block' : 'none';
 }
 
 function enterCardMode() {
