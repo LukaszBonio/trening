@@ -23,6 +23,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
 <style>
 :root {
   --bg: #0a0a0b;
@@ -381,6 +382,15 @@ body { background-image: radial-gradient(circle at 0% 0%, rgba(212,255,58,0.04) 
 .compact-sub-name { color:var(--text); font-weight:500; }
 .compact-sub-note { font-size:11px; color:var(--text-muted); }
 .compact-empty-state { text-align:center; color:var(--text-muted); font-size:13px; padding:20px; }
+
+/* SKELETON LOADER */
+@keyframes shimmer { 0% { background-position: -200px 0; } 100% { background-position: 200px 0; } }
+.skeleton-card { background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius); padding:12px 14px; margin-bottom:6px; }
+.skeleton-line { height:14px; border-radius:6px; background:linear-gradient(90deg, var(--border) 25%, var(--bg-hover) 50%, var(--border) 75%); background-size:400px 100%; animation:shimmer 1.5s infinite linear; }
+.skeleton-line.w60 { width:60%; }
+.skeleton-line.w40 { width:40%; margin-top:6px; }
+.skeleton-line.w80 { width:80%; }
+.skeleton-group-label { height:10px; width:30%; border-radius:4px; background:var(--border); margin-bottom:8px; margin-top:14px; }
 
 /* STICKY START BAR */
 .sticky-start-bar { position:sticky; bottom:0; background:linear-gradient(180deg, rgba(15,15,15,0) 0%, var(--bg) 30%); padding:14px 0 8px; margin:8px 0 0; z-index:50; }
@@ -1368,7 +1378,7 @@ body { background-image: radial-gradient(circle at 0% 0%, rgba(212,255,58,0.04) 
 </div>
 
 <!-- IMPORT MODAL -->
-<div class="modal-bg" id="importModal">
+<div class="modal-bg" id="importModal" role="dialog" aria-modal="true">
   <div class="modal" style="max-width: 520px;">
     <button class="modal-close" onclick="closeImportModal()" aria-label="Zamknij"><i class="ti ti-x"></i></button>
     <div class="modal-title"><i class="ti ti-upload" style="vertical-align:-2px"></i> Importuj trening</div>
@@ -1436,7 +1446,7 @@ Notatka: dobra forma"></textarea>
 </div>
 
 <!-- PROFILE MODAL -->
-<div class="modal-bg" id="profileModal">
+<div class="modal-bg" id="profileModal" role="dialog" aria-modal="true">
   <div class="modal">
     <button class="modal-close" onclick="closeProfileModal()" aria-label="Zamknij"><i class="ti ti-x"></i></button>
     <div class="modal-title">Profile użytkowników</div>
@@ -1449,20 +1459,16 @@ Notatka: dobra forma"></textarea>
     </div>
 
     <div class="api-section">
-      <div class="section-label">Klucz API Anthropic</div>
-      <input type="password" class="input" id="apiKeyInput" placeholder="sk-ant-..." style="width: 100%;">
-      <div class="help">
-        Wymagany do generowania planów. Klucz jest przechowywany lokalnie w przeglądarce.<br>
-        Pobierz na <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>
-      </div>
-      <div style="margin-top: 12px; display:flex; gap: 8px;">
-        <button class="btn btn-primary" onclick="saveApiKey()" style="flex: 1;"><i class="ti ti-check"></i>Zapisz klucz</button>
+      <div class="section-label">Połączenie z AI</div>
+      <div class="help" style="margin-bottom:8px">
+        Aplikacja łączy się z AI przez bezpieczny serwer proxy.<br>
+        Klucz API jest ukryty — nie musisz go podawać.
       </div>
     </div>
   </div>
 </div>
 
-<div class="modal-bg" id="goalModal">
+<div class="modal-bg" id="goalModal" role="dialog" aria-modal="true">
   <div class="modal">
     <button class="modal-close" onclick="closeGoalModal()" aria-label="Zamknij"><i class="ti ti-x"></i></button>
     <div class="modal-title">Wybierz cel treningowy</div>
@@ -1522,20 +1528,20 @@ Notatka: dobra forma"></textarea>
 
 <nav class="bottom-nav" id="bottomNav" aria-label="Nawigacja główna">
   <div class="bottom-nav-inner">
-    <button class="bnav-item active" id="bnav-plan" onclick="switchViewMobile('view-plan', 'bnav-plan')" aria-label="Plan na dziś">
+    <button class="bnav-item active" id="bnav-plan" onclick="switchViewMobile('view-plan', 'bnav-plan')" aria-label="Plan na dziś" aria-label="Plan na dziś">
       <i class="ti ti-barbell"></i>
       <span class="bnav-label">Plan</span>
     </button>
-    <button class="bnav-item" id="bnav-history" onclick="switchViewMobile('view-history', 'bnav-history')" aria-label="Historia">
+    <button class="bnav-item" id="bnav-history" onclick="switchViewMobile('view-history', 'bnav-history')" aria-label="Historia" aria-label="Historia">
       <i class="ti ti-history"></i>
       <span class="bnav-label">Historia</span>
     </button>
-    <button class="bnav-item" id="bnav-stats" onclick="switchViewMobile('view-stats', 'bnav-stats')" aria-label="Statystyki">
+    <button class="bnav-item" id="bnav-stats" onclick="switchViewMobile('view-stats', 'bnav-stats')" aria-label="Statystyki" aria-label="Statystyki">
       <i class="ti ti-chart-pie"></i>
       <span class="bnav-label">Stats</span>
     </button>
 
-    <button class="bnav-item" id="bnav-coach" onclick="switchViewMobile('view-coach', 'bnav-coach')" aria-label="AI Coach">
+    <button class="bnav-item" id="bnav-coach" onclick="switchViewMobile('view-coach', 'bnav-coach')" aria-label="AI Coach" aria-label="AI Coach">
       <i class="ti ti-brain"></i>
       <span class="bnav-label">Coach</span>
     </button>
@@ -1567,16 +1573,19 @@ const CFG = {
 
 // Model Claude — jedno miejsce na zmianę przy aktualizacji wersji
 const CLAUDE_MODEL = 'claude-sonnet-4-6';
-const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
+const DEBUG = false; // Ustaw true aby widzieć logi [Draft] w konsoli
+// WAŻNE: Zmień na URL Twojego Cloudflare Worker (patrz DEPLOY_WORKER.md)
+const CLAUDE_API_URL = 'https://trening-pro-api.lukasz-mateusz-bonio.workers.dev';
 
 // Wspólny helper do wywołań Claude API.
 // Rzuca Error z czytelnym komunikatem; honoruje AbortSignal.
 async function callClaude({ prompt, maxTokens, signal }) {
-  const apiKey = localStorage.getItem(STORAGE_API_KEY);
-  if (!apiKey) throw new Error('Brak klucza API — ustaw klucz w ustawieniach profilu');
+  // Użyj proxy URL z localStorage lub domyślny
+  const proxyUrl = localStorage.getItem('tp_proxy_url');
+  const apiUrl = proxyUrl || CLAUDE_API_URL;
   if (!navigator.onLine) throw new Error('Brak połączenia z internetem');
 
-  const resp = await fetch(CLAUDE_API_URL, {
+  const resp = await fetch(apiUrl, {
     method: 'POST',
     signal,
     headers: {
@@ -2014,7 +2023,7 @@ function refreshProfileUI() {
 // ============ MODAL ============
 function openProfileModal() {
   renderProfileList();
-  document.getElementById('apiKeyInput').value = localStorage.getItem(STORAGE_API_KEY) || '';
+  document.getElementById('proxyUrlInput').value = localStorage.getItem('tp_proxy_url') || '';
   document.getElementById('profileModal').classList.add('active');
 }
 function closeProfileModal() { document.getElementById('profileModal').classList.remove('active'); }
@@ -2090,13 +2099,7 @@ function deleteProfile(id) {
 }
 
 // ============ API KEY ============
-function saveApiKey() {
-  const key = document.getElementById('apiKeyInput').value.trim();
-  if (!key) { showToast('Wpisz klucz', 'error'); return; }
-  localStorage.setItem(STORAGE_API_KEY, key);
-  showToast('Klucz zapisany', 'success');
-  closeProfileModal();
-}
+// saveApiKey usunięte — proxy obsługuje klucz
 
 
 // ============ SIDEBAR / VIEWS ============
@@ -2492,14 +2495,10 @@ async function generatePlan() {
 async function executeGeneratePlan() {
   if (isLoading) return;
   
-  const apiKey = localStorage.getItem(STORAGE_API_KEY);
-  if (!apiKey) {
-    showToast('Najpierw ustaw klucz API', 'error');
-    openProfileModal();
-    return;
-  }
+  // Proxy URL — klucz API na serwerze
 
   isLoading = true;
+  showPlanSkeleton();
   const btn = document.getElementById('genBtn');
   const btnText = document.getElementById('genBtnText');
   if (btn) {
@@ -2822,6 +2821,27 @@ function renderExercises(exs, source) {
   }
 }
 
+function showPlanSkeleton() {
+  const container = document.getElementById('compactPlan');
+  const list = document.getElementById('exerciseList');
+  if (container) {
+    container.classList.add('active');
+    let html = '<div class="compact-plan-header" style="opacity:0.5">Generowanie planu...</div>';
+    html += '<div class="skeleton-group-label"></div>';
+    for (let i = 0; i < 6; i++) {
+      if (i === 3) html += '<div class="skeleton-group-label"></div>';
+      html += '<div class="skeleton-card"><div class="skeleton-line w60"></div><div class="skeleton-line w40"></div></div>';
+    }
+    container.innerHTML = html;
+  }
+  if (list) list.style.display = 'none';
+}
+
+function hidePlanSkeleton() {
+  const container = document.getElementById('compactPlan');
+  if (container) container.innerHTML = '';
+}
+
 // Renderuje kompaktowy widok wszystkich ćwiczeń pogrupowanych po partii (tryb kart, przed startem)
 function renderCompactPlan() {
   const container = document.getElementById('compactPlan');
@@ -2902,22 +2922,7 @@ function toggleCompactDetail(i, forceOpen) {
   }
 }
 
-function compactApplySubstitute(origIdx, subIdx) {
-  const ex = currentExercises[origIdx];
-  if (!ex || !ex.substitutes || !ex.substitutes[subIdx]) return;
-  const sub = ex.substitutes[subIdx];
-  if (!ex.substituteOf) currentExercises[origIdx].substituteOf = ex.name;
-  currentExercises[origIdx].name = sub.name;
-  currentExercises[origIdx].substitutes = [];
-  // Sync z exerciseGroups
-  for (const g of exerciseGroups) {
-    const found = g.exercises.find(e => e._origIdx === origIdx);
-    if (found) { found.name = sub.name; found.substitutes = []; if (!found.substituteOf) found.substituteOf = ex.substituteOf || ex.name; break; }
-  }
-  saveDraft();
-  renderCompactPlan();
-  showToast('Zamieniono na: ' + sub.name, 'success');
-}
+function compactApplySubstitute(origIdx, subIdx) { substituteExercise(origIdx, subIdx, renderCompactPlan); }
 
 // Renderuje TYLKO aktualną partię mięśniową
 // ============ LAST WEIGHT + EQUIPMENT TOGGLE ============
@@ -3090,20 +3095,16 @@ function toggleSubPanel(i) {
   if (btn) btn.style.color = isOpen ? 'var(--warning, #f59e0b)' : '';
 }
 
-function applySubstitute(origIdx, subIdx) {
+function substituteExercise(origIdx, subIdx, rerenderFn) {
   const ex = currentExercises[origIdx];
   if (!ex || !ex.substitutes || !ex.substitutes[subIdx]) return;
   const sub = ex.substitutes[subIdx];
 
-  // Zapisz oryginalne ćwiczenie jako substituteOf
-  if (!ex.substituteOf) {
-    currentExercises[origIdx].substituteOf = ex.name;
-  }
-  // Zamień nazwę i wyczyść substitutes (nie zagnieżdżamy zamienników)
+  if (!ex.substituteOf) currentExercises[origIdx].substituteOf = ex.name;
   currentExercises[origIdx].name = sub.name;
   currentExercises[origIdx].substitutes = [];
 
-  // Zsynchronizuj kopię w exerciseGroups — bez tego renderCurrentMuscleGroup czyta starą nazwę
+  // Sync z exerciseGroups
   for (const g of exerciseGroups) {
     const found = g.exercises.find(e => e._origIdx === origIdx);
     if (found) {
@@ -3114,10 +3115,13 @@ function applySubstitute(origIdx, subIdx) {
     }
   }
 
-  renderCurrentMuscleGroup();
   saveDraft();
   showToast('Zamieniono na: ' + sub.name, 'success');
+  if (typeof rerenderFn === 'function') rerenderFn();
 }
+
+// Backward compat wrappers
+function applySubstitute(origIdx, subIdx) { substituteExercise(origIdx, subIdx, renderCurrentMuscleGroup); }
 
 function renderCurrentMuscleGroup() {
   const list = document.getElementById('exerciseList');
@@ -3550,7 +3554,8 @@ function refreshHistory() {
     list.innerHTML = '<div class="empty" style="padding: 1rem;"><p style="font-size: 13px;">Brak treningów w historii</p></div>';
     return;
   }
-  list.innerHTML = p.history.slice(0, 30).map(e => {
+  const historyLimit = window._historyShowAll ? p.history.length : 30;
+  list.innerHTML = p.history.slice(0, historyLimit).map(e => {
     // Sanityzuj e.type — używany jako CSS class, musi być z whitelisty
     const safeType = VALID_WORKOUT_TYPES.includes(e.type) ? e.type : 'push';
     return `
@@ -3578,6 +3583,9 @@ function refreshHistory() {
       }).join(' · ')}</div>
     </div>`;
   }).join('');
+  if (!window._historyShowAll && p.history.length > 30) {
+    list.innerHTML += '<button onclick="window._historyShowAll=true;refreshHistory();" style="width:100%;padding:10px;margin-top:8px;border:1px solid var(--border);border-radius:var(--radius);background:transparent;color:var(--accent);font-size:13px;cursor:pointer;">Pokaż wszystkie (' + p.history.length + ' treningów)</button>';
+  }
 }
 
 // ============ STATS ============
@@ -3820,6 +3828,11 @@ function exportPDF() {
 }
 
 // ============ UTIL ============
+function sanitizeHtml(html) {
+  if (typeof DOMPurify !== 'undefined') return DOMPurify.sanitize(html, { ALLOWED_TAGS: ['b','i','strong','em','br','span','div'], ALLOWED_ATTR: ['style','class'] });
+  return escapeHtml(html);
+}
+
 function escapeHtml(s) {
   if (s === null || s === undefined) return '';
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -3880,7 +3893,7 @@ function saveDraft() {
       cardSetsData: cardSetsData || [],
       ts: Date.now()
     }));
-    console.log('[Draft] Zapisano draft:', currentExercises.length, 'ćwiczeń');
+    if(DEBUG) console.log('[Draft] Zapisano draft:', currentExercises.length, 'ćwiczeń');
   } catch(e) { console.error('[Draft] Błąd zapisu:', e); }
 }
 
@@ -3931,11 +3944,11 @@ function _formatDraftDuration(startTime) {
 function showDraftBanner() {
   try {
     const raw = localStorage.getItem(STORAGE_DRAFT);
-    if (!raw) { console.log('[Draft] Brak draftu w localStorage'); return; }
+    if (!raw) { if(DEBUG) console.log('[Draft] Brak draftu w localStorage'); return; }
     const draft = JSON.parse(raw);
     if (!_validateDraft(draft)) { console.warn('[Draft] Draft nie przeszedł walidacji'); clearDraft(); return; }
     if (Date.now() - draft.ts > CFG.DRAFT_TTL_MS) { console.warn('[Draft] Draft wygasł (TTL)'); clearDraft(); return; }
-    console.log('[Draft] Znaleziono draft:', draft.exercises.length, 'ćwiczeń, typ:', draft.type);
+    if(DEBUG) console.log('[Draft] Znaleziono draft:', draft.exercises.length, 'ćwiczeń, typ:', draft.type);
 
     // Wypełnij meta (czas, typ, liczba ćwiczeń)
     const meta = document.getElementById('draftRestoreMeta');
@@ -3968,7 +3981,7 @@ function showDraftBanner() {
     const banner = document.getElementById('draftRestoreBanner');
     if (banner) {
       banner.classList.add('visible');
-      console.log('[Draft] Baner przywracania widoczny');
+      if(DEBUG) console.log('[Draft] Baner przywracania widoczny');
     }
   } catch(e) { console.error('[Draft] Błąd showDraftBanner:', e); }
 }
@@ -4415,12 +4428,7 @@ let analyzeAbortController = null;
 async function analyzeWithAI() {
   if (isAnalyzing) return;
 
-  const apiKey = localStorage.getItem(STORAGE_API_KEY);
-  if (!apiKey) {
-    showToast('Najpierw ustaw klucz API', 'error');
-    openProfileModal();
-    return;
-  }
+  // Proxy URL — klucz API na serwerze
 
   const profile = getCurrentProfile();
   if (profile.history.length < 3) {
@@ -5198,20 +5206,10 @@ function cardShowSubstitutes() {
 }
 
 function cardApplySubstitute(subIdx) {
-  const ex = currentExercises[cardExIdx];
-  if (!ex || !ex.substitutes || !ex.substitutes[subIdx]) return;
-  const sub = ex.substitutes[subIdx];
-  if (!ex.substituteOf) currentExercises[cardExIdx].substituteOf = ex.name;
-  currentExercises[cardExIdx].name = sub.name;
-  currentExercises[cardExIdx].substitutes = [];
-  // Sync exerciseGroups
-  for (const g of exerciseGroups) {
-    const found = g.exercises.find(e => e._origIdx === cardExIdx);
-    if (found) { found.name = sub.name; found.substitutes = []; break; }
-  }
-  if (cardSetsData[cardExIdx]) cardSetsData[cardExIdx].name = sub.name;
-  showToast('Zamieniono na: ' + sub.name, 'success');
-  renderCard();
+  substituteExercise(cardExIdx, subIdx, () => {
+    if (cardSetsData[cardExIdx]) cardSetsData[cardExIdx].name = currentExercises[cardExIdx].name;
+    renderCard();
+  });
 }
 
 // ---- CARD SUMMARY ----
@@ -6117,13 +6115,7 @@ async function parseImport() {
     return;
   }
 
-  const apiKey = localStorage.getItem(STORAGE_API_KEY);
-  if (!apiKey) {
-    showToast('Wymagany klucz API do parsowania', 'error');
-    closeImportModal();
-    openProfileModal();
-    return;
-  }
+  // Proxy URL — klucz API na serwerze
 
   isImporting = true;
   if (importAbortController) importAbortController.abort();
@@ -6350,7 +6342,7 @@ updateEmptyState();
 window.addEventListener('beforeunload', () => {
   if (currentExercises && currentExercises.length) {
     saveDraft();
-    console.log('[Draft] Zapisano draft przed zamknięciem');
+    if(DEBUG) console.log('[Draft] Zapisano draft przed zamknięciem');
   }
 });
 
@@ -6358,7 +6350,7 @@ window.addEventListener('beforeunload', () => {
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden' && currentExercises && currentExercises.length) {
     saveDraft();
-    console.log('[Draft] Zapisano draft (visibilitychange → hidden)');
+    if(DEBUG) console.log('[Draft] Zapisano draft (visibilitychange → hidden)');
   }
 });
 
