@@ -27,31 +27,56 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" integrity="sha384-mePcIBbFoQFKzHqVtMDV7xBFJjnGTVpquWxnf3VGdFakKAnoGmj+YZyEkJ0NTPX" crossorigin="anonymous"></script>
 <style>
 :root {
-  --bg: #0a0a0b;
-  --bg-elev: #131316;
-  --bg-elev-2: #1c1c20;
-  --bg-hover: #232328;
-  --border: rgba(255,255,255,0.06);
-  --border-strong: rgba(255,255,255,0.12);
-  --text: #f5f5f7;
-  --text-muted: #8a8a92;
-  --text-dim: #5a5a62;
+  /* ===== SURFACES — deep layered slate-black (OLED-friendly) ===== */
+  --bg: #08090d;
+  --bg-elev: #0f1014;
+  --bg-elev-2: #16171d;
+  --bg-elev2: #16171d;              /* alias used across the app — fixes undefined-var */
+  --bg-hover: #1e1f27;
+  /* ===== BORDERS ===== */
+  --border: rgba(255,255,255,0.07);
+  --border-strong: rgba(255,255,255,0.14);
+  /* ===== TEXT ===== */
+  --text: #f4f5f7;
+  --text-muted: #989aa4;
+  --text-dim: #5e616b;
+  /* ===== BRAND ACCENT — electric lime ===== */
   --accent: #d4ff3a;
-  --accent-soft: rgba(212,255,58,0.1);
-  --accent-soft-2: rgba(212,255,58,0.18);
+  --accent-strong: #c2f024;
+  --accent-soft: rgba(212,255,58,0.10);
+  --accent-soft-2: rgba(212,255,58,0.20);
+  --accent-grad: linear-gradient(135deg, #e4ff64 0%, #b8f53c 100%);
+  --accent-glow: 0 0 22px rgba(212,255,58,0.30);
+  /* ===== CATEGORY COLORS ===== */
   --push: #ff5f4a;
   --push-soft: rgba(255,95,74,0.12);
   --pull: #4a8eff;
   --pull-soft: rgba(74,142,255,0.12);
   --legs: #b566ff;
   --legs-soft: rgba(181,102,255,0.12);
+  /* ===== SEMANTIC ===== */
   --success: #4ade80;
   --danger: #ef4444;
   --warning: #fb923c;
-  --radius-sm: 8px;
-  --radius: 12px;
-  --radius-lg: 16px;
-  --shadow: 0 4px 20px rgba(0,0,0,0.3);
+  /* ===== RADII ===== */
+  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-lg: 20px;
+  /* ===== ELEVATION SCALE ===== */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.35);
+  --shadow: 0 8px 28px rgba(0,0,0,0.42);
+  --shadow-lg: 0 20px 56px rgba(0,0,0,0.55);
+  /* ===== SPACING (4/8 rhythm) ===== */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 24px; --space-6: 32px; --space-8: 48px;
+  /* ===== MOTION ===== */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast: 150ms; --dur: 220ms; --dur-slow: 320ms;
+  /* ===== LAYOUT ===== */
+  --sidebar-w: 252px;
+  --sidebar-w-collapsed: 76px;
+  --topbar-h: 64px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -988,55 +1013,153 @@ body { background-image: radial-gradient(circle at 0% 0%, rgba(212,255,58,0.04) 
   .header { flex-wrap: wrap; gap: 12px; }
 }
 
-/* ===== SIDEBAR & VIEWS ===== */
-.view { display: none; animation: fadeIn 0.3s ease; }
+/* ===== VIEWS ===== */
+.view { display: none; animation: viewIn var(--dur-slow) var(--ease); }
 .view.active { display: block; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes viewIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
-.menu-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 300; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+/* ===== SIDEBAR (drawer on tablet/mobile, persistent on desktop) ===== */
+.menu-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 300; opacity: 0; pointer-events: none; transition: opacity var(--dur) var(--ease); }
 .menu-overlay.active { opacity: 1; pointer-events: all; }
 
-.sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 280px; background: var(--bg-elev); border-right: 1px solid var(--border); z-index: 400; transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; }
-.sidebar.active { transform: translateX(0); }
+.sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: var(--sidebar-w); background: var(--bg-elev); border-right: 1px solid var(--border); z-index: 400; transform: translateX(-100%); transition: transform var(--dur-slow) var(--ease), width var(--dur) var(--ease); display: flex; flex-direction: column; }
+.sidebar.active { transform: translateX(0); box-shadow: var(--shadow-lg); }
 
-.sidebar-header { padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
-.sidebar-nav { padding: 1rem; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex: 1; }
-.sidebar-link { padding: 12px 16px; border-radius: var(--radius-sm); border: none; background: transparent; color: var(--text-muted); font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all 0.2s; text-align: left; }
+.sidebar-header { padding: 18px 18px; display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); min-height: var(--topbar-h); }
+.sidebar-nav { padding: 14px 12px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; flex: 1; }
+.sidebar-link { position: relative; padding: 11px 14px; border-radius: var(--radius-sm); border: none; background: transparent; color: var(--text-muted); font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 13px; transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease); text-align: left; white-space: nowrap; text-decoration: none; }
+.sidebar-link i { font-size: 19px; flex-shrink: 0; width: 22px; text-align: center; }
 .sidebar-link:hover { background: var(--bg-elev-2); color: var(--text); }
-.sidebar-link.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; border-left: 3px solid var(--accent); }
-.sidebar-link i { font-size: 18px; }
+.sidebar-link.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.sidebar-link.active::before { content: ''; position: absolute; left: -12px; top: 50%; transform: translateY(-50%); width: 3px; height: 22px; border-radius: 0 3px 3px 0; background: var(--accent); box-shadow: var(--accent-glow); }
+.sidebar-link.bug-link { color: var(--text-dim); font-size: 13px; }
+.sidebar-link.bug-link:hover { color: var(--danger); background: transparent; }
+.sidebar-collapse-btn { display: none; }
 
-.menu-btn { background: transparent; border: 1px solid var(--border-strong); border-radius: 8px; color: var(--text); padding: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+.menu-btn { background: transparent; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); color: var(--text); padding: 7px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease); }
 .menu-btn:hover { background: var(--bg-elev-2); border-color: var(--text-muted); }
 
-/* ===== BOTTOM NAV BAR ===== */
+/* ===== MOBILE BOTTOM TAB BAR (thumb-reach, frosted) ===== */
 .bottom-nav {
   display: none;
-  position: fixed; top: 0; left: 0; right: 0;
-  background: var(--bg-elev);
-  border-bottom: 1px solid var(--border);
-  padding: calc(6px + env(safe-area-inset-top)) 4px 6px;
+  position: fixed; left: 0; right: 0; bottom: 0;
+  background: color-mix(in srgb, var(--bg-elev) 82%, transparent);
+  border-top: 1px solid var(--border);
+  padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
   z-index: 200;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
 }
-.bottom-nav-inner { display: flex; justify-content: space-around; align-items: center; max-width: 500px; margin: 0 auto; }
-.bnav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 10px; border-radius: 12px; border: none; background: transparent; cursor: pointer; transition: all 0.2s ease; font-family: inherit; flex: 1; }
-.bnav-item i { font-size: 22px; color: var(--text-muted); transition: all 0.2s; }
-.bnav-label { font-size: 10px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.2px; transition: all 0.2s; }
-.bnav-item.active { background: var(--accent-soft); }
-.bnav-item.active i { color: var(--accent); }
-.bnav-item.active .bnav-label { color: var(--accent); font-weight: 700; }
-.bnav-item:not(.active):hover { background: var(--bg-hover); }
-.bnav-item:not(.active):hover i { color: var(--text); }
+.bottom-nav-inner { display: flex; justify-content: space-around; align-items: stretch; max-width: 520px; margin: 0 auto; gap: 4px; }
+.bnav-item { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 7px 6px; border-radius: 14px; border: none; background: transparent; cursor: pointer; transition: background var(--dur-fast) var(--ease); font-family: inherit; flex: 1; -webkit-tap-highlight-color: transparent; }
+.bnav-item i { font-size: 23px; color: var(--text-muted); transition: color var(--dur-fast) var(--ease), transform var(--dur) var(--ease-spring); }
+.bnav-label { font-size: 10px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.2px; transition: color var(--dur-fast) var(--ease); }
+.bnav-item.active i { color: var(--accent); transform: translateY(-2px); }
+.bnav-item.active .bnav-label { color: var(--accent); }
+.bnav-item.active::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 28px; height: 3px; border-radius: 0 0 3px 3px; background: var(--accent); box-shadow: var(--accent-glow); }
+.bnav-item:active { background: var(--bg-hover); }
 
+/* ===== MOBILE (<768px) — bottom tab bar, no sidebar/header ===== */
 @media (max-width: 767px) {
   .bottom-nav { display: block; }
-  .menu-btn { display: none; }
-  .header { display: none; }
-  .app { padding-top: calc(80px + env(safe-area-inset-top)); padding-bottom: 1rem; }
+  .menu-btn, .header, .sidebar, .menu-overlay { display: none !important; }
+  .app { padding: 1rem 1rem calc(88px + env(safe-area-inset-bottom)); }
 }
 
+/* ===== DESKTOP (>=1024px) — persistent collapsible sidebar ===== */
+@media (min-width: 1024px) {
+  .sidebar, .sidebar.active { transform: none !important; box-shadow: none; }
+  .menu-overlay { display: none !important; }
+  .menu-btn, .header .brand, .sidebar-close-btn { display: none !important; }
+  .app {
+    margin-left: var(--sidebar-w);
+    max-width: none;
+    padding: 1.5rem clamp(1.5rem, 4vw, 3rem) 3.5rem;
+    transition: margin-left var(--dur) var(--ease);
+  }
+  .app > .view { max-width: 1120px; margin-inline: auto; }
+  /* collapsed state */
+  body.sidebar-collapsed .sidebar { width: var(--sidebar-w-collapsed); }
+  body.sidebar-collapsed .app { margin-left: var(--sidebar-w-collapsed); }
+  body.sidebar-collapsed .sidebar-nav .sidebar-link { justify-content: center; gap: 0; }
+  body.sidebar-collapsed .sidebar-link i { width: auto; }
+  body.sidebar-collapsed .sidebar-link span,
+  body.sidebar-collapsed .sidebar .brand-text { display: none; }
+  body.sidebar-collapsed .sidebar-header { justify-content: center; }
+  body.sidebar-collapsed .sidebar-header .brand { display: none; }
+  .sidebar-collapse-btn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 9px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); cursor: pointer; transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease); flex-shrink: 0; }
+  .sidebar-collapse-btn:hover { background: var(--bg-elev-2); color: var(--text); }
+}
+
+/* ============================================================
+   PREMIUM LAYER — accessibility, depth, micro-interactions
+   ============================================================ */
+
+/* Accessibility: visible keyboard focus ring (skill §1 CRITICAL) */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button:focus:not(:focus-visible), a:focus:not(:focus-visible), input:focus:not(:focus-visible) { outline: none; }
+
+/* Selection + smooth scroll */
+::selection { background: var(--accent-soft-2); color: var(--text); }
+html { scroll-behavior: smooth; }
+
+/* Refined global scrollbar */
+* { scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 10px; border: 3px solid transparent; background-clip: padding-box; }
+*::-webkit-scrollbar-thumb:hover { background: var(--text-dim); background-clip: padding-box; }
+
+/* Tabular figures for data legibility */
+.stat-value, .card-timer-display, .fab-countdown, .ex-stat-value { font-variant-numeric: tabular-nums; }
+
+/* Ambient brand glow background */
+body {
+  background-image:
+    radial-gradient(900px circle at 0% -5%, rgba(212,255,58,0.05), transparent 45%),
+    radial-gradient(900px circle at 100% 0%, rgba(74,142,255,0.05), transparent 45%);
+  background-attachment: fixed;
+}
+
+/* ---- Buttons: gradient primary, lift on hover, scale on press ---- */
+.btn { border-radius: 12px; transition: transform var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease), filter var(--dur-fast) var(--ease); }
+.btn:active:not(:disabled) { transform: scale(0.97); }
+.btn-primary { background: var(--accent-grad); color: #0a0a0b; border-color: transparent; box-shadow: 0 4px 16px rgba(212,255,58,0.18); }
+.btn-primary:hover:not(:disabled) { filter: brightness(1.06); transform: translateY(-1px); box-shadow: 0 8px 26px rgba(212,255,58,0.30); }
+
+/* ---- Cards: elevation + hover lift ---- */
+.stat-card, .exercise-card, .coach-panel, .modal { box-shadow: var(--shadow-sm); }
+.stat-card { transition: transform var(--dur) var(--ease), border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
+.stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+.exercise-card:hover { box-shadow: var(--shadow-sm); }
+.coach-panel { box-shadow: var(--shadow); }
+.modal { box-shadow: var(--shadow-lg); }
+
+/* ---- Brand identity: gradient logo + glow ---- */
+.brand-logo, .splash-logo { background: var(--accent-grad); }
+.splash-logo { box-shadow: 0 12px 44px rgba(212,255,58,0.30); }
+
+/* ---- Profile chip + tabs polish ---- */
+.profile-selector { cursor: pointer; transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease); }
+.profile-selector:hover { background: var(--bg-elev-2); }
+.tab { transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease); }
+.tab:active { transform: scale(0.97); }
+
+/* ---- Mobile: lift fixed bottom elements above the tab bar ---- */
+@media (max-width: 767px) {
+  .save-reminder { bottom: calc(98px + env(safe-area-inset-bottom)); }
+  .toast { bottom: calc(98px + env(safe-area-inset-bottom)); }
+  #restTimerFab { bottom: calc(100px + env(safe-area-inset-bottom)); }
+}
+
+/* ---- Respect reduced motion (skill §1) ---- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 </style>
 </head>
 <body>
@@ -1074,15 +1197,16 @@ body { background-image: radial-gradient(circle at 0% 0%, rgba(212,255,58,0.04) 
         <div class="brand-logo"><i class="ti ti-barbell"></i></div>
         <div class="brand-text" style="font-size: 16px;">Trening<span>·</span>Pro</div>
       </div>
-      <button class="btn btn-ghost" onclick="toggleMenu()" style="border:none; padding:4px;"><i class="ti ti-x" style="font-size:20px;"></i></button>
+      <button class="sidebar-collapse-btn" onclick="toggleSidebarCollapse()" aria-label="Zwiń / rozwiń menu" title="Zwiń / rozwiń menu"><i class="ti ti-layout-sidebar-left-collapse" style="font-size:18px;"></i></button>
+      <button class="btn btn-ghost sidebar-close-btn" onclick="toggleMenu()" style="border:none; padding:4px;" aria-label="Zamknij menu"><i class="ti ti-x" style="font-size:20px;"></i></button>
     </div>
     <nav class="sidebar-nav">
-      <button class="sidebar-link active" onclick="switchView('view-plan', this)"><i class="ti ti-barbell"></i> Plan na dziś</button>
-      <button class="sidebar-link" onclick="switchView('view-history', this)"><i class="ti ti-history"></i> Historia</button>
-      <button class="sidebar-link" onclick="switchView('view-stats', this)"><i class="ti ti-chart-pie"></i> Statystyki i mięśnie</button>
-      <button class="sidebar-link" onclick="switchView('view-coach', this)"><i class="ti ti-brain"></i> AI Coach</button>
+      <button class="sidebar-link active" onclick="switchView('view-plan', this)"><i class="ti ti-barbell"></i> <span>Plan na dziś</span></button>
+      <button class="sidebar-link" onclick="switchView('view-history', this)"><i class="ti ti-history"></i> <span>Historia</span></button>
+      <button class="sidebar-link" onclick="switchView('view-stats', this)"><i class="ti ti-chart-pie"></i> <span>Statystyki i mięśnie</span></button>
+      <button class="sidebar-link" onclick="switchView('view-coach', this)"><i class="ti ti-brain"></i> <span>AI Coach</span></button>
       <div style="margin-top:auto;padding-top:16px;border-top:1px solid var(--border)">
-        <a class="sidebar-link bug-link" href="#" onclick="openBugReport();return false;"><i class="ti ti-bug"></i> Zgłoś bug</a>
+        <a class="sidebar-link bug-link" href="#" onclick="openBugReport();return false;"><i class="ti ti-bug"></i> <span>Zgłoś bug</span></a>
       </div>
     </nav>
   </aside>
@@ -2105,6 +2229,15 @@ function toggleMenu() {
   document.getElementById('sidebar').classList.toggle('active');
   document.getElementById('menuOverlay').classList.toggle('active');
 }
+
+// Zwijanie/rozwijanie stałego sidebara na desktopie — stan zapamiętany
+function toggleSidebarCollapse() {
+  const collapsed = document.body.classList.toggle('sidebar-collapsed');
+  try { localStorage.setItem('tp_sidebar_collapsed', collapsed ? '1' : '0'); } catch {}
+}
+(function restoreSidebarState() {
+  try { if (localStorage.getItem('tp_sidebar_collapsed') === '1') document.body.classList.add('sidebar-collapsed'); } catch {}
+})();
 
 function switchView(viewId, btnEl) {
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
