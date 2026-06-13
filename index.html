@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data:; connect-src 'self' https://*.workers.dev https://api.anthropic.com;">
 <title>Trening Pro</title>
-<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js" defer integrity="sha384-bE18B2p0fzMNXOd3mTGcqsVo+FLKtRq7YDvHdv0KIzRPzH8RCmJNqMvR1A9Nk0t" crossorigin="anonymous"></script>
 <script src="db.js"></script>
 <!-- PWA -->
 <link rel="manifest" href="manifest.json">
@@ -21,9 +22,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-fqo7GXHc5SDi5ux9mHHoRQJvMb0LG4KzYp7Nk5LKFr4S5K+UZK7e5Y5p8jI4yG" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" integrity="sha384-mePcIBbFoQFKzHqVtMDV7xBFJjnGTVpquWxnf3VGdFakKAnoGmj+YZyEkJ0NTPX" crossorigin="anonymous"></script>
 <style>
 :root {
   --bg: #0a0a0b;
@@ -1565,10 +1566,15 @@ const CFG = {
   AI_HISTORY_MAX: 50,
   AI_SESSIONS_PER_EXERCISE: 10,
   IMPORT_MAX_CHARS: 4000,
-  DRAFT_TTL_MS: 72 * 60 * 60 * 1000, // 72h — plan powinien przeżyć weekend
+  DRAFT_TTL_MS: 72 * 60 * 60 * 1000,
   DAY_MS: 86400000,
-  BACKUP_INTERVAL_DAYS: 21,   // 3 tygodnie
-  BACKUP_DISMISS_DAYS: 7,     // jeśli odłożone — przypomnij za tydzień
+  BACKUP_INTERVAL_DAYS: 21,
+  BACKUP_DISMISS_DAYS: 7,
+  TOAST_DURATION_MS: 3500,
+  BACKUP_TOAST_DELAY_MS: 600,
+  SW_UPDATE_INTERVAL_MS: 3600000,
+  CARD_ENTER_DELAY_MS: 200,
+  CHECK_FILLED_DELAY_MS: 500,
 };
 
 // Model Claude — jedno miejsce na zmianę przy aktualizacji wersji
@@ -1991,13 +1997,17 @@ function getProfiles() {
 }
 function saveProfiles(p) {
   _profilesCache = p;
-  // Zapisz zawsze z aktualnym schemaVersion
   try {
     localStorage.setItem(STORAGE_PROFILES, JSON.stringify({
       schemaVersion: CURRENT_SCHEMA_VERSION,
       profiles: p
     }));
-  } catch (e) { console.warn('saveProfiles: zapis nie powiódł się', e); }
+  } catch (e) {
+    console.warn('saveProfiles: zapis nie powiódł się', e);
+    if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+      showToast('Brak miejsca na urządzeniu — wykonaj backup i wyczyść historię', 'error');
+    }
+  }
 }
 function getCurrentProfileId() { return localStorage.getItem(STORAGE_CURRENT) || 'default'; }
 function setCurrentProfileId(id) { localStorage.setItem(STORAGE_CURRENT, id); }
@@ -2051,10 +2061,7 @@ function switchProfile(id) {
   refreshProfileUI();
   hideRestTimerBar();
   stopRestTimer();
-  refreshHistory();
-  refreshStats();
-  refreshChart();
-  refreshMuscleStats();
+  refreshAllStats();
   refreshExerciseSelect();
   checkBackupReminder();
   renderProfileList();
@@ -2073,10 +2080,7 @@ function addProfile() {
   input.value = '';
   refreshProfileUI();
   renderProfileList();
-  refreshHistory();
-  refreshStats();
-  refreshChart();
-  refreshMuscleStats();
+  refreshAllStats();
   showToast('Profil utworzony', 'success');
 }
 
@@ -2088,10 +2092,7 @@ function deleteProfile(id) {
   if (getCurrentProfileId() === id) setCurrentProfileId(profs[0].id);
   refreshProfileUI();
   renderProfileList();
-  refreshHistory();
-  refreshStats();
-  refreshChart();
-  refreshMuscleStats();
+  refreshAllStats();
   showToast('Profil usunięty');
 }
 
@@ -3474,10 +3475,7 @@ function saveWorkout() {
   reminderShown = false;
   reminderDismissed = false;
   document.getElementById('saveReminder').classList.remove('show');
-  refreshHistory();
-  refreshStats();
-  refreshChart();
-  refreshMuscleStats();
+  refreshAllStats();
   refreshExerciseSelect();
   const kgInfo = exs.some(e => e.kg > 0) ? '' : '';
   const durStr = entry.duration ? ` · ${formatDuration(entry.duration)}` : '';
@@ -3543,6 +3541,13 @@ function deleteEntry(id) {
 
 // ============ HISTORY ============
 const VALID_WORKOUT_TYPES = ['push','pull','legs','upper_a','upper_b','lower_a','lower_b','fbw_a','fbw_b','fbw_c'];
+
+function refreshAllStats() {
+  refreshHistory();
+  refreshStats();
+  refreshChart();
+  refreshMuscleStats();
+}
 
 function refreshHistory() {
   const p = getCurrentProfile();
@@ -3864,7 +3869,7 @@ function showToast(msg, type = '') {
   // textContent zamiast innerHTML — chroni przed niezamierzonym XSS jeśli msg zawiera HTML
   t.textContent = msg;
   t.className = 'toast show' + (type ? ' ' + type : '');
-  setTimeout(() => t.classList.remove('show'), 3500);
+  setTimeout(() => t.classList.remove('show'), CFG.TOAST_DURATION_MS);
 }
 
 // ============ DRAFT (autosave aktywnego planu) ============
@@ -4072,14 +4077,14 @@ function restoreDraft() {
     if (_dBtnR) _dBtnR.style.display = 'flex';
     const _nsR = document.getElementById('workoutNoteSection');
     if (_nsR) _nsR.classList.add('visible');
-    setTimeout(checkAllFilled, 500);
+    setTimeout(checkAllFilled, CFG.CHECK_FILLED_DELAY_MS);
     showStartCardBtn();
     // Przywróć card mode jeśli był aktywny
     if (draft.cardActive && draft.cardSetsData && draft.cardSetsData.length) {
       cardSetsData = draft.cardSetsData;
       cardExIdx = draft.cardExIdx || 0;
       cardSetIdx = draft.cardSetIdx || 0;
-      setTimeout(() => enterCardMode(), 200);
+      setTimeout(() => enterCardMode(), CFG.CARD_ENTER_DELAY_MS);
       // Nadpisz domyślne wartości z zapisanych
       setTimeout(() => {
         cardExIdx = draft.cardExIdx || 0;
@@ -4714,7 +4719,7 @@ function backupAndMark(format) {
   if (format === 'csv') exportCSV();
   else if (format === 'pdf') exportPDF();
   markBackupDone();
-  setTimeout(() => showToast('Backup wykonany — dane bezpieczne 🛡️', 'success'), 600);
+  setTimeout(() => showToast('Backup wykonany — dane bezpieczne 🛡️', 'success'), CFG.BACKUP_TOAST_DELAY_MS);
 }
 
 function checkBackupReminder() {
@@ -5303,7 +5308,7 @@ function saveCardWorkout() {
   };
   updateCurrentProfile(p => { p.history = [entry, ...p.history].slice(0, CFG.HISTORY_MAX); return p; });
   clearDraft();
-  refreshHistory(); refreshStats(); refreshChart(); refreshMuscleStats(); refreshExerciseSelect();
+  refreshAllStats(); refreshExerciseSelect();
   showToast('Trening zapisany! ' + totalReps + ' rep' + (duration ? ' · ' + formatDuration(duration) : ''), 'success');
   updateEmptyState();
 
@@ -5749,15 +5754,17 @@ if ('serviceWorker' in navigator) {
           if (!newWorker) return;
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // Nowa wersja gotowa - delikatnie poinformuj
               setTimeout(() => {
-                showToast('🔄 Dostępna nowa wersja - odśwież stronę', '');
+                if (confirm('Dostępna nowa wersja aplikacji. Odświeżyć teraz?')) {
+                  newWorker.postMessage('SKIP_WAITING');
+                  window.location.reload();
+                }
               }, 1000);
             }
           });
         });
         // Sprawdzaj aktualizacje co godzinę gdy aplikacja jest otwarta
-        setInterval(() => reg.update().catch(() => {}), 3600000);
+        setInterval(() => reg.update().catch(() => {}), CFG.SW_UPDATE_INTERVAL_MS);
       })
       .catch(err => console.warn('SW registration failed:', err));
   });
@@ -6006,10 +6013,7 @@ function importCsvWorkouts() {
 
   const count = csvParsedData.length;
   closeImportModal();
-  refreshHistory();
-  refreshStats();
-  refreshChart();
-  refreshMuscleStats();
+  refreshAllStats();
   refreshExerciseSelect();
   checkBackupReminder();
   showToast(`Zaimportowano ${count} treningów z CSV`, 'success');
@@ -6248,10 +6252,7 @@ function saveImportedWorkout(parsed) {
   });
 
   closeImportModal();
-  refreshHistory();
-  refreshStats();
-  refreshChart();
-  refreshMuscleStats();
+  refreshAllStats();
   refreshExerciseSelect();
   checkBackupReminder();
   showToast('Trening zaimportowany! ' + totalReps + ' rep', 'success');
@@ -6326,10 +6327,7 @@ window.addEventListener('load', () => {
 });
 
 refreshProfileUI();
-refreshStats();
-refreshHistory();
-refreshChart();
-refreshMuscleStats();
+refreshAllStats();
 refreshExerciseSelect();
 checkBackupReminder();
 updateGoalBadge();

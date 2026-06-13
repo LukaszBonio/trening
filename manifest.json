@@ -10,6 +10,7 @@
   "theme_color": "#0a0a0b",
   "lang": "pl-PL",
   "categories": ["fitness", "health", "lifestyle"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "icon-192.png",
@@ -28,6 +29,30 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nowy trening",
+      "short_name": "Trening",
+      "description": "Szybko zacznij nowy trening",
+      "url": "./?tab=plan",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Historia",
+      "short_name": "Historia",
+      "description": "Przeglądaj historię treningów",
+      "url": "./?tab=history",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "label": "Trening Pro — Plan treningowy"
     }
   ]
 }
