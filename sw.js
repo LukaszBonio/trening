@@ -1,7 +1,7 @@
 // Trening Pro - Service Worker
 // Strategia: cache-first dla statycznych zasobów, network-first dla index.html
 
-const CACHE_VERSION = 'trening-pro-v11';
+const CACHE_VERSION = 'trening-pro-v12';
 const CACHE_NAME = `${CACHE_VERSION}`;
 
 const STATIC_ASSETS = [
