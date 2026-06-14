@@ -2744,64 +2744,33 @@ async function generatePlan() {
   executeGeneratePlan();
 }
 
-async function executeGeneratePlan() {
-  if (isLoading) return;
-  
-  // Proxy URL — klucz API na serwerze
-
-  isLoading = true;
-  showPlanSkeleton();
-  const btn = document.getElementById('genBtn');
-  const btnText = document.getElementById('genBtnText');
-  if (btn) {
-    btn.disabled = true;
-    const btnIcon = btn.querySelector('i');
-    if (btnIcon) btnIcon.outerHTML = '<i class="ti ti-loader-2 spin"></i>';
-  }
-  btnText.textContent = 'Generuję...';
-
-  document.getElementById('exerciseList').innerHTML = '<div class="loader"><span></span><span></span><span></span></div>';
-
-  const typeLabels = { 
-    push: 'Push',
-    pull: 'Pull',
-    legs: 'Legs',
-    upper_a: 'Upper Siłowy',
-    upper_b: 'Upper Objętościowy',
-    lower_a: 'Lower Quad',
-    lower_b: 'Lower Hinge',
-    fbw_a: 'Full Body Przysiad',
-    fbw_b: 'Full Body Martwy',
-    fbw_c: 'Full Body Hip Thrust'
-  };
-  
-  const profile = getCurrentProfile();
-  const recent = profile.history.filter(h => h.type === currentType).slice(0, 4);
-  // Ostatnia notatka dla tego typu treningu
-  const lastNoteEntry = profile.history.filter(h => h.type === currentType && h.note).shift();
-  const lastNote = lastNoteEntry?.note || '';
-
-  // Buduj historię ciężarów per ćwiczenie z ostatnich sesji tego typu treningu.
-  // Format: { "Wyciskanie sztangi": { equipment: "sztanga", sessions: [{kg: 80, reps: 8}, ...] } }
-  // Tylko sesje z wpisanymi danymi (kg > 0 lub reps > 0 dla bodyweight).
+function buildWeightHistory(profile, type) {
+  const recent = profile.history.filter(h => h.type === type).slice(0, 4);
   const weightHistory = {};
   recent.slice().reverse().forEach(workout => {
     workout.exercises.forEach(ex => {
       if (!ex.name) return;
       if ((ex.kg || 0) <= 0 && (ex.reps || 0) <= 0) return;
       if (!weightHistory[ex.name]) {
-        // Zapisane equipment lub autodetekt z nazwy jako fallback
         const eq = ex.equipment || detectEquipmentFromName(ex.name);
         weightHistory[ex.name] = { equipment: eq, sessions: [] };
       }
-      weightHistory[ex.name].sessions.push({
-        kg: ex.kg || 0,
-        reps: ex.reps || 0
-      });
+      weightHistory[ex.name].sessions.push({ kg: ex.kg || 0, reps: ex.reps || 0 });
     });
   });
+  return weightHistory;
+}
 
-  // Sformatuj historię do prompta — czytelny tekst dla Claude
+function buildPlanPrompt(type, profile, weightHistory) {
+  const typeLabels = {
+    push: 'Push', pull: 'Pull', legs: 'Legs',
+    upper_a: 'Upper Siłowy', upper_b: 'Upper Objętościowy',
+    lower_a: 'Lower Quad', lower_b: 'Lower Hinge',
+    fbw_a: 'Full Body Przysiad', fbw_b: 'Full Body Martwy', fbw_c: 'Full Body Hip Thrust'
+  };
+
+  const lastNote = (profile.history.filter(h => h.type === type && h.note).shift() || {}).note || '';
+
   const historyLines = Object.entries(weightHistory).map(([name, data]) => {
     const eqLabel = data.equipment ? ` [${data.equipment}]` : '';
     const fmt = data.sessions.map(s =>
@@ -2813,8 +2782,7 @@ async function executeGeneratePlan() {
     ? historyLines.join('\n')
     : 'brak historii — to pierwszy trening tego typu';
 
-  // Upper/Lower zawsze masa+siła, reszta według celu użytkownika
-  const isUpperLower = ['upper_a','upper_b','lower_a','lower_b'].includes(currentType);
+  const isUpperLower = ['upper_a','upper_b','lower_a','lower_b'].includes(type);
   const effectiveGoalKey = isUpperLower ? 'mass_strength' : (profile.goal || 'reduction');
   const goalData = effectiveGoalKey === 'mass_strength'
     ? { name: 'Masa + Siła', reps: '5-10', sets: '3-4', rest: 120, restText: '2-4 min', desc: 'Podstawowe ćwiczenia wielostawowe, progresja ciężaru' }
@@ -2903,7 +2871,7 @@ WAŻNE: Lower B = martwy ciąg jest głównym ćwiczeniem. Inne ćwiczenia niż 
 7. ŁYDKI ×1 — wspięcia na palce (4×12-20).`
   };
 
-  const prompt = `Jesteś trenerem personalnym. Wygeneruj plan treningowy ${typeLabels[currentType]} dla osoby trenującej na siłowni z pełnym wyposażeniem.
+  const prompt = `Jesteś trenerem personalnym. Wygeneruj plan treningowy ${typeLabels[type]} dla osoby trenującej na siłowni z pełnym wyposażeniem.
 
 CEL TRENINGOWY UŻYTKOWNIKA: ${goalData.name}
 Dostosuj plan do celu:
@@ -2922,7 +2890,7 @@ WYKORZYSTAJ HISTORIĘ:
 - Jeśli widzisz progres — utrzymaj kierunek, dobierz ćwiczenia uzupełniające
 - Możesz powtarzać sprawdzone ćwiczenia z historii (progresja na tych samych ruchach jest podstawą siły) lub wprowadzić warianty — decyduj na podstawie kontekstu
 
-${schemaByType[currentType]}
+${schemaByType[type]}
 
 ZASADY OGÓLNE:
 - BEZWZGLĘDNIE trzymaj się schematu — nie mieszaj partii mięśniowych
@@ -2948,8 +2916,54 @@ Nazwy zamienników — te same zasady nazewnictwa co wyżej (sprzęt w nazwie, p
 Odpowiedz TYLKO w formacie JSON:
 {"exercises":[{"name":"Wyciskanie sztangi na ławce poziomej","reps":"6-8","sets":3,"tip":"łopatki ściągnięte","substitutes":[{"name":"Wyciskanie hantli na ławce poziomej","note":"ta sama partia, hantle"},{"name":"Wyciskanie na maszynie","note":"stabilne, mniej stawów"}]}, ...]}`;
 
+  return { prompt, goalData };
+}
+
+function validatePlanResponse(rawExs) {
+  if (!Array.isArray(rawExs) || !rawExs.length) {
+    throw new Error('Nieprawidłowy format odpowiedzi — spróbuj ponownie');
+  }
+  if (rawExs.length < 5) throw new Error(`AI zwróciło za mało ćwiczeń (${rawExs.length}) — spróbuj ponownie`);
+  return rawExs.map((ex, i) => {
+    if (!ex || typeof ex !== 'object' || !ex.name || typeof ex.name !== 'string' || !ex.name.trim()) {
+      throw new Error(`Ćwiczenie #${i + 1} nie ma nazwy — spróbuj ponownie`);
+    }
+    const substitutes = Array.isArray(ex.substitutes)
+      ? ex.substitutes
+          .filter(s => s && typeof s.name === 'string' && s.name.trim())
+          .map(s => ({ name: s.name.trim(), note: typeof s.note === 'string' ? s.note.trim() : '' }))
+          .slice(0, 3)
+      : [];
+    return {
+      name: ex.name.trim(),
+      reps: (typeof ex.reps === 'string' && ex.reps.trim()) ? ex.reps.trim() : '8-12',
+      sets: Math.min(Math.max(parseInt(ex.sets) || 3, 1), 10),
+      tip:  typeof ex.tip === 'string' ? ex.tip.trim() : '',
+      substitutes,
+    };
+  });
+}
+
+async function executeGeneratePlan() {
+  if (isLoading) return;
+
+  isLoading = true;
+  showPlanSkeleton();
+  const btn = document.getElementById('genBtn');
+  const btnText = document.getElementById('genBtnText');
+  if (btn) {
+    btn.disabled = true;
+    const btnIcon = btn.querySelector('i');
+    if (btnIcon) btnIcon.outerHTML = '<i class="ti ti-loader-2 spin"></i>';
+  }
+  btnText.textContent = 'Generuję...';
+  document.getElementById('exerciseList').innerHTML = '<div class="loader"><span></span><span></span><span></span></div>';
+
+  const profile = getCurrentProfile();
+  const weightHistory = buildWeightHistory(profile, currentType);
+  const { prompt, goalData } = buildPlanPrompt(currentType, profile, weightHistory);
+
   try {
-    // Przerwij poprzedni request jeśli trwa
     if (generateAbortController) generateAbortController.abort();
     generateAbortController = new AbortController();
 
@@ -2959,31 +2973,8 @@ Odpowiedz TYLKO w formacie JSON:
       signal: generateAbortController.signal
     });
     const parsed = parseClaudeJSON(clean);
+    const validatedExs = validatePlanResponse(parsed.exercises);
 
-    if (!Array.isArray(parsed.exercises) || !parsed.exercises.length) {
-      throw new Error('Nieprawidłowy format odpowiedzi — spróbuj ponownie');
-    }
-    // Walidacja schematu — twarda dla name/count, fallback dla reszty
-    const rawExs = parsed.exercises;
-    if (rawExs.length < 5) throw new Error(`AI zwróciło za mało ćwiczeń (${rawExs.length}) — spróbuj ponownie`);
-    const validatedExs = rawExs.map((ex, i) => {
-      if (!ex || typeof ex !== 'object' || !ex.name || typeof ex.name !== 'string' || !ex.name.trim()) {
-        throw new Error(`Ćwiczenie #${i + 1} nie ma nazwy — spróbuj ponownie`);
-      }
-      const substitutes = Array.isArray(ex.substitutes)
-        ? ex.substitutes
-            .filter(s => s && typeof s.name === 'string' && s.name.trim())
-            .map(s => ({ name: s.name.trim(), note: typeof s.note === 'string' ? s.note.trim() : '' }))
-            .slice(0, 3)
-        : [];
-      return {
-        name: ex.name.trim(),
-        reps: (typeof ex.reps === 'string' && ex.reps.trim()) ? ex.reps.trim() : '8-12',
-        sets: Math.min(Math.max(parseInt(ex.sets) || 3, 1), 10),
-        tip:  typeof ex.tip === 'string' ? ex.tip.trim() : '',
-        substitutes,
-      };
-    });
     currentSource = 'ai';
     currentExercises = validatedExs;
     renderExercises(currentExercises, 'ai');
