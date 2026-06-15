@@ -956,6 +956,11 @@ body { background-image: radial-gradient(circle at 0% 0%, rgba(212,255,58,0.04) 
 .coach-empty { text-align: center; padding: 1.5rem 1rem; color: var(--text-muted); font-size: 13px; }
 .coach-empty i { display: block; font-size: 28px; margin-bottom: 8px; opacity: 0.4; }
 .coach-loading { display: flex; align-items: center; gap: 8px; padding: 1rem 0; color: var(--accent); font-size: 13px; }
+.coach-skeleton { display: flex; flex-direction: column; gap: 8px; }
+.coach-skeleton-status { display: flex; align-items: center; gap: 8px; color: var(--accent); font-size: 13px; margin-bottom: 4px; }
+.coach-skeleton-card { background: var(--bg-elev2); border-left: 2px solid var(--border-strong); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; padding: 12px 14px; }
+.coach-skeleton-card .skeleton-line { margin-bottom: 8px; }
+.coach-skeleton-card .skeleton-line:last-child { margin-bottom: 0; }
 
 .coach-insight { background: var(--bg-elev2); border-left: 2px solid var(--accent); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; padding: 12px 14px; margin-bottom: 8px; font-size: 13px; line-height: 1.6; }
 .coach-insight.priority { border-left-color: var(--warning); background: rgba(251,146,60,0.06); }
@@ -1574,6 +1579,32 @@ body {
     </div>
     </div>
 
+    <!-- WYKRES: WOLUMEN TYGODNIOWY -->
+    <div style="margin-bottom: 2rem;">
+      <div class="panel">
+      <div class="panel-title">
+        <i class="ti ti-stack-2"></i>Wolumen tygodniowy (tonaż)
+      </div>
+      <div class="chart-wrap">
+        <canvas id="volumeChart"></canvas>
+        <div class="chart-empty" id="volumeChartEmpty">Brak danych — zapisz trening z ciężarem</div>
+      </div>
+      </div>
+    </div>
+
+    <!-- WYKRES: TREND SIŁY (1RM) -->
+    <div style="margin-bottom: 2rem;">
+      <div class="panel">
+      <div class="panel-title">
+        <i class="ti ti-trending-up"></i>Trend siły (szacowane 1RM)
+      </div>
+      <div class="chart-wrap">
+        <canvas id="ormChart"></canvas>
+        <div class="chart-empty" id="ormChartEmpty">Brak danych — potrzeba min. 2 sesji tego samego ćwiczenia</div>
+      </div>
+      </div>
+    </div>
+
     <!-- PARTIE MIĘŚNIOWE -->
   <div class="section-divider">
     <div class="section-divider-title">Partie mięśniowe (ostatnie 45 dni)</div>
@@ -1695,6 +1726,23 @@ Notatka: dobra forma"></textarea>
     <div class="form-row">
       <input type="text" class="input" id="newProfileName" placeholder="Nazwa nowego profilu" maxlength="20">
       <button aria-label="Dodaj profil" class="btn btn-primary" onclick="addProfile()"><i class="ti ti-plus"></i></button>
+    </div>
+
+    <div class="api-section">
+      <div class="section-label">Kopia zapasowa (JSON)</div>
+      <div class="help" style="margin-bottom:10px">
+        Pełna kopia wszystkich profili i historii w jednym pliku.<br>
+        Import scala dane — treningi z drugiego urządzenia dodają się bez nadpisywania.
+      </div>
+      <div class="btn-group" style="display:flex; gap:8px;">
+        <button class="btn btn-ghost" style="flex:1; font-size:12px;" onclick="exportJSON()" title="Eksport pełnej kopii">
+          <i class="ti ti-download"></i>Eksport JSON
+        </button>
+        <button class="btn btn-ghost" style="flex:1; font-size:12px;" onclick="document.getElementById('jsonImportInput').click()" title="Import / scalanie kopii">
+          <i class="ti ti-upload"></i>Import JSON
+        </button>
+      </div>
+      <input type="file" id="jsonImportInput" accept="application/json,.json" style="display:none" onchange="handleJsonImport(this)">
     </div>
 
     <div class="api-section">
@@ -1882,6 +1930,8 @@ const GOALS_DATA = {
 let pendingGenerate = false;
 let chart = null;
 let weightChart = null;
+let volumeChart = null;
+let ormChart = null;
 let reminderShown = false;
 let reminderDismissed = false;
 let isAnalyzing = false;
@@ -2272,7 +2322,8 @@ function refreshProfileUI() {
 // ============ MODAL ============
 function openProfileModal() {
   renderProfileList();
-  document.getElementById('proxyUrlInput').value = localStorage.getItem('tp_proxy_url') || '';
+  const proxyInput = document.getElementById('proxyUrlInput');
+  if (proxyInput) proxyInput.value = localStorage.getItem('tp_proxy_url') || '';
   document.getElementById('profileModal').classList.add('active');
 }
 function closeProfileModal() { document.getElementById('profileModal').classList.remove('active'); }
@@ -2371,7 +2422,7 @@ function switchView(viewId, btnEl) {
 
   if (viewId === 'view-dashboard') refreshDashboard();
   if (viewId === 'view-history') refreshHistory();
-  if (viewId === 'view-stats') { refreshStats(); refreshChart(); refreshMuscleStats(); }
+  if (viewId === 'view-stats') { refreshStats(); refreshChart(); refreshVolumeChart(); refreshOrmChart(); refreshMuscleStats(); }
 }
 
 function switchViewMobile(viewId, bnavId) {
@@ -2388,7 +2439,7 @@ function switchViewMobile(viewId, bnavId) {
   if (idx !== undefined && sidebarLinks[idx]) sidebarLinks[idx].classList.add('active');
   if (viewId === 'view-dashboard') refreshDashboard();
   if (viewId === 'view-history') refreshHistory();
-  if (viewId === 'view-stats') { refreshStats(); refreshChart(); refreshMuscleStats(); }
+  if (viewId === 'view-stats') { refreshStats(); refreshChart(); refreshVolumeChart(); refreshOrmChart(); refreshMuscleStats(); }
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -3791,6 +3842,8 @@ function refreshAllStats() {
   refreshHistory();
   refreshStats();
   refreshChart();
+  refreshVolumeChart();
+  refreshOrmChart();
   refreshMuscleStats();
   refreshDashboard();
 }
@@ -4140,6 +4193,158 @@ function refreshChart() {
   });
 }
 
+// Zwraca datę poniedziałku tygodnia (ISO) dla danego timestampa
+function weekStartDate(ts) {
+  const d = new Date(ts);
+  d.setHours(0, 0, 0, 0);
+  const day = (d.getDay() + 6) % 7; // pon=0 ... niedz=6
+  d.setDate(d.getDate() - day);
+  return d;
+}
+
+// Wykres: wolumen tygodniowy (tonaż = suma ciężar × powtórzenia) z ostatnich 10 tygodni
+function refreshVolumeChart() {
+  const p = getCurrentProfile();
+  const empty = document.getElementById('volumeChartEmpty');
+  const canvas = document.getElementById('volumeChart');
+  if (!empty || !canvas) return;
+
+  const WEEKS = 10;
+  const weeks = [];
+  const thisWeek = weekStartDate(Date.now());
+  for (let i = WEEKS - 1; i >= 0; i--) {
+    const d = new Date(thisWeek);
+    d.setDate(d.getDate() - i * 7);
+    weeks.push({ key: d.toISOString().slice(0, 10), label: d.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' }), volume: 0 });
+  }
+  const weekMap = {};
+  weeks.forEach(w => weekMap[w.key] = w);
+
+  let hasData = false;
+  p.history.forEach(e => {
+    const key = weekStartDate(e.timestamp).toISOString().slice(0, 10);
+    if (weekMap[key]) {
+      e.exercises.forEach(x => {
+        if (x.kg > 0 && x.total > 0) { weekMap[key].volume += x.kg * x.total; hasData = true; }
+      });
+    }
+  });
+
+  if (!hasData) {
+    empty.style.display = 'flex';
+    canvas.style.display = 'none';
+    if (volumeChart) { volumeChart.destroy(); volumeChart = null; }
+    return;
+  }
+  empty.style.display = 'none';
+  canvas.style.display = 'block';
+  if (volumeChart) volumeChart.destroy();
+
+  volumeChart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: weeks.map(w => w.label),
+      datasets: [{
+        label: 'Tonaż (kg)',
+        data: weeks.map(w => Math.round(w.volume)),
+        backgroundColor: '#d4ff3a',
+        borderRadius: 5,
+        borderSkipped: false,
+        maxBarThickness: 28
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => `${ctx.raw.toLocaleString('pl-PL')} kg` } }
+      },
+      scales: {
+        x: { grid: { display: false }, border: { display: false }, ticks: { color: CHART_TICK, font: { size: 10 } } },
+        y: { beginAtZero: true, grid: { color: CHART_GRID }, border: { display: false }, ticks: { color: CHART_TICK, font: { size: 10 }, callback: v => v >= 1000 ? (v / 1000) + 't' : v } }
+      }
+    }
+  });
+}
+
+// Wykres: trend siły — szacowane 1RM w czasie dla najczęściej trenowanych ćwiczeń
+function refreshOrmChart() {
+  const p = getCurrentProfile();
+  const empty = document.getElementById('ormChartEmpty');
+  const canvas = document.getElementById('ormChart');
+  if (!empty || !canvas) return;
+
+  const byExercise = {};
+  p.history.slice().sort((a, b) => a.timestamp - b.timestamp).forEach(w => {
+    w.exercises.forEach(ex => {
+      const orm = calculate1RM(ex.kg, ex.reps);
+      if (orm > 0) {
+        const key = ex.substituteOf || ex.name;
+        if (!byExercise[key]) byExercise[key] = new Map();
+        // dla danego dnia bierzemy najwyższe 1RM
+        byExercise[key].set(w.timestamp, Math.max(byExercise[key].get(w.timestamp) || 0, orm));
+      }
+    });
+  });
+
+  // Tylko ćwiczenia z min. 2 sesjami; top 4 po liczbie sesji
+  const eligible = Object.entries(byExercise)
+    .filter(([, m]) => m.size >= 2)
+    .sort((a, b) => b[1].size - a[1].size)
+    .slice(0, 4);
+
+  if (!eligible.length) {
+    empty.style.display = 'flex';
+    canvas.style.display = 'none';
+    if (ormChart) { ormChart.destroy(); ormChart = null; }
+    return;
+  }
+  empty.style.display = 'none';
+  canvas.style.display = 'block';
+  if (ormChart) ormChart.destroy();
+
+  const allTimestamps = [...new Set(eligible.flatMap(([, m]) => [...m.keys()]))].sort((a, b) => a - b);
+  const labels = allTimestamps.map(ts => new Date(ts).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' }));
+
+  const datasets = eligible.map(([name, m], i) => {
+    const color = CHART_COLORS[i % CHART_COLORS.length];
+    return {
+      label: name,
+      data: allTimestamps.map(ts => m.has(ts) ? m.get(ts) : null),
+      borderColor: color,
+      backgroundColor: color + '22',
+      borderWidth: 2.5,
+      tension: 0.35,
+      fill: false,
+      spanGaps: true,
+      pointRadius: 3,
+      pointBackgroundColor: color,
+      pointBorderColor: '#08090d',
+      pointBorderWidth: 2,
+      pointHoverRadius: 6
+    };
+  });
+
+  ormChart = new Chart(canvas, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: true, position: 'bottom' },
+        tooltip: { callbacks: { label: ctx => ctx.raw == null ? null : `${ctx.dataset.label}: ${ctx.raw} kg` } }
+      },
+      scales: {
+        x: { grid: { display: false }, border: { display: false }, ticks: { color: CHART_TICK, font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 10 } },
+        y: { grid: { color: CHART_GRID }, border: { display: false }, ticks: { color: CHART_TICK, font: { size: 10 }, callback: v => v + ' kg' } }
+      }
+    }
+  });
+}
+
 // ============ EXPORT ============
 function exportCSV() {
   const p = getCurrentProfile();
@@ -4211,6 +4416,97 @@ function exportPDF() {
   
   doc.save(`trening_${p.name}_${new Date().toISOString().slice(0,10)}.pdf`);
   showToast('PDF pobrany', 'success');
+}
+
+// ============ BACKUP JSON (pełna kopia + scalanie) ============
+function exportJSON() {
+  const profs = getProfiles();
+  const backup = {
+    app: 'trening-pro',
+    type: 'full-backup',
+    schemaVersion: CURRENT_SCHEMA_VERSION,
+    exportedAt: new Date().toISOString(),
+    currentProfileId: getCurrentProfileId(),
+    profiles: profs
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `trening_backup_${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Kopia JSON pobrana', 'success');
+}
+
+function handleJsonImport(input) {
+  const file = input.files && input.files[0];
+  input.value = ''; // reset — pozwala ponownie wybrać ten sam plik
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    let data;
+    try { data = JSON.parse(reader.result); }
+    catch (e) { showToast('Nieprawidłowy plik JSON', 'error'); return; }
+    importBackupData(data);
+  };
+  reader.onerror = () => showToast('Nie udało się odczytać pliku', 'error');
+  reader.readAsText(file);
+}
+
+// Klucz deduplikacji treningu — po id, a w razie braku po timestamp+typ
+function workoutKey(w) {
+  return w.id || ((w.timestamp || 0) + '_' + (w.type || ''));
+}
+
+// Scala dwie listy historii bez duplikatów, sortuje malejąco, ogranicza do HISTORY_MAX
+function dedupeHistory(existing, incoming) {
+  const merged = existing.slice();
+  const seen = new Set(existing.map(workoutKey));
+  incoming.forEach(w => {
+    if (!w || typeof w !== 'object' || !Array.isArray(w.exercises)) return;
+    const key = workoutKey(w);
+    if (!seen.has(key)) { seen.add(key); merged.push(w); }
+  });
+  merged.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+  return merged.slice(0, CFG.HISTORY_MAX);
+}
+
+function importBackupData(data) {
+  const imported = Array.isArray(data) ? data : (data && data.profiles);
+  const valid = Array.isArray(imported)
+    ? imported.filter(p => p && typeof p === 'object' && Array.isArray(p.history))
+    : [];
+  if (!valid.length) { showToast('Plik nie zawiera prawidłowych profili', 'error'); return; }
+
+  const profs = getProfiles();
+  let newProfiles = 0, newWorkouts = 0;
+
+  valid.forEach(imp => {
+    // Dopasuj profil po id, w razie braku po nazwie
+    const local = profs.find(p => p.id === imp.id) || profs.find(p => p.name === imp.name);
+    if (local) {
+      const before = local.history.length;
+      local.history = dedupeHistory(local.history, imp.history);
+      newWorkouts += local.history.length - before;
+    } else {
+      // Nowy profil — zapewnij unikalny id
+      let id = imp.id || ('p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7));
+      while (profs.some(p => p.id === id)) id = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+      const clean = makeProfile({ id, name: (imp.name || 'Importowany').slice(0, 20), goal: imp.goal, askGoalEveryTime: imp.askGoalEveryTime, workoutMode: imp.workoutMode });
+      clean.history = dedupeHistory([], imp.history);
+      newWorkouts += clean.history.length;
+      newProfiles++;
+      profs.push(clean);
+    }
+  });
+
+  saveProfiles(profs);
+  refreshProfileUI();
+  renderProfileList();
+  refreshAllStats();
+  refreshExerciseSelect();
+  showToast(`Zaimportowano: ${newProfiles} now. profili, ${newWorkouts} now. treningów`, 'success');
 }
 
 // ============ UTIL ============
@@ -4817,7 +5113,16 @@ async function analyzeWithAI() {
   const content = document.getElementById('coachContent');
   btn.disabled = true;
   btn.innerHTML = '<i class="ti ti-loader-2 spin"></i>Analizuję...';
-  content.innerHTML = '<div class="coach-loading"><i class="ti ti-loader-2 spin"></i>Claude analizuje Twoje postępy...</div>';
+  content.innerHTML = `
+    <div class="coach-skeleton">
+      <div class="coach-skeleton-status"><i class="ti ti-loader-2 spin"></i>Claude analizuje Twoje postępy...</div>
+      ${Array.from({ length: 3 }).map(() => `
+        <div class="coach-skeleton-card">
+          <div class="skeleton-line w40"></div>
+          <div class="skeleton-line w80"></div>
+          <div class="skeleton-line w60"></div>
+        </div>`).join('')}
+    </div>`;
 
   // Przygotuj dane: po każdym ćwiczeniu - historia ciężarów
   // Limit do AI_HISTORY_MAX najnowszych treningów - chroni przed dużymi kosztami API

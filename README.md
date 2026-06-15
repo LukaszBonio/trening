@@ -89,11 +89,15 @@ za serwerem proxy (Cloudflare Worker) — **użytkownik nie potrzebuje własnego
 - **Dashboard (Pulpit)** — ekran startowy: dzisiejszy trening, statystyki tygodnia,
   ostatnia aktywność, seria dni z rzędu, pasek 7 dni, szybkie akcje
 - **Statystyki tygodniowe** i **wykres ostatnich 45 dni** (Push/Pull/Legs)
+- **Wolumen tygodniowy (tonaż)** — wykres łącznego obciążenia (ciężar × powtórzenia) per tydzień
+- **Trend siły (1RM)** — wykres szacowanego 1RM w czasie dla najczęściej trenowanych ćwiczeń
 - **Analiza partii mięśniowych** — wykres siły per ćwiczenie, historyczny rekord 1RM
 - **AI Coach** — Claude wskazuje stagnację, postępy i konkretne sugestie
 
 ### 📥 Dane
 - **Import** z tekstu (AI) lub pliku CSV · **Eksport** do CSV i PDF · wykrywanie duplikatów
+- **Kopia zapasowa JSON** — pełny backup wszystkich profili i historii w jednym pliku
+- **Scalanie profili** — import łączy treningi z innego urządzenia bez duplikatów i nadpisywania
 - **Wiele profili** · historia 200 ostatnich treningów · przypomnienia o kopii zapasowej
 
 ### 📱 PWA
@@ -346,8 +350,9 @@ Tak — dzięki Service Workerowi. Offline dostępne jest pełne rejestrowanie t
 <details>
 <summary><b>Jak przenieść dane na inne urządzenie?</b></summary>
 
-Wyeksportuj kopię (CSV/PDF) na starym urządzeniu, a następnie zaimportuj CSV na nowym.
-Dane są przypisane do konkretnej przeglądarki — synchronizacja w chmurze jest na *Roadmap*.
+Najlepiej użyj **kopii zapasowej JSON** (Profile → Eksport JSON) na starym urządzeniu i zaimportuj
+ją na nowym (Import JSON). Import **scala** dane — treningi z obu urządzeń łączą się bez duplikatów
+i bez nadpisywania. Alternatywnie działa eksport/import CSV. Synchronizacja w chmurze jest na *Roadmap*.
 </details>
 
 <details>
@@ -365,14 +370,15 @@ To ograniczenie iOS. Instalacja ręczna: **Safari → Udostępnij → Dodaj do e
 - [x] Generowanie planów AI + Plan offline (67 planów)
 - [x] Tryb kart, timer odpoczynku, dane per seria, draft
 - [x] Historia, statystyki, wykresy, analiza partii, AI Coach
+- [x] Wykresy wolumenu tygodniowego (tonaż) i trendu siły (1RM)
+- [x] Kopia zapasowa JSON + scalanie profili między urządzeniami
+- [x] Skeleton loading przy generowaniu planu i analizie AI
 - [x] PWA (offline, instalacja) + Dashboard + UI premium
 
 ### 🅱️ Beta — *następne kroki*
 - [ ] Opcjonalna synchronizacja w chmurze (backup konta)
-- [ ] Skeleton loading i dopracowane stany ładowania
-- [ ] Więcej typów wykresów (wolumen tygodniowy, trend 1RM)
-- [ ] Rozszerzony import/eksport (JSON) + scalanie profili
 - [ ] Testy automatyczne kluczowej logiki
+- [ ] Rozszerzony eksport (PDF z wykresami) i raporty okresowe
 
 ### 1️⃣ Wersja 1.0
 - [ ] Konta użytkowników i synchronizacja end-to-end
@@ -386,7 +392,8 @@ To ograniczenie iOS. Instalacja ręczna: **Safari → Udostępnij → Dodaj do e
 ## Known Issues
 
 - **Brak synchronizacji w chmurze** — dane są lokalne (per przeglądarka/urządzenie); wyczyszczenie
-  danych przeglądarki = utrata historii. Rób regularne kopie zapasowe.
+  danych przeglądarki = utrata historii. Rób regularne kopie zapasowe (eksport JSON łączy dane
+  między urządzeniami, ale nie synchronizuje automatycznie).
 - **`worker.js` / `DEPLOY_WORKER.md` poza repo** — kod odwołuje się do `DEPLOY_WORKER.md`, którego
   nie ma w repozytorium; instrukcję deployu proxy znajdziesz w sekcji [Installation](#installation).
 - **Monolit `index.html`** (~290 KB) — brak bundlera/modularyzacji; świadomy kompromis „zero-build".
