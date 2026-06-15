@@ -1067,8 +1067,12 @@ body { background-image: radial-gradient(circle at 0% 0%, rgba(212,255,58,0.04) 
 /* ===== MOBILE (<768px) — bottom tab bar, no sidebar/header ===== */
 @media (max-width: 767px) {
   .bottom-nav { display: block; }
-  .menu-btn, .header, .sidebar, .menu-overlay { display: none !important; }
+  /* Sidebar zastąpiony dolną nawigacją; hamburger zbędny. Nagłówek zostaje (logo + profil). */
+  .menu-btn, .sidebar, .menu-overlay { display: none !important; }
   .app { padding: 1rem 1rem calc(88px + env(safe-area-inset-bottom)); }
+  .header { margin-bottom: 1.25rem; padding-bottom: 1rem; }
+  /* Historia: lista płynie ze stroną zamiast wąskiego wewnętrznego scrolla 280px */
+  .history-list { max-height: none; overflow: visible; padding-right: 0; }
 }
 
 /* ===== DESKTOP (>=1024px) — persistent collapsible sidebar ===== */
@@ -1751,6 +1755,12 @@ Notatka: dobra forma"></textarea>
         Aplikacja łączy się z AI przez bezpieczny serwer proxy.<br>
         Klucz API jest ukryty — nie musisz go podawać.
       </div>
+    </div>
+
+    <div class="api-section">
+      <a class="sidebar-link bug-link" href="#" onclick="closeProfileModal();openBugReport();return false;" style="padding:10px 0;">
+        <i class="ti ti-bug"></i> <span>Zgłoś bug</span>
+      </a>
     </div>
   </div>
 </div>
