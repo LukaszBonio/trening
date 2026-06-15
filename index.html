@@ -1054,8 +1054,8 @@ body { background-image: radial-gradient(circle at 0% 0%, rgba(212,255,58,0.04) 
   z-index: 200;
   backdrop-filter: blur(18px) saturate(160%);
   -webkit-backdrop-filter: blur(18px) saturate(160%);
-  /* Wymuś własną warstwę kompozytową — naprawia bug Androida, gdzie fixed + backdrop-filter
-     nie maluje się przy pierwszym renderze przewijalnego widoku (pojawiał się dopiero po scrollu) */
+  /* Własna warstwa kompozytowa + transform zarządzany przez pinBottomNav() (visualViewport),
+     który trzyma pasek przy widocznym dole ekranu mimo paska adresu Androida. */
   transform: translateZ(0);
   -webkit-transform: translateZ(0);
   will-change: transform;
@@ -2458,6 +2458,8 @@ function switchViewMobile(viewId, bnavId) {
   if (viewId === 'view-history') refreshHistory();
   if (viewId === 'view-stats') { refreshStats(); refreshChart(); refreshVolumeChart(); refreshOrmChart(); refreshMuscleStats(); }
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Po scrollu do góry pasek adresu Androida może się rozwinąć — przelicz pozycję nav.
+  if (window.pinBottomNav) { requestAnimationFrame(window.pinBottomNav); setTimeout(window.pinBottomNav, 350); }
 }
 
 function syncBottomNav(viewId) {
@@ -2470,6 +2472,27 @@ function syncBottomNav(viewId) {
   const id = map[viewId];
   if (id) { const el = document.getElementById(id); if (el) el.classList.add('active'); }
 }
+
+// Trzyma dolną nawigację przy widocznym dole ekranu. Na Androidzie pasek adresu
+// przeglądarki potrafi zepchnąć element `fixed; bottom:0` poza widoczny obszar
+// (nav pojawiał się dopiero po scrollu). visualViewport mówi nam, gdzie realnie
+// kończy się widoczny ekran, więc kompensujemy różnicę transformem.
+(function pinBottomNav() {
+  const nav = document.getElementById('bottomNav');
+  const vv = window.visualViewport;
+  if (!nav || !vv) return;
+  function update() {
+    if (getComputedStyle(nav).display === 'none') { nav.style.transform = 'translateZ(0)'; return; }
+    const layoutH = document.documentElement.clientHeight;
+    const gap = layoutH - (vv.offsetTop + vv.height);
+    nav.style.transform = gap > 1 ? `translate3d(0, ${-gap}px, 0)` : 'translateZ(0)';
+  }
+  vv.addEventListener('resize', update);
+  vv.addEventListener('scroll', update);
+  window.addEventListener('orientationchange', () => setTimeout(update, 120));
+  window.pinBottomNav = update;
+  update();
+})();
 
 // Etykiety typów treningów — jedno źródło prawdy zamiast dwóch funkcji
 const TYPE_LABELS = {
