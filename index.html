@@ -1054,6 +1054,13 @@ body { background-image: radial-gradient(circle at 0% 0%, rgba(212,255,58,0.04) 
   z-index: 200;
   backdrop-filter: blur(18px) saturate(160%);
   -webkit-backdrop-filter: blur(18px) saturate(160%);
+  /* Wymuś własną warstwę kompozytową — naprawia bug Androida, gdzie fixed + backdrop-filter
+     nie maluje się przy pierwszym renderze przewijalnego widoku (pojawiał się dopiero po scrollu) */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 .bottom-nav-inner { display: flex; justify-content: space-around; align-items: stretch; max-width: 520px; margin: 0 auto; gap: 4px; }
 .bnav-item { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 7px 6px; border-radius: 14px; border: none; background: transparent; cursor: pointer; transition: background var(--dur-fast) var(--ease); font-family: inherit; flex: 1; -webkit-tap-highlight-color: transparent; }
