@@ -12,7 +12,10 @@
       "Bash(git branch *)",
       "Bash(git add *)",
       "Bash(git commit *)",
-      "Bash(git config *)"
+      "Bash(git config *)",
+      "Bash(git pull *)",
+      "Bash(git push *)",
+      "Bash(Remove-Item -Recurse -Force \"trening-main\")"
     ]
   }
 }
