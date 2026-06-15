@@ -962,6 +962,45 @@ body { background-image: radial-gradient(circle at 0% 0%, rgba(212,255,58,0.04) 
 .coach-skeleton-card .skeleton-line { margin-bottom: 8px; }
 .coach-skeleton-card .skeleton-line:last-child { margin-bottom: 0; }
 
+/* ===== WORKOUT RECAP ===== */
+.recap-head { text-align: center; margin-bottom: 18px; }
+.recap-emoji { font-size: 40px; line-height: 1; margin-bottom: 8px; }
+.recap-title { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 600; color: var(--text); }
+.recap-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.recap-stats { display: flex; gap: 8px; margin-bottom: 14px; }
+.recap-stat { flex: 1; background: var(--bg-elev2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 8px; text-align: center; }
+.recap-stat-val { display: block; font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+.recap-stat-lbl { display: block; font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+.recap-cmp { text-align: center; font-size: 12px; font-weight: 600; padding: 8px; border-radius: var(--radius-sm); margin-bottom: 12px; }
+.recap-cmp.up { color: var(--success); background: rgba(74,222,128,0.08); }
+.recap-cmp.down { color: var(--text-muted); background: var(--bg-elev2); }
+.recap-pr { background: linear-gradient(135deg, rgba(212,255,58,0.12), rgba(212,255,58,0.04)); border: 1px solid var(--accent-soft-2, rgba(212,255,58,0.25)); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 4px; }
+.recap-pr-title { font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600; color: var(--accent); margin-bottom: 8px; }
+.recap-pr-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 4px 0; }
+.recap-pr-row span { color: var(--text); }
+.recap-pr-row strong { color: var(--text); font-family: 'Space Grotesk', sans-serif; }
+.recap-pr-row small { color: var(--text-muted); font-weight: 400; }
+
+/* ===== KAFEL PR NA PULPICIE ===== */
+.dash-pr { display: flex; align-items: center; gap: 14px; background: linear-gradient(135deg, rgba(212,255,58,0.10), rgba(212,255,58,0.03)); border: 1px solid rgba(212,255,58,0.20); border-radius: var(--radius); padding: 14px 18px; margin-bottom: 1rem; }
+.dash-pr-icon { width: 40px; height: 40px; border-radius: 11px; background: rgba(212,255,58,0.15); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.dash-pr-body { flex: 1; min-width: 0; }
+.dash-pr-eyebrow { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--accent); }
+.dash-pr-name { font-size: 14px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-pr-val { font-size: 12px; color: var(--text-muted); }
+.dash-pr-val strong { color: var(--text); }
+
+/* ===== HEATMAPA AKTYWNOŚCI ===== */
+.heatmap-wrap { overflow-x: auto; padding-bottom: 6px; }
+.heatmap { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 1fr); gap: 3px; min-width: max-content; }
+.heatmap-cell { width: 13px; height: 13px; border-radius: 3px; background: var(--bg-elev2); }
+.heatmap-cell.l1 { background: rgba(212,255,58,0.30); }
+.heatmap-cell.l2 { background: rgba(212,255,58,0.55); }
+.heatmap-cell.l3 { background: rgba(212,255,58,0.80); }
+.heatmap-cell.l4 { background: var(--accent); }
+.heatmap-legend { display: flex; align-items: center; gap: 5px; justify-content: flex-end; margin-top: 8px; font-size: 10px; color: var(--text-muted); }
+.heatmap-legend .heatmap-cell { width: 11px; height: 11px; }
+
 .coach-insight { background: var(--bg-elev2); border-left: 2px solid var(--accent); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; padding: 12px 14px; margin-bottom: 8px; font-size: 13px; line-height: 1.6; }
 .coach-insight.priority { border-left-color: var(--warning); background: rgba(251,146,60,0.06); }
 .coach-insight.success { border-left-color: var(--success); background: rgba(74,222,128,0.06); }
@@ -1320,6 +1359,9 @@ body {
     <!-- Statystyki tygodnia -->
     <div class="stats dash-stats" id="dashStats"></div>
 
+    <!-- Ostatni rekord (PR) -->
+    <div id="dashPR"></div>
+
     <!-- Ostatnia aktywność + 7 dni -->
     <div class="dash-grid">
       <div class="panel dash-card" id="dashLast"></div>
@@ -1578,6 +1620,24 @@ body {
   <div id="view-stats" class="view">
     <!-- STATS -->
     <div class="stats" id="statsBar"></div>
+
+    <!-- HEATMAPA AKTYWNOŚCI -->
+    <div style="margin-top: 1rem; margin-bottom: 2rem;">
+      <div class="panel">
+        <div class="panel-title"><i class="ti ti-calendar-heart"></i>Aktywność (ostatni rok)</div>
+        <div class="heatmap-wrap"><div class="heatmap" id="activityHeatmap"></div></div>
+        <div class="heatmap-legend">
+          mniej
+          <span class="heatmap-cell"></span>
+          <span class="heatmap-cell l1"></span>
+          <span class="heatmap-cell l2"></span>
+          <span class="heatmap-cell l3"></span>
+          <span class="heatmap-cell l4"></span>
+          więcej
+        </div>
+      </div>
+    </div>
+
     <div style="margin-top: 1rem; margin-bottom: 2rem;">
       <div class="panel">
       <div class="panel-title">
@@ -1769,6 +1829,14 @@ Notatka: dobra forma"></textarea>
         <i class="ti ti-bug"></i> <span>Zgłoś bug</span>
       </a>
     </div>
+  </div>
+</div>
+
+<!-- WORKOUT RECAP MODAL -->
+<div class="modal-bg" id="recapModal" role="dialog" aria-modal="true">
+  <div class="modal" style="max-width: 420px;">
+    <button class="modal-close" onclick="closeRecap()" aria-label="Zamknij"><i class="ti ti-x"></i></button>
+    <div id="recapBody"></div>
   </div>
 </div>
 
@@ -2347,6 +2415,9 @@ function closeProfileModal() { document.getElementById('profileModal').classList
 document.getElementById('profileModal').addEventListener('click', (e) => {
   if (e.target.id === 'profileModal') closeProfileModal();
 });
+document.getElementById('recapModal').addEventListener('click', (e) => {
+  if (e.target.id === 'recapModal') closeRecap();
+});
 
 function renderProfileList() {
   const profs = getProfiles();
@@ -2439,7 +2510,7 @@ function switchView(viewId, btnEl) {
 
   if (viewId === 'view-dashboard') refreshDashboard();
   if (viewId === 'view-history') refreshHistory();
-  if (viewId === 'view-stats') { refreshStats(); refreshChart(); refreshVolumeChart(); refreshOrmChart(); refreshMuscleStats(); }
+  if (viewId === 'view-stats') { refreshStats(); refreshChart(); refreshVolumeChart(); refreshOrmChart(); refreshHeatmap(); refreshMuscleStats(); }
 }
 
 function switchViewMobile(viewId, bnavId) {
@@ -2456,7 +2527,7 @@ function switchViewMobile(viewId, bnavId) {
   if (idx !== undefined && sidebarLinks[idx]) sidebarLinks[idx].classList.add('active');
   if (viewId === 'view-dashboard') refreshDashboard();
   if (viewId === 'view-history') refreshHistory();
-  if (viewId === 'view-stats') { refreshStats(); refreshChart(); refreshVolumeChart(); refreshOrmChart(); refreshMuscleStats(); }
+  if (viewId === 'view-stats') { refreshStats(); refreshChart(); refreshVolumeChart(); refreshOrmChart(); refreshHeatmap(); refreshMuscleStats(); }
   window.scrollTo({ top: 0, behavior: 'smooth' });
   // Po scrollu do góry pasek adresu Androida może się rozwinąć — przelicz pozycję nav.
   if (window.pinBottomNav) { requestAnimationFrame(window.pinBottomNav); setTimeout(window.pinBottomNav, 350); }
@@ -3752,6 +3823,122 @@ function discardWorkout() {
   showToast('Trening zakończony bez zapisywania', '');
 }
 
+// ============ REKORDY (PR) + WORKOUT RECAP ============
+// Najlepsze szacowane 1RM dla ćwiczenia (grupuje zamienniki) w podanej historii
+function bestOrmFor(history, key) {
+  let best = 0;
+  history.forEach(w => (w.exercises || []).forEach(ex => {
+    if ((ex.substituteOf || ex.name) === key && ex.orm > best) best = ex.orm;
+  }));
+  return best;
+}
+
+// Wykrywa nowe rekordy w świeżo zapisanym treningu względem historii sprzed niego.
+// Rekord = pobicie wcześniejszego najlepszego 1RM (pierwsze wykonanie ćwiczenia nie liczy się jako PR).
+function detectPRs(exs, priorHistory) {
+  const prs = [];
+  const bestInThis = {};
+  exs.forEach(ex => {
+    if (!ex.orm || ex.orm <= 0) return;
+    const key = ex.substituteOf || ex.name;
+    const prevBest = Math.max(bestOrmFor(priorHistory, key), bestInThis[key] || 0);
+    if (prevBest > 0 && ex.orm > prevBest) {
+      prs.push({ name: ex.name, orm: ex.orm, kg: ex.kg, reps: ex.reps, prevBest });
+    }
+    if (ex.orm > (bestInThis[key] || 0)) bestInThis[key] = ex.orm;
+  });
+  return prs;
+}
+
+// Najnowszy rekord w całej historii (do kafla na Pulpicie)
+function getMostRecentPR() {
+  const p = getCurrentProfile();
+  const sorted = (p.history || []).slice().sort((a, b) => a.timestamp - b.timestamp);
+  const best = {};
+  let last = null;
+  sorted.forEach(w => (w.exercises || []).forEach(ex => {
+    if (!ex.orm || ex.orm <= 0) return;
+    const key = ex.substituteOf || ex.name;
+    if (best[key] !== undefined && ex.orm > best[key]) {
+      last = { name: ex.name, orm: ex.orm, kg: ex.kg, reps: ex.reps, prev: best[key], timestamp: w.timestamp };
+    }
+    if (best[key] === undefined || ex.orm > best[key]) best[key] = ex.orm;
+  }));
+  return last;
+}
+
+function tonnageOf(entry) {
+  return (entry.exercises || []).reduce((s, e) => s + (e.kg > 0 ? e.kg * e.total : 0), 0);
+}
+
+// Animacja liczenia od 0 do wartości docelowej (data-count); respektuje reduced-motion
+function animateCountUps(scope) {
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  scope.querySelectorAll('[data-count]').forEach(el => {
+    const target = parseInt(el.getAttribute('data-count'), 10) || 0;
+    if (reduce || target === 0) { el.textContent = target.toLocaleString('pl-PL'); return; }
+    const dur = 750, start = performance.now();
+    (function tick(t) {
+      const prog = Math.min((t - start) / dur, 1);
+      const eased = 1 - Math.pow(1 - prog, 3);
+      el.textContent = Math.round(target * eased).toLocaleString('pl-PL');
+      if (prog < 1) requestAnimationFrame(tick);
+    })(start);
+  });
+}
+
+function firePRConfetti() {
+  if (typeof confetti !== 'function') return;
+  confetti({ particleCount: 90, spread: 75, origin: { y: 0.6 }, colors: ['#d4ff3a', '#4a8eff', '#ff6b6b', '#b566ff', '#4ade80'] });
+  setTimeout(() => {
+    confetti({ particleCount: 45, angle: 60, spread: 55, origin: { x: 0, y: 0.7 }, colors: ['#d4ff3a', '#4a8eff'] });
+    confetti({ particleCount: 45, angle: 120, spread: 55, origin: { x: 1, y: 0.7 }, colors: ['#b566ff', '#ff6b6b'] });
+  }, 200);
+}
+
+function closeRecap() { document.getElementById('recapModal').classList.remove('active'); }
+
+function showWorkoutRecap(entry, prs, prevSameType) {
+  const tonnage = Math.round(tonnageOf(entry));
+  const setsCount = (entry.exercises || []).reduce((s, e) => s + (e.sets || 0), 0);
+
+  let cmpHtml = '';
+  if (prevSameType) {
+    const prevTon = tonnageOf(prevSameType);
+    if (prevTon > 0 && tonnage > 0) {
+      const diff = Math.round((tonnage - prevTon) / prevTon * 100);
+      const up = diff >= 0;
+      cmpHtml = `<div class="recap-cmp ${up ? 'up' : 'down'}">${up ? '▲' : '▼'} ${up ? '+' : ''}${diff}% tonażu vs poprzedni ${escapeHtml(getTypeLabel(entry.type))}</div>`;
+    }
+  }
+
+  const prHtml = prs.length ? `
+    <div class="recap-pr">
+      <div class="recap-pr-title">🏆 ${prs.length === 1 ? 'Nowy rekord!' : prs.length + ' nowe rekordy!'}</div>
+      ${prs.map(pr => `<div class="recap-pr-row"><span>${escapeHtml(pr.name)}</span><strong>${pr.orm} kg <small>1RM</small></strong></div>`).join('')}
+    </div>` : '';
+
+  const body = document.getElementById('recapBody');
+  body.innerHTML = `
+    <div class="recap-head">
+      <div class="recap-emoji">${prs.length ? '🎉' : '✅'}</div>
+      <div class="recap-title">${prs.length ? 'Świetny trening!' : 'Trening zapisany'}</div>
+      <div class="recap-sub">${escapeHtml(getTypeLabel(entry.type))} · ${entry.exercises.length} ćwiczeń${entry.duration ? ' · ' + formatDuration(entry.duration) : ''}</div>
+    </div>
+    <div class="recap-stats">
+      <div class="recap-stat"><span class="recap-stat-val" data-count="${tonnage}">0</span><span class="recap-stat-lbl">kg tonażu</span></div>
+      <div class="recap-stat"><span class="recap-stat-val" data-count="${entry.totalReps}">0</span><span class="recap-stat-lbl">powtórzeń</span></div>
+      <div class="recap-stat"><span class="recap-stat-val" data-count="${setsCount}">0</span><span class="recap-stat-lbl">serii</span></div>
+    </div>
+    ${cmpHtml}
+    ${prHtml}
+    <button class="btn btn-primary" style="width:100%;margin-top:16px;" onclick="closeRecap()">Gotowe</button>
+  `;
+  document.getElementById('recapModal').classList.add('active');
+  animateCountUps(body);
+  if (prs.length) firePRConfetti();
+}
+
 function saveWorkout() {
   if (!currentExercises.length) return;
   // Zapisz wartości z aktualnej widocznej partii (jeśli używamy nawigacji)
@@ -3806,6 +3993,10 @@ function saveWorkout() {
     totalReps,
     duration
   };
+  // Wykryj rekordy względem historii sprzed tego treningu + znajdź poprzedni trening tego typu
+  const priorHistory = (getCurrentProfile().history || []).slice();
+  const prevSameType = priorHistory.find(w => w.type === entry.type) || null;
+  const prs = detectPRs(exs, priorHistory);
   updateCurrentProfile(p => { p.history = [entry, ...p.history].slice(0, CFG.HISTORY_MAX); return p; });
   clearDraft();
   reminderShown = false;
@@ -3813,11 +4004,6 @@ function saveWorkout() {
   document.getElementById('saveReminder').classList.remove('show');
   refreshAllStats();
   refreshExerciseSelect();
-  const kgInfo = exs.some(e => e.kg > 0) ? '' : '';
-  const durStr = entry.duration ? ` · ${formatDuration(entry.duration)}` : '';
-  // Informacja o dacie jeśli różna od dzisiaj
-  const savedDate = entry.date.split(',')[0] || entry.date.split(' ')[0];
-  showToast(`Trening zapisany! ${totalReps} rep${durStr}`, 'success');
   updateEmptyState();
   initWorkoutDateInput(); // Reset daty na dziś po zapisie
   // Wyczyść ekran po zapisaniu
@@ -3837,31 +4023,8 @@ function saveWorkout() {
   if (_dateAfter) _dateAfter.style.display = 'none';
   document.getElementById('genBtnText').textContent = 'Generuj plan';
 
-  // Konfetti - mała nagroda za ukończony trening
-  if (typeof confetti === 'function') {
-    confetti({
-      particleCount: 80,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: ['#d4ff3a', '#4a8eff', '#ff6b6b', '#b566ff', '#4ade80']
-    });
-    setTimeout(() => {
-      confetti({
-        particleCount: 40,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0, y: 0.7 },
-        colors: ['#d4ff3a', '#4a8eff']
-      });
-      confetti({
-        particleCount: 40,
-        angle: 120,
-        spread: 55,
-        origin: { x: 1, y: 0.7 },
-        colors: ['#b566ff', '#ff6b6b']
-      });
-    }, 200);
-  }
+  // Podsumowanie treningu (Workout Recap) — confetti odpala się tylko przy rekordzie
+  showWorkoutRecap(entry, prs, prevSameType);
 }
 
 function deleteEntry(id) {
@@ -3884,6 +4047,7 @@ function refreshAllStats() {
   refreshChart();
   refreshVolumeChart();
   refreshOrmChart();
+  refreshHeatmap();
   refreshMuscleStats();
   refreshDashboard();
 }
@@ -3942,6 +4106,26 @@ function refreshDashboard() {
     <div class="stat-card"><div class="stat-label">Łącznie treningów</div><div class="stat-value">${h.length}</div></div>
     <div class="stat-card"><div class="stat-label">Aktualny cel</div><div class="stat-value" style="font-size:17px;">${goal.icon || ''} ${escapeHtml(goal.name || '—')}</div></div>
   `;
+
+  // Ostatni rekord (PR)
+  const prEl = document.getElementById('dashPR');
+  if (prEl) {
+    const pr = getMostRecentPR();
+    if (pr) {
+      const delta = pr.orm - pr.prev;
+      prEl.innerHTML = `
+        <div class="dash-pr">
+          <div class="dash-pr-icon">🏆</div>
+          <div class="dash-pr-body">
+            <div class="dash-pr-eyebrow">Ostatni rekord</div>
+            <div class="dash-pr-name">${escapeHtml(pr.name)}</div>
+            <div class="dash-pr-val"><strong>${pr.orm} kg</strong> 1RM${delta > 0 ? ` · <span style="color:var(--success)">+${Math.round(delta * 10) / 10} kg</span>` : ''}</div>
+          </div>
+        </div>`;
+    } else {
+      prEl.innerHTML = '';
+    }
+  }
 
   // Dzisiejszy sugerowany trening
   const todayEl = document.getElementById('dashToday');
@@ -4231,6 +4415,34 @@ function refreshChart() {
       }
     }
   });
+}
+
+// Heatmapa aktywności — ostatnie ~53 tygodnie (jak GitHub): kolumny=tygodnie, wiersze=dni (pn→nd)
+function refreshHeatmap() {
+  const el = document.getElementById('activityHeatmap');
+  if (!el) return;
+  const p = getCurrentProfile();
+  const counts = {};
+  (p.history || []).forEach(w => {
+    const d = new Date(w.timestamp); d.setHours(0, 0, 0, 0);
+    const key = d.toISOString().slice(0, 10);
+    counts[key] = (counts[key] || 0) + 1;
+  });
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const start = weekStartDate(today.getTime());
+  start.setDate(start.getDate() - 52 * 7); // 52 tygodnie wstecz, wyrównane do poniedziałku
+  const cells = [];
+  const cur = new Date(start);
+  while (cur <= today) {
+    const key = cur.toISOString().slice(0, 10);
+    const c = counts[key] || 0;
+    let lvl = '';
+    if (c >= 4) lvl = 'l4'; else if (c === 3) lvl = 'l3'; else if (c === 2) lvl = 'l2'; else if (c === 1) lvl = 'l1';
+    const title = `${cur.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric' })}: ${c} ${c === 1 ? 'trening' : 'treningi'}`;
+    cells.push(`<div class="heatmap-cell ${lvl}" title="${title}"></div>`);
+    cur.setDate(cur.getDate() + 1);
+  }
+  el.innerHTML = cells.join('');
 }
 
 // Zwraca datę poniedziałku tygodnia (ISO) dla danego timestampa
