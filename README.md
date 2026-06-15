@@ -25,7 +25,7 @@ prowadzi Cię przez trening seria po serii i analizuje postępy. Działa offline
 - [Demo](#demo)
 - [Features](#features)
 - [Quick Start](#quick-start)
-- [Installation](#installation)
+- [Instalacja na telefonie](#instalacja-na-telefonie-jak-natywna-aplikacja)
 - [Environment Variables](#environment-variables)
 - [Architecture](#architecture)
 - [Technology Stack](#technology-stack)
@@ -104,67 +104,31 @@ za serwerem proxy (Cloudflare Worker) — **użytkownik nie potrzebuje własnego
 
 ## Quick Start
 
-Aplikacja to **statyczny PWA bez kroku build** — wystarczy zaserwować pliki przez dowolny serwer HTTP.
+Najprostszy sposób — **po prostu otwórz aplikację w przeglądarce:**
 
-```bash
-# 1. Sklonuj repozytorium
-git clone https://github.com/LukaszBonio/trening.git
-cd trening
+👉 **[https://lukaszbonio.github.io/trening/](https://lukaszbonio.github.io/trening/)**
 
-# 2. Uruchom lokalny serwer (wybierz jedno)
-python -m http.server 8000          # Python 3
-npx serve .                         # Node.js
-php -S localhost:8000               # PHP
-
-# 3. Otwórz w przeglądarce
-#    http://localhost:8000
-```
-
-> ⚠️ Otwieranie przez `file://` nie zadziała poprawnie — Service Worker i `fetch` wymagają
-> kontekstu HTTP(S). Użyj serwera lokalnego (powyżej) lub hostingu.
-
-**Build produkcyjny?** Nie ma żadnego — wgrywasz pliki tak jak są (patrz [Installation](#installation)).
+Nie trzeba nic instalować, zakładać konta ani płacić. Działa od razu.
 
 ---
 
-## Installation
+## Instalacja na telefonie (jak natywna aplikacja)
 
-### A. Hosting aplikacji (frontend)
+Możesz dodać aplikację do ekranu głównego telefonu — będzie wyglądać i działać jak normalna aplikacja, łącznie z trybem offline.
 
-Dowolny statyczny hosting. Rekomendowany **GitHub Pages**:
+### Android (Chrome)
+1. Otwórz aplikację w Chrome
+2. Kliknij **⋮** (trzy kropki) w prawym górnym rogu
+3. Wybierz **"Dodaj do ekranu głównego"**
+4. Potwierdź — gotowe!
 
-```bash
-# Wypchnij na branch main, włącz Pages: Settings → Pages → Source: main /(root)
-git push origin main
-# Aplikacja: https://<użytkownik>.github.io/trening/
-```
+### iPhone / iPad (Safari)
+1. Otwórz aplikację w **Safari** (inny browser nie zadziała)
+2. Kliknij ikonę **Udostępnij** (kwadrat ze strzałką w górę) na dole ekranu
+3. Wybierz **"Dodaj do ekranu głównego"**
+4. Potwierdź — gotowe!
 
-Alternatywnie: Netlify, Vercel, Cloudflare Pages — przeciągnij katalog lub podłącz repo.
-
-### B. Serwer proxy AI (Cloudflare Worker)
-
-Funkcje AI (generowanie planów, AI Coach, import z tekstu) wymagają proxy, które ukrywa klucz
-API Anthropic. **`worker.js` nie jest częścią tego repozytorium** — deployujesz go osobno:
-
-```bash
-# Wymaga konta Cloudflare i CLI Wrangler
-npm install -g wrangler
-wrangler login
-
-# Ustaw klucz API jako sekret (NIE commituj go!)
-wrangler secret put ANTHROPIC_API_KEY
-
-# Deploy workera
-wrangler deploy
-```
-
-Worker przyjmuje `POST` z body `{ model, max_tokens, messages }`, dołącza nagłówek
-`x-api-key` i przekazuje żądanie do `https://api.anthropic.com/v1/messages`, zwracając odpowiedź.
-Adres workera podajesz w aplikacji (stała `CLAUDE_API_URL` w `index.html` lub override w localStorage —
-patrz [Environment Variables](#environment-variables)).
-
-> Bez własnego workera możesz korzystać z **Planu offline** i pełnego rejestrowania treningów —
-> nie działają jedynie funkcje oparte na AI.
+> Po instalacji aplikacja działa **w pełni offline** — możesz trenować bez internetu. Tylko funkcje AI (generowanie planów, AI Coach) wymagają połączenia.
 
 ---
 
