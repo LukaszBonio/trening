@@ -953,6 +953,16 @@ body { background-image: radial-gradient(circle at 0% 0%, rgba(212,255,58,0.04) 
 .fab-preset-btn:hover, .fab-preset-btn.active {
   background: var(--accent); color: #fff; border-color: var(--accent);
 }
+.fab-adjust { display: flex; gap: 5px; }
+.fab-adjust-btn {
+  padding: 5px 12px; font-size: 11px; font-weight: 700;
+  border-radius: 100px; border: 1px solid var(--border-strong);
+  background: var(--bg-elev2); color: var(--text); cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif; transition: all 0.15s;
+  backdrop-filter: blur(8px); font-variant-numeric: tabular-nums;
+}
+.fab-adjust-btn:hover { background: var(--bg-hover); border-color: var(--text-muted); }
+.fab-adjust-btn:active { transform: scale(0.94); }
 
 /* ===== EXERCISE PROGRESS PANEL ===== */
 .section-divider { margin: 32px 0 20px; padding-top: 24px; border-top: 1px solid var(--border); }
@@ -1616,6 +1626,10 @@ body {
       <button class="fab-preset-btn" data-sec="60" onclick="setRestPreset(60);event.stopPropagation()">60s</button>
       <button class="fab-preset-btn active" data-sec="90" onclick="setRestPreset(90);event.stopPropagation()">90s</button>
       <button class="fab-preset-btn" data-sec="120" onclick="setRestPreset(120);event.stopPropagation()">120s</button>
+    </div>
+    <div class="fab-adjust">
+      <button class="fab-adjust-btn" onclick="adjustRest(-15);event.stopPropagation()" aria-label="Odejmij 15 sekund">−15s</button>
+      <button class="fab-adjust-btn" onclick="adjustRest(15);event.stopPropagation()" aria-label="Dodaj 15 sekund">+15s</button>
     </div>
   </div>
 
@@ -2337,6 +2351,7 @@ let restDuration = 90;
 let restRemaining = 90;
 let restInterval = null;
 let restPaused = true;
+let restEndTime = 0; // absolutny czas końca (ms) — pozwala korygować odliczanie przez ±15s
 let restPrefs = (function() {
   try {
     const raw = localStorage.getItem(STORAGE_TIMER_PREFS);
@@ -3694,6 +3709,10 @@ function renderCurrentMuscleGroup() {
               inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*"
               oninput="updateTotal(${i})" placeholder="0" aria-label="Kilogramy">
             <span class="kg-unit">kg</span>
+            <div class="reps-stepper">
+              <button class="reps-step" onclick="stepKg(${i}, 1)" aria-label="Dodaj 2,5 kg"><i class="ti ti-chevron-up" style="font-size:11px"></i></button>
+              <button class="reps-step" onclick="stepKg(${i}, -1)" aria-label="Odejmij 2,5 kg"><i class="ti ti-chevron-down" style="font-size:11px"></i></button>
+            </div>
           </div>
           <div class="last-weight-hint" id="lastHint_${i}" style="color:${hintColor}">${suggestion.text}</div>
         </div>
@@ -6525,9 +6544,9 @@ function startRestTimer() {
   getAudioCtx();
   if (restInterval) clearInterval(restInterval);
   // Używamy absolutnego czasu końca — odporny na throttling przeglądarki w tle
-  const endTime = Date.now() + restRemaining * 1000;
+  restEndTime = Date.now() + restRemaining * 1000;
   restInterval = setInterval(() => {
-    restRemaining = Math.max(0, Math.round((endTime - Date.now()) / 1000));
+    restRemaining = Math.max(0, Math.round((restEndTime - Date.now()) / 1000));
     updateRestDisplay();
     if (restRemaining <= 5 && restRemaining > 0) {
       const ring = document.getElementById('fabRing');
@@ -6541,6 +6560,20 @@ function pauseRestTimer() {
   restPaused = true;
   if (restInterval) { clearInterval(restInterval); restInterval = null; }
   setRestStartIcon('play');
+}
+
+// Koryguje odpoczynek o ±delta sekund — działa zarówno gdy timer odlicza, jak i gdy jest wstrzymany
+function adjustRest(delta) {
+  if (!restPaused) {
+    restEndTime += delta * 1000;
+    restRemaining = Math.max(0, Math.round((restEndTime - Date.now()) / 1000));
+  } else {
+    restRemaining = Math.max(0, restRemaining + delta);
+  }
+  if (restRemaining > restDuration) restDuration = restRemaining; // pierścień nie przekroczy 100%
+  const ring = document.getElementById('fabRing');
+  if (ring && restRemaining > 5) ring.classList.remove('finishing');
+  updateRestDisplay();
 }
 
 function stopRestTimer() {
