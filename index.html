@@ -1440,9 +1440,9 @@ body {
     <nav class="sidebar-nav">
       <button class="sidebar-link active" onclick="switchView('view-dashboard', this)"><i class="ti ti-home"></i> <span>Pulpit</span></button>
       <button class="sidebar-link" onclick="switchView('view-plan', this)"><i class="ti ti-barbell"></i> <span>Plan na dziś</span></button>
-      <button class="sidebar-link" onclick="switchView('view-history', this)"><i class="ti ti-history"></i> <span>Historia</span></button>
-      <button class="sidebar-link" onclick="switchView('view-stats', this)"><i class="ti ti-chart-pie"></i> <span>Statystyki i mięśnie</span></button>
+      <button class="sidebar-link" onclick="switchView('view-stats', this)"><i class="ti ti-chart-pie"></i> <span>Postępy i historia</span></button>
       <button class="sidebar-link" onclick="switchView('view-coach', this)"><i class="ti ti-brain"></i> <span>AI Coach</span></button>
+      <button class="sidebar-link" onclick="switchView('view-profile', this)"><i class="ti ti-user"></i> <span>Ty</span></button>
       <div style="margin-top:auto;padding-top:16px;border-top:1px solid var(--border)">
         <a class="sidebar-link bug-link" href="#" onclick="openBugReport();return false;"><i class="ti ti-bug"></i> <span>Zgłoś bug</span></a>
       </div>
@@ -1481,8 +1481,8 @@ body {
         <div class="dash-card-title"><i class="ti ti-bolt"></i> Szybkie akcje</div>
         <div class="dash-actions">
           <button class="btn btn-primary" onclick="goToTodayWorkout()"><i class="ti ti-player-play"></i> Rozpocznij trening</button>
-          <button class="btn" onclick="switchViewMobile('view-history','bnav-history')"><i class="ti ti-history"></i> Historia</button>
-          <button class="btn" onclick="switchViewMobile('view-stats','bnav-stats')"><i class="ti ti-chart-pie"></i> Statystyki</button>
+          <button class="btn" onclick="switchViewMobile('view-stats','bnav-stats')"><i class="ti ti-chart-pie"></i> Postępy</button>
+          <button class="btn" onclick="switchViewMobile('view-profile','bnav-profile')"><i class="ti ti-user"></i> Profil</button>
           <button class="btn" onclick="switchViewMobile('view-coach','bnav-coach')"><i class="ti ti-brain"></i> AI Coach</button>
         </div>
       </div>
@@ -1702,30 +1702,6 @@ body {
   </div>
 
   <!-- VIEW: HISTORY -->
-  <div id="view-history" class="view">
-    <div class="panel">
-      <div class="panel-title" style="display:flex; justify-content:space-between;">
-        <span><i class="ti ti-history"></i>Historia</span>
-        <div class="btn-group">
-          <button class="btn btn-ghost" style="padding: 6px 12px; font-size: 12px;" onclick="openImportModal()" title="Importuj trening">
-            <i class="ti ti-upload"></i>Import
-          </button>
-          <button class="btn btn-ghost" style="padding: 6px 12px; font-size: 12px;" onclick="exportCSV()" title="Eksport CSV">
-            <i class="ti ti-file-spreadsheet"></i>CSV
-          </button>
-          <button class="btn btn-ghost" style="padding: 6px 12px; font-size: 12px;" onclick="exportPDF()" title="Eksport PDF">
-            <i class="ti ti-file-type-pdf"></i>PDF
-          </button>
-        </div>
-      </div>
-      <div class="history-list" id="historyList">
-        <div class="empty" style="padding: 1rem;">
-          <p style="font-size: 13px;">Brak treningów w historii</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- VIEW: STATS -->
   <div id="view-stats" class="view">
     <!-- STATS -->
@@ -1791,6 +1767,32 @@ body {
     <div class="section-divider-title">Partie mięśniowe (ostatnie 45 dni)</div>
   </div>
   <div id="muscleStatsContent" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 2rem;"></div>
+
+    <!-- HISTORIA (przeniesiona z osobnej zakładki) -->
+    <div class="section-divider">
+      <div class="section-divider-title">Historia treningów</div>
+    </div>
+    <div class="panel">
+      <div class="panel-title" style="display:flex; justify-content:space-between;">
+        <span><i class="ti ti-history"></i>Historia</span>
+        <div class="btn-group">
+          <button class="btn btn-ghost" style="padding: 6px 12px; font-size: 12px;" onclick="openImportModal()" title="Importuj trening">
+            <i class="ti ti-upload"></i>Import
+          </button>
+          <button class="btn btn-ghost" style="padding: 6px 12px; font-size: 12px;" onclick="exportCSV()" title="Eksport CSV">
+            <i class="ti ti-file-spreadsheet"></i>CSV
+          </button>
+          <button class="btn btn-ghost" style="padding: 6px 12px; font-size: 12px;" onclick="exportPDF()" title="Eksport PDF">
+            <i class="ti ti-file-type-pdf"></i>PDF
+          </button>
+        </div>
+      </div>
+      <div class="history-list" id="historyList">
+        <div class="empty" style="padding: 1rem;">
+          <p style="font-size: 13px;">Brak treningów w historii</p>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- VIEW: ANALYSIS -->
@@ -1825,6 +1827,56 @@ body {
       </div>
     </div>
   </div>
+  </div>
+
+  <!-- VIEW: PROFILE / TY -->
+  <div id="view-profile" class="view">
+    <div class="section-divider" style="margin-top:0;border-top:none;padding-top:0;">
+      <div class="section-divider-title"><i class="ti ti-user" style="color:var(--accent);"></i> Twój profil</div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title"><i class="ti ti-users"></i>Profile</div>
+      <div class="profile-list" id="profileList"></div>
+      <div class="form-row" style="margin-top:10px;">
+        <input type="text" class="input" id="newProfileName" placeholder="Nazwa nowego profilu" maxlength="20">
+        <button aria-label="Dodaj profil" class="btn btn-primary" onclick="addProfile()"><i class="ti ti-plus"></i></button>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:1rem;">
+      <div class="panel-title"><i class="ti ti-trophy"></i>Osiągnięcia <span id="achCount" style="color:var(--text-dim);font-weight:400;margin-left:4px;"></span></div>
+      <div class="ach-grid" id="achievementsGrid"></div>
+    </div>
+
+    <div class="panel" style="margin-top:1rem;">
+      <div class="panel-title"><i class="ti ti-database-export"></i>Kopia zapasowa (JSON)</div>
+      <div class="help" style="margin-bottom:10px">
+        Pełna kopia wszystkich profili i historii w jednym pliku.<br>
+        Import scala dane — treningi z drugiego urządzenia dodają się bez nadpisywania.
+      </div>
+      <div class="btn-group" style="display:flex; gap:8px;">
+        <button class="btn btn-ghost" style="flex:1; font-size:12px;" onclick="exportJSON()" title="Eksport pełnej kopii">
+          <i class="ti ti-download"></i>Eksport JSON
+        </button>
+        <button class="btn btn-ghost" style="flex:1; font-size:12px;" onclick="document.getElementById('jsonImportInput').click()" title="Import / scalanie kopii">
+          <i class="ti ti-upload"></i>Import JSON
+        </button>
+      </div>
+      <input type="file" id="jsonImportInput" accept="application/json,.json" style="display:none" onchange="handleJsonImport(this)">
+    </div>
+
+    <div class="panel" style="margin-top:1rem;">
+      <div class="panel-title"><i class="ti ti-sparkles"></i>Połączenie z AI</div>
+      <div class="help">
+        Aplikacja łączy się z AI przez bezpieczny serwer proxy.<br>
+        Klucz API jest ukryty — nie musisz go podawać.
+      </div>
+    </div>
+
+    <div style="margin-top:1rem;">
+      <a class="bug-report-btn" href="#" onclick="openBugReport();return false;"><i class="ti ti-bug"></i> Zgłoś bug</a>
+    </div>
   </div>
 </div>
 
@@ -1892,57 +1944,6 @@ Notatka: dobra forma"></textarea>
       <button class="btn btn-primary" id="importParseBtn" onclick="parseImport()" style="flex: 2;">
         <i class="ti ti-sparkles"></i>Analizuj z AI
       </button>
-    </div>
-  </div>
-</div>
-
-<!-- PROFILE MODAL -->
-<div class="modal-bg" id="profileModal" role="dialog" aria-modal="true">
-  <div class="modal">
-    <button class="modal-close" onclick="closeProfileModal()" aria-label="Zamknij"><i class="ti ti-x"></i></button>
-    <div class="modal-title">Profile użytkowników</div>
-    
-    <div class="profile-list" id="profileList"></div>
-    
-    <div class="form-row">
-      <input type="text" class="input" id="newProfileName" placeholder="Nazwa nowego profilu" maxlength="20">
-      <button aria-label="Dodaj profil" class="btn btn-primary" onclick="addProfile()"><i class="ti ti-plus"></i></button>
-    </div>
-
-    <div class="api-section">
-      <div class="section-label">Osiągnięcia <span id="achCount" style="color:var(--text-dim);font-weight:400;"></span></div>
-      <div class="ach-grid" id="achievementsGrid"></div>
-    </div>
-
-    <div class="api-section">
-      <div class="section-label">Kopia zapasowa (JSON)</div>
-      <div class="help" style="margin-bottom:10px">
-        Pełna kopia wszystkich profili i historii w jednym pliku.<br>
-        Import scala dane — treningi z drugiego urządzenia dodają się bez nadpisywania.
-      </div>
-      <div class="btn-group" style="display:flex; gap:8px;">
-        <button class="btn btn-ghost" style="flex:1; font-size:12px;" onclick="exportJSON()" title="Eksport pełnej kopii">
-          <i class="ti ti-download"></i>Eksport JSON
-        </button>
-        <button class="btn btn-ghost" style="flex:1; font-size:12px;" onclick="document.getElementById('jsonImportInput').click()" title="Import / scalanie kopii">
-          <i class="ti ti-upload"></i>Import JSON
-        </button>
-      </div>
-      <input type="file" id="jsonImportInput" accept="application/json,.json" style="display:none" onchange="handleJsonImport(this)">
-    </div>
-
-    <div class="api-section">
-      <div class="section-label">Połączenie z AI</div>
-      <div class="help" style="margin-bottom:8px">
-        Aplikacja łączy się z AI przez bezpieczny serwer proxy.<br>
-        Klucz API jest ukryty — nie musisz go podawać.
-      </div>
-    </div>
-
-    <div class="api-section">
-      <a class="sidebar-link bug-link" href="#" onclick="closeProfileModal();openBugReport();return false;" style="padding:10px 0;">
-        <i class="ti ti-bug"></i> <span>Zgłoś bug</span>
-      </a>
     </div>
   </div>
 </div>
@@ -2023,18 +2024,17 @@ Notatka: dobra forma"></textarea>
       <i class="ti ti-barbell"></i>
       <span class="bnav-label">Plan</span>
     </button>
-    <button class="bnav-item" id="bnav-history" onclick="switchViewMobile('view-history', 'bnav-history')" aria-label="Historia" aria-label="Historia">
-      <i class="ti ti-history"></i>
-      <span class="bnav-label">Historia</span>
-    </button>
-    <button class="bnav-item" id="bnav-stats" onclick="switchViewMobile('view-stats', 'bnav-stats')" aria-label="Statystyki" aria-label="Statystyki">
+    <button class="bnav-item" id="bnav-stats" onclick="switchViewMobile('view-stats', 'bnav-stats')" aria-label="Postępy">
       <i class="ti ti-chart-pie"></i>
-      <span class="bnav-label">Stats</span>
+      <span class="bnav-label">Postępy</span>
     </button>
-
-    <button class="bnav-item" id="bnav-coach" onclick="switchViewMobile('view-coach', 'bnav-coach')" aria-label="AI Coach" aria-label="AI Coach">
+    <button class="bnav-item" id="bnav-coach" onclick="switchViewMobile('view-coach', 'bnav-coach')" aria-label="AI Coach">
       <i class="ti ti-brain"></i>
       <span class="bnav-label">Coach</span>
+    </button>
+    <button class="bnav-item" id="bnav-profile" onclick="switchViewMobile('view-profile', 'bnav-profile')" aria-label="Twój profil">
+      <i class="ti ti-user"></i>
+      <span class="bnav-label">Ty</span>
     </button>
   </div>
 </nav>
@@ -2521,17 +2521,11 @@ function refreshProfileUI() {
 }
 
 // ============ MODAL ============
+// Profil to teraz pełnoprawny widok (zakładka „Ty"); selektor w nagłówku tam nawiguje
 function openProfileModal() {
-  renderProfileList();
-  renderAchievements();
-  const proxyInput = document.getElementById('proxyUrlInput');
-  if (proxyInput) proxyInput.value = localStorage.getItem('tp_proxy_url') || '';
-  document.getElementById('profileModal').classList.add('active');
+  switchViewMobile('view-profile', 'bnav-profile');
 }
-function closeProfileModal() { document.getElementById('profileModal').classList.remove('active'); }
-document.getElementById('profileModal').addEventListener('click', (e) => {
-  if (e.target.id === 'profileModal') closeProfileModal();
-});
+function closeProfileModal() { /* zachowane dla zgodności — profil jest teraz widokiem */ }
 document.getElementById('recapModal').addEventListener('click', (e) => {
   if (e.target.id === 'recapModal') closeRecap();
 });
@@ -2626,8 +2620,8 @@ function switchView(viewId, btnEl) {
   toggleMenu();
 
   if (viewId === 'view-dashboard') refreshDashboard();
-  if (viewId === 'view-history') refreshHistory();
-  if (viewId === 'view-stats') { refreshStats(); refreshChart(); refreshVolumeChart(); refreshOrmChart(); refreshHeatmap(); refreshMuscleStats(); }
+  if (viewId === 'view-stats') { refreshStats(); refreshChart(); refreshVolumeChart(); refreshOrmChart(); refreshHeatmap(); refreshMuscleStats(); refreshHistory(); }
+  if (viewId === 'view-profile') { renderProfileList(); renderAchievements(); }
 }
 
 function switchViewMobile(viewId, bnavId) {
@@ -2636,15 +2630,15 @@ function switchViewMobile(viewId, bnavId) {
   syncBottomNav(viewId);
   // sync sidebar too
   const viewToSidebar = {
-    'view-dashboard': 0, 'view-plan': 1, 'view-history': 2, 'view-stats': 3, 'view-coach': 4
+    'view-dashboard': 0, 'view-plan': 1, 'view-stats': 2, 'view-coach': 3, 'view-profile': 4
   };
   const sidebarLinks = document.querySelectorAll('.sidebar-link');
   sidebarLinks.forEach(el => el.classList.remove('active'));
   const idx = viewToSidebar[viewId];
   if (idx !== undefined && sidebarLinks[idx]) sidebarLinks[idx].classList.add('active');
   if (viewId === 'view-dashboard') refreshDashboard();
-  if (viewId === 'view-history') refreshHistory();
-  if (viewId === 'view-stats') { refreshStats(); refreshChart(); refreshVolumeChart(); refreshOrmChart(); refreshHeatmap(); refreshMuscleStats(); }
+  if (viewId === 'view-stats') { refreshStats(); refreshChart(); refreshVolumeChart(); refreshOrmChart(); refreshHeatmap(); refreshMuscleStats(); refreshHistory(); }
+  if (viewId === 'view-profile') { renderProfileList(); renderAchievements(); }
   window.scrollTo({ top: 0, behavior: 'smooth' });
   // Po scrollu do góry pasek adresu Androida może się rozwinąć — przelicz pozycję nav.
   if (window.pinBottomNav) { requestAnimationFrame(window.pinBottomNav); setTimeout(window.pinBottomNav, 350); }
@@ -2653,7 +2647,7 @@ function switchViewMobile(viewId, bnavId) {
 function syncBottomNav(viewId) {
   const map = {
     'view-dashboard': 'bnav-dashboard',
-    'view-plan': 'bnav-plan', 'view-history': 'bnav-history',
+    'view-plan': 'bnav-plan', 'view-profile': 'bnav-profile',
     'view-stats': 'bnav-stats', 'view-coach': 'bnav-coach'
   };
   document.querySelectorAll('.bnav-item').forEach(el => el.classList.remove('active'));
