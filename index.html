@@ -1014,6 +1014,20 @@ body { background-image: radial-gradient(circle at 0% 0%, rgba(212,255,58,0.04) 
 .coach-skeleton-card .skeleton-line { margin-bottom: 8px; }
 .coach-skeleton-card .skeleton-line:last-child { margin-bottom: 0; }
 
+/* ===== CZAT Z COACHEM ===== */
+.coach-chat { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+.coach-msg { max-width: 85%; padding: 10px 14px; border-radius: 16px; font-size: 13px; line-height: 1.55; white-space: pre-wrap; }
+.coach-msg.user { align-self: flex-end; background: var(--accent); color: #0a0a0b; border-bottom-right-radius: 4px; font-weight: 500; }
+.coach-msg.assistant { align-self: flex-start; background: var(--bg-elev2); border: 1px solid var(--border); color: var(--text); border-bottom-left-radius: 4px; }
+.coach-msg.thinking { color: var(--text-muted); display: flex; align-items: center; gap: 8px; }
+.coach-chat-suggestions { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.coach-chip { padding: 7px 12px; border-radius: 100px; border: 1px solid var(--border-strong); background: var(--bg-elev2); color: var(--text-muted); font-family: inherit; font-size: 12px; cursor: pointer; transition: all 0.15s; }
+.coach-chip:hover { border-color: var(--accent); color: var(--text); }
+.coach-chat-input-row { display: flex; gap: 8px; }
+.coach-chat-input { flex: 1; padding: 11px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-strong); background: var(--bg-elev2); color: var(--text); font-family: inherit; font-size: 13px; outline: none; transition: border-color 0.15s; }
+.coach-chat-input:focus { border-color: var(--accent); }
+.coach-chat-input-row .btn { flex-shrink: 0; padding: 11px 16px; }
+
 /* ===== WORKOUT RECAP ===== */
 .recap-head { text-align: center; margin-bottom: 18px; }
 .recap-emoji { font-size: 40px; line-height: 1; margin-bottom: 8px; }
@@ -1046,6 +1060,32 @@ body { background-image: radial-gradient(circle at 0% 0%, rgba(212,255,58,0.04) 
 .dash-insight { display: flex; align-items: flex-start; gap: 10px; background: var(--accent-soft); border: 1px solid var(--accent-soft-2); border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 12px; }
 .dash-insight-ic { font-size: 18px; line-height: 1.3; flex-shrink: 0; }
 .dash-insight-text { font-size: 12.5px; color: var(--text); line-height: 1.5; }
+
+/* ===== STRENGTH SCORE ===== */
+.strength-card { background: linear-gradient(135deg, rgba(212,255,58,0.12), rgba(74,142,255,0.06)); border: 1px solid rgba(212,255,58,0.22); border-radius: var(--radius); padding: 18px 20px; }
+.strength-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.strength-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--accent); }
+.strength-delta { font-size: 12px; font-weight: 600; }
+.strength-delta.up { color: var(--success); }
+.strength-delta.flat { color: var(--text-muted); }
+.strength-value { font-family: 'Space Grotesk', sans-serif; font-size: 38px; font-weight: 700; color: var(--text); line-height: 1; font-variant-numeric: tabular-nums; }
+.strength-value span { font-size: 16px; color: var(--text-muted); font-weight: 500; margin-left: 4px; }
+.strength-breakdown { font-size: 11px; color: var(--text-muted); margin-top: 8px; line-height: 1.5; }
+.strength-empty { font-size: 12px; color: var(--text-muted); }
+
+/* ===== MASA CIAŁA / SAMOPOCZUCIE ===== */
+.body-summary { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.body-weight { font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; color: var(--text); }
+.body-delta { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+.body-delta.down { color: var(--success); }
+.body-delta.up { color: var(--warning); }
+.body-log-row { display: flex; gap: 8px; align-items: center; }
+.body-mood { display: flex; gap: 4px; }
+.body-mood-btn { width: 38px; height: 40px; border-radius: var(--radius-sm); border: 1px solid var(--border-strong); background: var(--bg-elev2); font-size: 18px; cursor: pointer; transition: all 0.15s; }
+.body-mood-btn:hover { border-color: var(--accent); }
+.body-mood-btn.active { background: var(--accent-soft); border-color: var(--accent); }
+.body-log-item { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); padding: 6px 0; border-bottom: 1px solid var(--border); }
+.body-log-item:last-child { border-bottom: none; }
 
 /* ===== HEATMAPA AKTYWNOŚCI ===== */
 .heatmap-wrap { overflow-x: auto; padding-bottom: 6px; }
@@ -1704,6 +1744,9 @@ body {
   <!-- VIEW: HISTORY -->
   <!-- VIEW: STATS -->
   <div id="view-stats" class="view">
+    <!-- STRENGTH SCORE -->
+    <div id="strengthScore" style="margin-bottom: 1rem;"></div>
+
     <!-- STATS -->
     <div class="stats" id="statsBar"></div>
 
@@ -1827,6 +1870,21 @@ body {
       </div>
     </div>
   </div>
+
+  <!-- CZAT Z COACHEM -->
+  <div class="section-divider">
+    <div class="section-divider-title"><i class="ti ti-messages" style="color: var(--accent);"></i> Zapytaj coacha</div>
+  </div>
+  <div class="coach-chat" id="coachChat"></div>
+  <div class="coach-chat-suggestions" id="coachChatSuggestions">
+    <button class="coach-chip" onclick="coachAsk('Jak rozłożyć treningi na tydzień przy moim celu?')">Jak rozłożyć tydzień?</button>
+    <button class="coach-chip" onclick="coachAsk('Czy widzisz u mnie stagnację? Co zmienić?')">Mam stagnację?</button>
+    <button class="coach-chip" onclick="coachAsk('Jak bezpiecznie zwiększać ciężary?')">Jak zwiększać ciężar?</button>
+  </div>
+  <div class="coach-chat-input-row">
+    <input type="text" class="coach-chat-input" id="coachChatInput" placeholder="Zapytaj o trening, technikę, progresję…" maxlength="300" onkeydown="if(event.key==='Enter')coachAsk()">
+    <button class="btn btn-primary" id="coachChatSend" onclick="coachAsk()" aria-label="Wyślij"><i class="ti ti-send"></i></button>
+  </div>
   </div>
 
   <!-- VIEW: PROFILE / TY -->
@@ -1847,6 +1905,25 @@ body {
     <div class="panel" style="margin-top:1rem;">
       <div class="panel-title"><i class="ti ti-trophy"></i>Osiągnięcia <span id="achCount" style="color:var(--text-dim);font-weight:400;margin-left:4px;"></span></div>
       <div class="ach-grid" id="achievementsGrid"></div>
+    </div>
+
+    <div class="panel" style="margin-top:1rem;">
+      <div class="panel-title"><i class="ti ti-scale"></i>Masa ciała i samopoczucie</div>
+      <div class="help" style="margin-bottom:10px">
+        Synchronizacja z opaskami/zegarkami (Apple Health, Google Fit) nie jest możliwa w aplikacji webowej — wpisuj dane ręcznie.
+      </div>
+      <div id="bodyLogSummary"></div>
+      <div class="body-log-row">
+        <input type="number" id="bodyWeightInput" class="input" inputmode="decimal" step="0.1" min="0" max="500" placeholder="Masa (kg)" style="flex:1;">
+        <div class="body-mood" id="bodyMood">
+          <button class="body-mood-btn" data-mood="1" onclick="selectMood(1)" title="Słabo" aria-label="Słabo">😣</button>
+          <button class="body-mood-btn" data-mood="2" onclick="selectMood(2)" title="Średnio" aria-label="Średnio">😐</button>
+          <button class="body-mood-btn active" data-mood="3" onclick="selectMood(3)" title="Dobrze" aria-label="Dobrze">🙂</button>
+          <button class="body-mood-btn" data-mood="4" onclick="selectMood(4)" title="Mocno" aria-label="Mocno">💪</button>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:10px;" onclick="logBodyMeasure()"><i class="ti ti-plus"></i> Zapisz pomiar</button>
+      <div id="bodyLogList" style="margin-top:12px;"></div>
     </div>
 
     <div class="panel" style="margin-top:1rem;">
@@ -2620,8 +2697,8 @@ function switchView(viewId, btnEl) {
   toggleMenu();
 
   if (viewId === 'view-dashboard') refreshDashboard();
-  if (viewId === 'view-stats') { refreshStats(); refreshChart(); refreshVolumeChart(); refreshOrmChart(); refreshHeatmap(); refreshMuscleStats(); refreshHistory(); }
-  if (viewId === 'view-profile') { renderProfileList(); renderAchievements(); }
+  if (viewId === 'view-stats') { refreshStats(); refreshChart(); refreshVolumeChart(); refreshOrmChart(); refreshHeatmap(); refreshMuscleStats(); refreshHistory(); refreshStrengthScore(); }
+  if (viewId === 'view-profile') { renderProfileList(); renderAchievements(); renderBodyLog(); }
 }
 
 function switchViewMobile(viewId, bnavId) {
@@ -2637,8 +2714,8 @@ function switchViewMobile(viewId, bnavId) {
   const idx = viewToSidebar[viewId];
   if (idx !== undefined && sidebarLinks[idx]) sidebarLinks[idx].classList.add('active');
   if (viewId === 'view-dashboard') refreshDashboard();
-  if (viewId === 'view-stats') { refreshStats(); refreshChart(); refreshVolumeChart(); refreshOrmChart(); refreshHeatmap(); refreshMuscleStats(); refreshHistory(); }
-  if (viewId === 'view-profile') { renderProfileList(); renderAchievements(); }
+  if (viewId === 'view-stats') { refreshStats(); refreshChart(); refreshVolumeChart(); refreshOrmChart(); refreshHeatmap(); refreshMuscleStats(); refreshHistory(); refreshStrengthScore(); }
+  if (viewId === 'view-profile') { renderProfileList(); renderAchievements(); renderBodyLog(); }
   window.scrollTo({ top: 0, behavior: 'smooth' });
   // Po scrollu do góry pasek adresu Androida może się rozwinąć — przelicz pozycję nav.
   if (window.pinBottomNav) { requestAnimationFrame(window.pinBottomNav); setTimeout(window.pinBottomNav, 350); }
@@ -4038,6 +4115,64 @@ function getProactiveInsight() {
   return null;
 }
 
+// ============ STRENGTH SCORE ============
+// Zagregowany wskaźnik siły = suma najlepszych szacowanych 1RM kluczowych bojów.
+const BIG_LIFTS = [
+  { key: 'bench',    label: 'Wyciskanie', re: /wyciskanie sztangi na ławce poziom|bench press/i },
+  { key: 'squat',    label: 'Przysiad',   re: /przysiad|back squat|\bsquat\b/i },
+  { key: 'deadlift', label: 'Martwy ciąg', re: /martwy ci[ąa]g|deadlift/i },
+  { key: 'ohp',      label: 'OHP',        re: /nad głow|overhead press|\bohp\b/i },
+];
+function bestOrmMatching(history, re, beforeTs) {
+  let best = 0;
+  history.forEach(w => {
+    if (beforeTs && w.timestamp > beforeTs) return;
+    (w.exercises || []).forEach(ex => { if (ex.orm > best && re.test(ex.name)) best = ex.orm; });
+  });
+  return best;
+}
+function computeStrengthScore() {
+  const h = getCurrentProfile().history || [];
+  const parts = BIG_LIFTS.map(l => ({ label: l.label, orm: Math.round(bestOrmMatching(h, l.re)) }));
+  const score = parts.reduce((s, p) => s + p.orm, 0);
+  const cutoff = Date.now() - 30 * 86400000;
+  const prevScore = BIG_LIFTS.reduce((s, l) => s + Math.round(bestOrmMatching(h, l.re, cutoff)), 0);
+  return { score, prevScore, delta: score - prevScore, parts: parts.filter(p => p.orm > 0) };
+}
+function refreshStrengthScore() {
+  const el = document.getElementById('strengthScore');
+  if (!el) return;
+  const s = computeStrengthScore();
+  if (!s.score) {
+    el.innerHTML = `<div class="strength-card"><div class="strength-head"><span class="strength-label">💪 Strength Score</span></div><div class="strength-empty">Zapisz trening z wyciskaniem, przysiadem, martwym ciągiem lub OHP, aby policzyć wskaźnik.</div></div>`;
+    return;
+  }
+  const up = s.delta > 0;
+  const deltaHtml = s.delta !== 0
+    ? `<span class="strength-delta ${up ? 'up' : 'flat'}">${up ? '▲ +' + s.delta : '▼ ' + s.delta} kg / 30 dni</span>`
+    : `<span class="strength-delta flat">— bez zmian / 30 dni</span>`;
+  el.innerHTML = `
+    <div class="strength-card">
+      <div class="strength-head"><span class="strength-label">💪 Strength Score</span>${deltaHtml}</div>
+      <div class="strength-value" data-count="${s.score}">0<span>kg</span></div>
+      <div class="strength-breakdown">${s.parts.map(p => `${escapeHtml(p.label)} <strong style="color:var(--text)">${p.orm}</strong>`).join(' · ')}</div>
+    </div>`;
+  // animacja count-up dla głównej liczby (zachowując sufiks kg)
+  const valEl = el.querySelector('.strength-value');
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (valEl && !reduce && s.score > 0) {
+    const target = s.score, start = performance.now();
+    (function tick(t) {
+      const prog = Math.min((t - start) / 750, 1);
+      const v = Math.round(target * (1 - Math.pow(1 - prog, 3)));
+      valEl.innerHTML = v + '<span>kg</span>';
+      if (prog < 1) requestAnimationFrame(tick);
+    })(start);
+  } else if (valEl) {
+    valEl.innerHTML = s.score + '<span>kg</span>';
+  }
+}
+
 // ============ OSIĄGNIĘCIA ============
 const ACHIEVEMENTS = [
   { id: 'first',    icon: '🎯', name: 'Pierwszy krok',  desc: '1. trening',    check: s => s.total >= 1 },
@@ -4090,6 +4225,41 @@ function renderAchievements() {
       <span class="ach-badge-desc">${escapeHtml(a.desc)}</span>
     </div>`;
   }).join('');
+}
+
+// ===== Masa ciała i samopoczucie (ręczny log — substytut wearables) =====
+let _selectedMood = 3;
+function selectMood(m) {
+  _selectedMood = m;
+  document.querySelectorAll('.body-mood-btn').forEach(b => b.classList.toggle('active', +b.dataset.mood === m));
+}
+function getBodyLog() { return getCurrentProfile().bodyLog || []; }
+function logBodyMeasure() {
+  const input = document.getElementById('bodyWeightInput');
+  const w = parseFloat((input.value || '').replace(',', '.'));
+  if (!w || w <= 0 || w > 500) { showToast('Podaj poprawną masę (kg)', 'error'); return; }
+  const entry = { ts: Date.now(), weight: Math.round(w * 10) / 10, mood: _selectedMood };
+  updateCurrentProfile(p => { p.bodyLog = [entry, ...(p.bodyLog || [])].slice(0, 365); return p; });
+  input.value = '';
+  showToast('Pomiar zapisany', 'success');
+  renderBodyLog();
+}
+function renderBodyLog() {
+  const summary = document.getElementById('bodyLogSummary');
+  const list = document.getElementById('bodyLogList');
+  if (!summary || !list) return;
+  const log = getBodyLog();
+  if (!log.length) {
+    summary.innerHTML = '';
+    list.innerHTML = '<div class="help">Brak pomiarów — zapisz pierwszy powyżej.</div>';
+    return;
+  }
+  const moods = ['', '😣', '😐', '🙂', '💪'];
+  const latest = log[0];
+  const delta = log.length > 1 ? Math.round((latest.weight - log[1].weight) * 10) / 10 : 0;
+  summary.innerHTML = `<div class="body-summary"><span class="body-weight">${latest.weight} kg</span>${log.length > 1 ? `<span class="body-delta ${delta < 0 ? 'down' : delta > 0 ? 'up' : ''}">${delta > 0 ? '+' : ''}${delta} kg vs poprzednio</span>` : ''}</div>`;
+  list.innerHTML = log.slice(0, 6).map(e =>
+    `<div class="body-log-item"><span>${new Date(e.ts).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span><span>${e.weight} kg ${moods[e.mood] || ''}</span></div>`).join('');
 }
 
 // Po zapisie: wykryj nowo zdobyte odznaki i pokaż toast (z-index toasta > modala Recap)
@@ -4166,11 +4336,41 @@ function showWorkoutRecap(entry, prs, prevSameType) {
     </div>
     ${cmpHtml}
     ${prHtml}
-    <button class="btn btn-primary" style="width:100%;margin-top:16px;" onclick="closeRecap()">Gotowe</button>
+    <div style="display:flex; gap:8px; margin-top:16px;">
+      <button class="btn btn-ghost" style="flex:1;" onclick="shareWorkout()"><i class="ti ti-share"></i> Udostępnij</button>
+      <button class="btn btn-primary" style="flex:2;" onclick="closeRecap()">Gotowe</button>
+    </div>
   `;
+  window._lastRecap = { entry, prs };
   document.getElementById('recapModal').classList.add('active');
   animateCountUps(body);
   if (prs.length) firePRConfetti();
+}
+
+// Udostępnianie treningu (Web Share API; fallback: schowek)
+function shareWorkoutText(entry, prs) {
+  const tonnage = Math.round(tonnageOf(entry));
+  let txt = `💪 Trening ${getTypeLabel(entry.type)} — ${entry.totalReps} powt.`;
+  if (tonnage > 0) txt += `, ${tonnage.toLocaleString('pl-PL')} kg tonażu`;
+  if (entry.duration) txt += `, ${formatDuration(entry.duration)}`;
+  if (prs && prs.length) txt += `\n🏆 Nowe rekordy: ${prs.map(p => p.name + ' ' + p.orm + ' kg').join(', ')}`;
+  txt += '\n— zapisane w Trening Pro';
+  return txt;
+}
+async function shareWorkout() {
+  const d = window._lastRecap;
+  if (!d) return;
+  const text = shareWorkoutText(d.entry, d.prs);
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: 'Mój trening', text });
+    } else if (navigator.clipboard) {
+      await navigator.clipboard.writeText(text);
+      showToast('Skopiowano do schowka', 'success');
+    } else {
+      showToast('Udostępnianie niedostępne na tym urządzeniu', 'error');
+    }
+  } catch (e) { /* użytkownik anulował — ignoruj */ }
 }
 
 function saveWorkout() {
@@ -4283,6 +4483,7 @@ function refreshAllStats() {
   refreshVolumeChart();
   refreshOrmChart();
   refreshHeatmap();
+  refreshStrengthScore();
   refreshMuscleStats();
   refreshDashboard();
 }
@@ -5584,6 +5785,65 @@ function getAllUniqueExercises() {
 
 // ============ AI COACH ============
 let analyzeAbortController = null;
+
+// ===== Czat z coachem (konwersacyjny AI) =====
+let coachChatMessages = [];
+let coachChatBusy = false;
+
+function renderCoachChat(thinking) {
+  const el = document.getElementById('coachChat');
+  if (!el) return;
+  let html = coachChatMessages.map(m =>
+    `<div class="coach-msg ${m.role}">${escapeHtml(m.text)}</div>`).join('');
+  if (thinking) html += '<div class="coach-msg assistant thinking"><i class="ti ti-loader-2 spin"></i>Coach myśli…</div>';
+  el.innerHTML = html;
+  el.scrollTop = el.scrollHeight;
+  const sugg = document.getElementById('coachChatSuggestions');
+  if (sugg) sugg.style.display = coachChatMessages.length ? 'none' : 'flex';
+}
+
+async function coachAsk(presetText) {
+  if (coachChatBusy) return;
+  const input = document.getElementById('coachChatInput');
+  const text = String(presetText || (input && input.value) || '').trim();
+  if (!text) return;
+  coachChatMessages.push({ role: 'user', text });
+  if (input) input.value = '';
+  renderCoachChat(true);
+  coachChatBusy = true;
+  const sendBtn = document.getElementById('coachChatSend');
+  if (sendBtn) sendBtn.disabled = true;
+  try {
+    const profile = getCurrentProfile();
+    const recent = (profile.history || []).slice(0, 12).map(w => {
+      const exs = (w.exercises || []).filter(e => e.kg > 0).map(e => `${e.name} ${e.kg}kg×${e.reps}`).join(', ');
+      return `${new Date(w.timestamp).toISOString().slice(0, 10)} [${w.type}] ${exs || '—'}`;
+    }).join('\n');
+    const goal = (GOALS_DATA[profile.goal] || {}).name || '—';
+    const convo = coachChatMessages.map(m => (m.role === 'user' ? 'Użytkownik: ' : 'Coach: ') + m.text).join('\n');
+    const prompt = `Jesteś doświadczonym trenerem siłowym. Odpowiadasz po polsku, rzeczowo i krótko (max 4–5 zdań), konkretnie i praktycznie. Opieraj się na danych użytkownika, nie zmyślaj.
+
+CEL UŻYTKOWNIKA: ${goal}
+OSTATNIE TRENINGI:
+${recent || 'brak danych'}
+
+ROZMOWA:
+${convo}
+
+Odpowiedz na ostatnią wiadomość użytkownika jako Coach. Zwykły tekst, bez markdown.`;
+    const reply = await callClaude({ prompt, maxTokens: 600 });
+    coachChatMessages.push({ role: 'assistant', text: reply || 'Nie mam na to dobrej odpowiedzi.' });
+  } catch (e) {
+    const offline = !navigator.onLine;
+    coachChatMessages.push({ role: 'assistant', text: offline
+      ? '⚠️ Jesteś offline — czat z coachem wymaga połączenia z internetem.'
+      : '⚠️ Nie udało się połączyć z AI. Sprawdź konfigurację proxy w ustawieniach.' });
+  } finally {
+    coachChatBusy = false;
+    if (sendBtn) sendBtn.disabled = false;
+    renderCoachChat(false);
+  }
+}
 
 async function analyzeWithAI() {
   if (isAnalyzing) return;
