@@ -320,12 +320,17 @@ body { background-image: radial-gradient(circle at 0% 0%, rgba(212,255,58,0.04) 
 .card-ex-name { font-size:20px; font-weight:700; color:var(--text); margin-bottom:4px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .card-ex-tip { font-size:12px; color:var(--text-muted); font-style:italic; margin-bottom:12px; }
 .card-set-label { font-size:15px; font-weight:600; color:var(--accent); margin-bottom:16px; text-align:center; }
-.card-inputs { display:flex; gap:16px; margin-bottom:16px; }
+.card-inputs { display:flex; flex-direction:column; gap:14px; margin-bottom:16px; }
 .card-input-block { flex:1; display:flex; flex-direction:column; align-items:center; }
 .card-input-label { font-size:11px; color:var(--text-muted); margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px; }
 .card-input { width:100%; text-align:center; font-size:28px; font-weight:700; padding:14px 8px; border-radius:var(--radius); border:2px solid var(--border); background:var(--bg-elev); color:var(--text); transition:border-color 0.2s; }
 .card-input:focus { border-color:var(--accent); outline:none; }
 .card-input::placeholder { color:var(--text-dim); }
+.card-input-row { display:flex; align-items:stretch; gap:6px; width:100%; }
+.card-input-row .card-input { flex:1; width:auto; min-width:0; padding-left:2px; padding-right:2px; }
+.card-step { flex-shrink:0; width:40px; border-radius:var(--radius); border:2px solid var(--border); background:var(--bg-elev); color:var(--text); font-size:22px; font-weight:700; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:border-color .15s, color .15s, transform .1s; -webkit-tap-highlight-color:transparent; }
+.card-step:hover { border-color:var(--accent); color:var(--accent); }
+.card-step:active { transform:scale(0.92); }
 .card-last-hint { font-size:11px; color:var(--text-muted); text-align:center; margin-bottom:16px; }
 .card-actions { display:flex; gap:10px; width:100%; }
 .card-btn-done { flex:2; padding:16px; font-size:16px; font-weight:700; border:none; border-radius:var(--radius); background:var(--accent); color:#000; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:transform 0.1s,opacity 0.1s; }
@@ -6097,9 +6102,17 @@ function renderCard() {
 
   html += '<div class="card-inputs">';
   html += '<div class="card-input-block"><span class="card-input-label">Powtórzenia</span>';
-  html += '<input type="number" class="card-input" id="cardReps" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="' + (setData.reps || '') + '" autofocus></div>';
+  html += '<div class="card-input-row">';
+  html += '<button class="card-step" onclick="cardStep(\'reps\',-1)" aria-label="Mniej powtórzeń">−</button>';
+  html += '<input type="number" class="card-input" id="cardReps" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="' + (setData.reps || '') + '" autofocus>';
+  html += '<button class="card-step" onclick="cardStep(\'reps\',1)" aria-label="Więcej powtórzeń">+</button>';
+  html += '</div></div>';
   html += '<div class="card-input-block"><span class="card-input-label">Ciężar (kg)</span>';
-  html += '<input type="number" class="card-input" id="cardKg" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" step="0.5" placeholder="0" value="' + (setData.kg || '') + '"></div>';
+  html += '<div class="card-input-row">';
+  html += '<button class="card-step" onclick="cardStep(\'kg\',-1)" aria-label="Odejmij 2,5 kg">−</button>';
+  html += '<input type="number" class="card-input" id="cardKg" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" step="0.5" placeholder="0" value="' + (setData.kg || '') + '">';
+  html += '<button class="card-step" onclick="cardStep(\'kg\',1)" aria-label="Dodaj 2,5 kg">+</button>';
+  html += '</div></div>';
   html += '</div>';
 
   html += '<div class="card-last-hint" style="color:' + hintColor + '">' + suggestion.text + '</div>';
@@ -6122,6 +6135,20 @@ function renderCard() {
     if (repsEl && !repsEl.value) repsEl.focus();
     else if (kgEl && !kgEl.value) kgEl.focus();
   }, 50);
+}
+
+// Stepper w trybie kart: reps ±1, kg ±2,5
+function cardStep(field, dir) {
+  const el = document.getElementById(field === 'kg' ? 'cardKg' : 'cardReps');
+  if (!el) return;
+  let val;
+  if (field === 'kg') {
+    val = Math.round(((parseFloat(el.value) || 0) + dir * 2.5) * 10) / 10;
+  } else {
+    val = (parseInt(el.value) || 0) + dir;
+  }
+  if (val < 0 || val > 999) return;
+  el.value = val;
 }
 
 function cardDone() {
