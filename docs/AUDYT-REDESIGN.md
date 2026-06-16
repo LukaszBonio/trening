@@ -6,6 +6,19 @@
 
 ---
 
+## ✅ Status wdrożenia (aktualizacja czerwiec 2026)
+
+Większość rekomendacji z tego dokumentu została **wdrożona**:
+
+- **Quick Wins:** ✅ PR jako 1. klasa · ✅ Workout Recap · ✅ confetti-na-PR · ✅ count-up · ✅ onboarding · ✅ heatmapa. *(pełna tokenizacja CSS — świadomie odłożona)*
+- **Średni priorytet:** ✅ zakładka „Ty/Profil" + reorg IA (Historia → Postępy) · ✅ proaktywny overload + steppery + timer ±15 s · ✅ osiągnięcia/odznaki · ✅ seria wybaczająca · ✅ proaktywny coach.
+- **Premium:** ✅ AI konwersacyjny (czat) · ✅ Strength Score · ✅ udostępnianie (Web Share) · ✅ wideo techniki (linki YT) · ✅ log masy/samopoczucia (substytut wearables).
+- **Pozostaje (wymaga backendu / natywności):** ⬜ synchronizacja w chmurze + konta · ⬜ powiadomienia push · ⬜ pełny social (obserwowanie/leaderboardy) · ⬜ realny sync wearables (niemożliwy z web PWA).
+
+Poniższy dokument zachowano jako pełny zapis researchu i uzasadnień projektowych.
+
+---
+
 ## Streszczenie wykonawcze (TL;DR)
 
 **Trening Pro jest zaskakująco dobrze pozycjonowany.** Ma rzeczy, których brakuje wielu konkurentom: generowanie planów AI, design w stylu „premium dark", akcent w kolorze limonki (dokładnie ten trend, w który poszła Strava), typografię Inter + Space Grotesk (Strava używa Inter), tryb offline (PWA) oraz wielozmysłowy timer odpoczynku (wibracja + dźwięk + głos). To nie jest aplikacja do przepisania od zera.

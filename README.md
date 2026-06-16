@@ -78,21 +78,32 @@ za serwerem proxy (Cloudflare Worker) — **użytkownik nie potrzebuje własnego
 
 ### 🏋️ Rejestrowanie treningu (tryb krok po kroku)
 - **Tryb kart** — jedna seria na ekranie, maksymalny fokus
+- **Steppery ± przy polach** — powtórzenia ±1 i ciężar ±2,5 kg jednym tknięciem (tryb kart i listy)
+- **Proaktywna podpowiedź progresji** — przy ćwiczeniu sugeruje docelowy ciężar (np. „spróbuj 62,5 kg") na bazie historii i wykrywa stagnację
 - **Pre-fill ciężaru** — wczytuje ostatni używany ciężar, kolejne serie kopiują poprzednią
-- **Timer odpoczynku** — startuje automatycznie, czas wg celu, presety 60/90/120/180 s
-- **Dane per seria** — np. `80kg×8, 80kg×6, 75kg×5`
+- **Timer odpoczynku** — startuje automatycznie, presety 60/90/120 s oraz korekta **−15 s / +15 s**
 - **Wibracja + dźwięk + komunikat głosowy** po zakończeniu przerwy
 - **Kalkulator 1RM** (Brzycki + Epley), stoper czasu treningu, wybór daty
 - **Autozapis roboczy** — baner przywracania niedokończonego treningu (TTL 72 h)
+- **Workout Recap** — po zapisie podsumowanie: tonaż, serie, porównanie do poprzedniego treningu, nowe rekordy (z konfetti)
 
 ### 📊 Dashboard i analiza
 - **Dashboard (Pulpit)** — ekran startowy: dzisiejszy trening, statystyki tygodnia,
-  ostatnia aktywność, seria dni z rzędu, pasek 7 dni, szybkie akcje
+  ostatni rekord, proaktywny insight coacha, seria dni, pasek 7 dni, szybkie akcje
+- **Strength Score** — zagregowany wskaźnik siły (suma najlepszych 1RM kluczowych bojów) z trendem 30-dniowym
+- **Rekordy (PR)** — automatyczne wykrywanie nowych rekordów 1RM, kafel na Pulpicie, celebracja w Recap
 - **Statystyki tygodniowe** i **wykres ostatnich 45 dni** (Push/Pull/Legs)
-- **Wolumen tygodniowy (tonaż)** — wykres łącznego obciążenia (ciężar × powtórzenia) per tydzień
-- **Trend siły (1RM)** — wykres szacowanego 1RM w czasie dla najczęściej trenowanych ćwiczeń
+- **Wolumen tygodniowy (tonaż)** i **trend siły (1RM)** — wykresy postępu
+- **Heatmapa aktywności** — siatka roku pokazująca konsekwencję treningową
 - **Analiza partii mięśniowych** — wykres siły per ćwiczenie, historyczny rekord 1RM
-- **AI Coach** — Claude wskazuje stagnację, postępy i konkretne sugestie
+- **AI Coach** — analiza postępów oraz **czat konwersacyjny** (pytaj o trening, technikę, progresję)
+
+### 🔥 Motywacja
+- **Onboarding** — przy pierwszym uruchomieniu prowadzi przez cel i system treningowy (bez konta)
+- **Osiągnięcia / odznaki** — 9 odznak (treningi, seria, rekordy, tonaż, balans PPL) z powiadomieniem o zdobyciu
+- **Seria treningowa wybaczająca** — pojedyncze dni przerwy (regeneracja) jej nie zerują
+- **Masa ciała i samopoczucie** — ręczny log masy + readiness (substytut wearables)
+- **Udostępnianie treningu** — Web Share z podsumowaniem treningu i rekordami
 
 ### 📥 Dane
 - **Import** z tekstu (AI) lub pliku CSV · **Eksport** do CSV i PDF · wykrywanie duplikatów
@@ -103,6 +114,7 @@ za serwerem proxy (Cloudflare Worker) — **użytkownik nie potrzebuje własnego
 ### 📱 PWA
 - Instalacja na telefonie i komputerze · pełny tryb offline (poza AI) · auto-aktualizacje
 - **Responsywny UI premium** — stały sidebar (desktop), dolny pasek nawigacji (mobile), tryb ciemny
+- **Nawigacja 5-zakładkowa** — Pulpit · Plan · Postępy (statystyki + historia) · Coach · Ty (profil, osiągnięcia, backup)
 
 ---
 
@@ -368,23 +380,26 @@ To ograniczenie iOS. Instalacja ręczna: **Safari → Udostępnij → Dodaj do e
 ### 🅰️ Alpha — *obecna wersja*
 - [x] 3 systemy treningowe (PPL / Upper-Lower / FBW)
 - [x] Generowanie planów AI + Plan offline (67 planów)
-- [x] Tryb kart, timer odpoczynku, dane per seria, draft
-- [x] Historia, statystyki, wykresy, analiza partii, AI Coach
-- [x] Wykresy wolumenu tygodniowego (tonaż) i trendu siły (1RM)
-- [x] Kopia zapasowa JSON + scalanie profili między urządzeniami
-- [x] Skeleton loading przy generowaniu planu i analizie AI
-- [x] PWA (offline, instalacja) + Dashboard + UI premium
+- [x] Tryb kart, timer odpoczynku (±15 s), steppery ±, dane per seria, draft
+- [x] Statystyki, wykresy (45 dni, tonaż, trend 1RM), heatmapa, analiza partii
+- [x] **Strength Score** i automatyczne **rekordy (PR)** + **Workout Recap**
+- [x] **AI Coach** — analiza postępów + **czat konwersacyjny**
+- [x] **Onboarding**, **osiągnięcia/odznaki**, seria wybaczająca, proaktywny insight
+- [x] **Log masy ciała / samopoczucia**, udostępnianie treningu (Web Share)
+- [x] Kopia zapasowa JSON + scalanie profili; nawigacja 5-zakładkowa (zakładka „Ty")
+- [x] Skeleton loading; PWA (offline, instalacja) + UI premium
 
 ### 🅱️ Beta — *następne kroki*
-- [ ] Opcjonalna synchronizacja w chmurze (backup konta)
+- [ ] Opcjonalna synchronizacja w chmurze (backup konta) — wymaga backendu
+- [ ] Powiadomienia push (PWA) — „czas na trening", „nie zgub serii"
 - [ ] Testy automatyczne kluczowej logiki
 - [ ] Rozszerzony eksport (PDF z wykresami) i raporty okresowe
 
 ### 1️⃣ Wersja 1.0
 - [ ] Konta użytkowników i synchronizacja end-to-end
 - [ ] Internacjonalizacja (EN) i przełącznik języka
-- [ ] Integracje z wearables / Health
-- [ ] Udostępnianie planów i wyników (social)
+- [ ] Pełny social (obserwowanie, leaderboardy) — wymaga backendu
+- [ ] Integracje z wearables / Health (poza zasięgiem web PWA — wymaga aplikacji natywnej)
 - [ ] Konfigurowalne motywy i akcenty
 
 ---
