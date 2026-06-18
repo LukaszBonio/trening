@@ -1,7 +1,7 @@
 // Trening Pro - Service Worker
 // Strategia: cache-first dla statycznych zasobów, network-first dla index.html
 
-const CACHE_VERSION = 'trening-pro-v12';
+const CACHE_VERSION = 'trening-pro-v13';
 const CACHE_NAME = `${CACHE_VERSION}`;
 
 const STATIC_ASSETS = [
@@ -24,7 +24,9 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => Promise.allSettled(
-        STATIC_ASSETS.map(url => cache.add(url).catch(err => {
+        // cache: 'reload' wymusza pobranie z sieci (pomija cache HTTP przeglądarki),
+        // dzięki czemu po bumpie wersji SW precache zawsze dostaje świeże pliki (np. db.js)
+        STATIC_ASSETS.map(url => cache.add(new Request(url, { cache: 'reload' })).catch(err => {
           console.warn('SW: failed to cache:', url, err);
         }))
       ))

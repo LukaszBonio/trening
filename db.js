@@ -6,10 +6,11 @@
 //        2 triceps
 //        = 7 ćwiczeń
 //
-// Pull:  3 plecy  (1× wertykalne: podciąganie/lat pulldown,
+// Pull:  4 plecy  (1× wertykalne: podciąganie/lat pulldown,
 //                  1× horyzontalne: wiosłowanie,
-//                  1× dodatkowe plecy)
-//        2 tylne barki (TYLKO: face pull / reverse fly / odwrotne rozpiętki)
+//                  1× inna płaszczyzna/akcent,
+//                  1× jednostronne lub odmienne)
+//        1 tylne barki (TYLKO: face pull / reverse fly / odwrotne rozpiętki)
 //        2 biceps
 //        1 przedramię
 //        = 8 ćwiczeń
@@ -506,13 +507,13 @@
       {
         name: 'Pull klasyczny',
         exercises: [
-          // PLECY (3)
+          // PLECY (4)
           { name: 'Martwy ciąg klasyczny', sets: 4, reps: '5-6', tip: 'Plecy proste, sztanga blisko ciała' },
           { name: 'Podciąganie szerokim chwytem', sets: 3, reps: '6-10', tip: 'Ściągnij łopatki w dół' },
           { name: 'Wiosłowanie sztangą w opadzie', sets: 3, reps: '8-10', tip: 'Tułów stabilny, do brzucha' },
-          // TYLNE BARKI (2)
+          { name: 'Wiosłowanie hantlem jednoręcz', sets: 3, reps: '10-12', tip: 'Jednostronnie, pełen zakres' },
+          // TYLNE BARKI (1)
           { name: 'Face pull', sets: 3, reps: '15-20', tip: 'Łokcie wysoko, ciągnij do twarzy' },
-          { name: 'Odwrotne rozpiętki', sets: 3, reps: '15-20', tip: 'Pochyl się, łokcie lekko ugięte' },
           // BICEPS (2)
           { name: 'Uginanie ze sztangą EZ', sets: 3, reps: '10-12', tip: 'Bez bujania, kontroluj' },
           { name: 'Uginanie hantli młotkowo', sets: 3, reps: '10-12', tip: 'Brachialis — objętość ramion' },
@@ -524,13 +525,13 @@
       {
         name: 'Pull bez martwego ciągu',
         exercises: [
-          // PLECY (3)
+          // PLECY (4)
           { name: 'Podciąganie nachwytem', sets: 4, reps: '6-10', tip: 'Broda nad drążek' },
           { name: 'Wiosłowanie sztangą', sets: 3, reps: '8-10', tip: 'Pochyl się 45°' },
           { name: 'Ściąganie drążka wyciągu górnego', sets: 3, reps: '10-12', tip: 'Szerokim chwytem' },
-          // TYLNE BARKI (2)
+          { name: 'Wiosłowanie hantlem jednoręcz', sets: 3, reps: '10-12', tip: 'Jednostronnie, kolano na ławce' },
+          // TYLNE BARKI (1)
           { name: 'Cable face pull', sets: 3, reps: '15-20', tip: 'Tylne barki i rotatory' },
-          { name: 'Odwrotne rozpiętki na maszynie', sets: 3, reps: '15-20', tip: 'Pec deck odwrotnie' },
           // BICEPS (2)
           { name: 'Uginanie hantli', sets: 3, reps: '10-12', tip: 'Naprzemiennie, supinacja' },
           { name: 'Uginanie hantli młotkowo', sets: 3, reps: '10-12', tip: 'Brachialis' },
@@ -542,13 +543,13 @@
       {
         name: 'Pull grubość pleców',
         exercises: [
-          // PLECY (3)
+          // PLECY (4)
           { name: 'Martwy ciąg klasyczny', sets: 4, reps: '4-6', tip: 'Maksymalne ciężary' },
           { name: 'Wiosłowanie sztangą Pendlay', sets: 4, reps: '6-8', tip: 'Każde powt. z ziemi' },
           { name: 'Wiosłowanie hantlem jednoręcz', sets: 3, reps: '10-12', tip: 'Skupienie na ściskaniu' },
-          // TYLNE BARKI (2)
+          { name: 'Ściąganie drążka wyciągu górnego', sets: 3, reps: '10-12', tip: 'Wertykalnie — szerokość pleców' },
+          // TYLNE BARKI (1)
           { name: 'Face pull', sets: 3, reps: '15-20', tip: 'Łokcie na poziomie barków' },
-          { name: 'Odwrotne rozpiętki', sets: 3, reps: '15-20', tip: 'Pochyl tułów 90°' },
           // BICEPS (2)
           { name: 'Uginanie ramion ze sztangą', sets: 3, reps: '8-10', tip: 'Cięższe ciężary' },
           { name: 'Uginanie hantli młotkowo', sets: 3, reps: '10-12', tip: 'Brachialis' },
@@ -560,13 +561,13 @@
       {
         name: 'Pull szerokość pleców',
         exercises: [
-          // PLECY (3)
+          // PLECY (4)
           { name: 'Podciąganie szerokim chwytem', sets: 4, reps: '6-10', tip: 'Najszersze — główne' },
           { name: 'Ściąganie drążka wyciągu górnego', sets: 3, reps: '10-12', tip: 'Powolny ekscentryk' },
           { name: 'Wyciąg górny podchwytem', sets: 3, reps: '10-12', tip: 'Podchwyt — więcej dołu pleców' },
-          // TYLNE BARKI (2)
+          { name: 'Wiosłowanie na wyciągu siedząc', sets: 3, reps: '10-12', tip: 'Horyzontalnie — grubość pleców' },
+          // TYLNE BARKI (1)
           { name: 'Cable face pull', sets: 3, reps: '15-20', tip: 'Zdrowe barki tylne' },
-          { name: 'Reverse pec deck', sets: 3, reps: '15-20', tip: 'Maszyna motyl odwrotnie' },
           // BICEPS (2)
           { name: 'Uginanie hantli młotkowo', sets: 3, reps: '10-12', tip: 'Brachialis' },
           { name: 'Uginanie ze sztangą EZ', sets: 3, reps: '10-12', tip: 'Klasyczne' },
@@ -578,13 +579,13 @@
       {
         name: 'Pull z naciskiem na biceps',
         exercises: [
-          // PLECY (3)
+          // PLECY (4)
           { name: 'Podciąganie podchwytem wąskim', sets: 3, reps: '8-10', tip: 'Wąski chwyt — mocno biceps' },
           { name: 'Wiosłowanie sztangą wąskim chwytem', sets: 3, reps: '8-10', tip: 'Podchwyt, łokcie przy tułowiu' },
           { name: 'Ściąganie drążka wyciągu górnego', sets: 3, reps: '10-12', tip: 'Szerokość pleców' },
-          // TYLNE BARKI (2)
+          { name: 'Wiosłowanie hantlem jednoręcz', sets: 3, reps: '10-12', tip: 'Jednostronnie, pełen zakres' },
+          // TYLNE BARKI (1)
           { name: 'Face pull', sets: 3, reps: '15-20', tip: 'Tylne barki i rotatory' },
-          { name: 'Odwrotne rozpiętki', sets: 3, reps: '15-20', tip: 'Tylne barki izolacja' },
           // BICEPS (2)
           { name: 'Uginanie ramion ze sztangą stojąc', sets: 4, reps: '8-10', tip: 'Klasyczne, bez bujania' },
           { name: 'Uginanie hantli na modlitewniku', sets: 3, reps: '10-12', tip: 'Izolacja bicepsa' },
@@ -596,13 +597,13 @@
       {
         name: 'Pull siłowy',
         exercises: [
-          // PLECY (3)
+          // PLECY (4)
           { name: 'Martwy ciąg klasyczny', sets: 5, reps: '3-5', tip: 'Maksymalne ciężary' },
           { name: 'Podciąganie z obciążeniem', sets: 4, reps: '4-6', tip: 'Pas z talerzem' },
           { name: 'Wiosłowanie sztangą', sets: 4, reps: '5-6', tip: 'Cięższe ciężary' },
-          // TYLNE BARKI (2)
+          { name: 'Wiosłowanie hantlem jednoręcz', sets: 3, reps: '8-10', tip: 'Jednostronnie, dociążenie pleców' },
+          // TYLNE BARKI (1)
           { name: 'Face pull', sets: 3, reps: '15-20', tip: 'Rotatory — zdrowie barków' },
-          { name: 'Odwrotne rozpiętki', sets: 3, reps: '15-20', tip: 'Tylne barki' },
           // BICEPS (2)
           { name: 'Uginanie ramion ze sztangą', sets: 3, reps: '6-8', tip: 'Cięższe ciężary' },
           { name: 'Uginanie hantli młotkowo', sets: 3, reps: '8-10', tip: 'Siłowo' },
@@ -614,13 +615,13 @@
       {
         name: 'Pull cable i wyciągi',
         exercises: [
-          // PLECY (3)
+          // PLECY (4)
           { name: 'Ściąganie drążka wyciągu górnego', sets: 3, reps: '10-12', tip: 'Szerokim chwytem do klatki' },
           { name: 'Wyciąg górny podchwytem', sets: 3, reps: '10-12', tip: 'Podchwyt — biceps' },
           { name: 'Wiosłowanie na wyciągu siedząc', sets: 3, reps: '10-12', tip: 'Do brzucha' },
-          // TYLNE BARKI (2)
+          { name: 'Wiosłowanie hantlem jednoręcz', sets: 3, reps: '10-12', tip: 'Jednostronnie — uzupełnienie wyciągów' },
+          // TYLNE BARKI (1)
           { name: 'Cable face pull', sets: 3, reps: '15-20', tip: 'Zdrowe barki' },
-          { name: 'Odwrotne rozpiętki na lince', sets: 3, reps: '15-20', tip: 'Tylne barki przez wyciąg' },
           // BICEPS (2)
           { name: 'Uginanie z liną', sets: 3, reps: '12-15', tip: 'Biceps przez wyciąg' },
           { name: 'Uginanie hantli młotkowo', sets: 3, reps: '10-12', tip: 'Wykończenie brachialis' },
@@ -632,13 +633,13 @@
       {
         name: 'Pull z superseriami',
         exercises: [
-          // PLECY (3)
+          // PLECY (4)
           { name: 'Podciąganie szerokim chwytem', sets: 3, reps: '6-10', tip: 'Superseria z wiosłowaniem' },
           { name: 'Wiosłowanie hantlem jednoręcz', sets: 3, reps: '10-12', tip: 'Bez przerwy po podciąganiu' },
           { name: 'Wiosłowanie sztangą', sets: 3, reps: '8-10', tip: 'Główne ćwiczenie pleców' },
-          // TYLNE BARKI (2)
+          { name: 'Ściąganie drążka wyciągu górnego', sets: 3, reps: '10-12', tip: 'Wertykalnie — dobicie najszerszego' },
+          // TYLNE BARKI (1)
           { name: 'Face pull', sets: 3, reps: '15-20', tip: 'Tylne barki' },
-          { name: 'Odwrotne rozpiętki', sets: 3, reps: '15-20', tip: 'Superseria z face pull' },
           // BICEPS (2)
           { name: 'Uginanie ze sztangą EZ', sets: 3, reps: '10-12', tip: 'Superseria z hantlami' },
           { name: 'Uginanie hantli', sets: 3, reps: '10-12', tip: 'Bez przerwy' },
@@ -650,13 +651,13 @@
       {
         name: 'Pull izolacja bicepsa',
         exercises: [
-          // PLECY (3)
+          // PLECY (4)
           { name: 'Podciąganie szerokim chwytem', sets: 3, reps: '6-10', tip: 'Plecy — rozgrzewka' },
           { name: 'Wiosłowanie na maszynie', sets: 3, reps: '10-12', tip: 'Stabilna pozycja' },
           { name: 'Ściąganie drążka wyciągu górnego', sets: 3, reps: '10-12', tip: 'Szerokość pleców' },
-          // TYLNE BARKI (2)
+          { name: 'Wiosłowanie hantlem jednoręcz', sets: 3, reps: '10-12', tip: 'Jednostronnie — symetria pleców' },
+          // TYLNE BARKI (1)
           { name: 'Cable face pull', sets: 3, reps: '15-20', tip: 'Tylne barki i zdrowie rotatorów' },
-          { name: 'Reverse pec deck', sets: 3, reps: '15-20', tip: 'Izolacja tylnych barków' },
           // BICEPS (2)
           { name: 'Concentration curl hantlem', sets: 3, reps: '10-12', tip: 'Łokieć na udzie' },
           { name: 'Uginanie hantli na modlitewniku', sets: 3, reps: '10-12', tip: 'Długa głowa bicepsa' },
@@ -668,13 +669,13 @@
       {
         name: 'Pull pełne plecy',
         exercises: [
-          // PLECY (3)
+          // PLECY (4)
           { name: 'Martwy ciąg klasyczny', sets: 3, reps: '5-6', tip: 'Plecy dolne' },
           { name: 'Podciąganie szerokim chwytem', sets: 3, reps: '6-10', tip: 'Plecy szerokie' },
           { name: 'Wiosłowanie sztangą w opadzie', sets: 3, reps: '8-10', tip: 'Plecy środkowe' },
-          // TYLNE BARKI (2)
+          { name: 'Wiosłowanie hantlem jednoręcz', sets: 3, reps: '10-12', tip: 'Plecy — symetria jednostronna' },
+          // TYLNE BARKI (1)
           { name: 'Face pull', sets: 3, reps: '15-20', tip: 'Tylne barki — nie pomijaj!' },
-          { name: 'Odwrotne rozpiętki', sets: 3, reps: '15-20', tip: 'Rear delts izolacja' },
           // BICEPS (2)
           { name: 'Uginanie ze sztangą EZ', sets: 3, reps: '8-10', tip: 'Biceps — główne' },
           { name: 'Uginanie hantli', sets: 3, reps: '10-12', tip: 'Naprzemiennie, supinacja' },
