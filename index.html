@@ -3161,33 +3161,38 @@ function buildPlanPrompt(type, profile, weightHistory) {
     : GOALS_DATA[effectiveGoalKey] || GOALS_DATA['mass'];
 
   const schemaByType = {
-    push: `SCHEMAT PUSH — DOKŁADNIE 7 ćwiczeń, w tej kolejności:
+    push: `SCHEMAT PUSH — DOKŁADNIE 7 ćwiczeń, kolejność: klatka → barki → triceps:
 1. KLATKA ×3 — ZAKAZ dawania tu OHP/żołnierskiego/wznosów — to są barki! Struktura:
-   - ćw. 1: poziom lub skos ujemny (klatka środkowa/dolna) — np. wyciskanie sztangi/hantli na ławce poziomej, dipy
-   - ćw. 2: skos dodatni (klatka górna) — np. wyciskanie na skosie, rozpiętki na skosie
-   - ćw. 3: izolacja lub kable (klatka środkowa) — np. rozpiętki, crossover, maszyna motyl
-2. BARKI ×2 — deltoid, NIE klatka. Struktura:
-   - ćw. 1: wyciskanie nad głowę (barki przednie+boczne) — OHP, żołnierskie, arnolda, hantlowe
-   - ćw. 2: wznosy (barki boczne) — wznosy bokiem, wznosy przodem, cable lateral raise
-3. TRICEPS ×2 — wyprosty, pushdown, français, wąski chwyt.`,
-    pull: `SCHEMAT PULL — DOKŁADNIE 8 ćwiczeń, w tej kolejności:
-1. PLECY ×3 — ZAKAZ dawania tu bicepsa lub barków. Struktura:
-   - ćw. 1: ruch wertykalny (najszersze grzbietu) — podciąganie, lat pulldown, ściąganie drążka
-   - ćw. 2: ruch horyzontalny (środkowe plecy, równoległoboczne) — wiosłowanie sztangą, hantlem, na maszynie
-   - ćw. 3: dodatkowe plecy — dowolne (np. pullover, seated row, inny wariant wiosłowania)
-2. TYLNE BARKI ×2 — WYŁĄCZNIE: face pull, odwrotne rozpiętki, reverse fly, cable face pull. ZAKAZ dawania tu bicepsa lub pleców.
-3. BICEPS ×2 — uginania sztangą, hantlami, wyciągiem (curl variants).
+   - ćw. 1: poziom lub skos ujemny (klatka środkowa/dolna) — np. wyciskanie sztangi na ławce poziomej, wyciskanie hantli poziomo, dipy
+   - ćw. 2: skos dodatni (klatka górna) — np. wyciskanie sztangi/hantli na skosie dodatnim, rozpiętki na skosie
+   - ćw. 3: izolacja lub kable (klatka środkowa) — np. rozpiętki hantlami, crossover na kablach, maszyna motyl (pec deck)
+2. BARKI ×2 — deltoid (nacisk na akton boczny), NIE klatka. Struktura:
+   - ćw. 1: wyciskanie nad głowę — OHP, żołnierskie, arnolda, wyciskanie hantli nad głowę
+   - ćw. 2: wznosy bokiem (barki boczne) — wznosy hantlami bokiem, wznosy na wyciągu, maszyna
+3. TRICEPS ×2 — komplementarna para, ćwiczenia MUSZĄ różnić się pozycją ramienia i zakresem rozciągnięcia:
+   - ćw. 1: ramiona przy tułowiu — pushdown na wyciągu, wyprost wąskim chwytem
+   - ćw. 2: ramiona nad głową — francuskie wyciskanie sztangi, wyprost zza głowy (overhead)`,
+    pull: `SCHEMAT PULL — DOKŁADNIE 8 ćwiczeń, kolejność: plecy → tylne barki → biceps → przedramię:
+1. PLECY ×4 — ZAKAZ dawania tu bicepsa lub barków (ćwiczenia tylnych barków NIE wliczają się do tej puli). Struktura:
+   - ćw. 1: ruch wertykalny (najszersze) — podciąganie, ściąganie drążka (lat pulldown), pullover na wyciągu
+   - ćw. 2: ruch horyzontalny (środkowe plecy) — wiosłowanie sztangą, hantlem, na maszynie, na wyciągu (cable row)
+   - ćw. 3: inna płaszczyzna lub akcent — pullover hantlem, ściąganie prostymi rękami (straight-arm pulldown), wiosłowanie podchwytem
+   - ćw. 4: ruch jednostronny lub wyraźnie odmienny od ćw. 1-3 — wiosłowanie hantlem jednorącz, Meadows row, wiosłowanie siedząc na wyciągu innym uchwytem niż ćw. 2
+2. TYLNE BARKI ×1 — WYŁĄCZNIE: face pull, odwrotne rozpiętki, reverse fly (wyciąg, hantle lub maszyna). ZAKAZ dawania tu bicepsa lub pleców.
+3. BICEPS ×2 — komplementarna para, ćwiczenia MUSZĄ różnić się kątem pracy lub pozycją łokcia:
+   - ćw. 1: klasyczne uginanie — sztanga, EZ, hantle naprzemiennie
+   - ćw. 2: pozycja rozciągnięta lub inny profil oporu — uginanie na skosie (incline curl), na modlitewniku (preacher), na wyciągu
 4. PRZEDRAMIĘ ×1 — uginanie młotkowe (hammer curl) lub Zottman curl.`,
-    legs: `SCHEMAT LEGS — DOKŁADNIE 7 ćwiczeń, w tej kolejności:
+    legs: `SCHEMAT LEGS — DOKŁADNIE 7 ćwiczeń, kolejność: czworogłowy → hamstring/pośladki → jednostronne → łydki → core:
 1. CZWOROGŁOWY ×2 — struktura:
-   - ćw. 1: wielostawowe dominujące (czworogłowy+pośladki) — przysiad ze sztangą, leg press, hack squat, goblet squat
-   - ćw. 2: izolacja lub jednostronne — leg extension, Bulgarian split squat (tu jako ćw. czworogłowy), front squat
+   - ćw. 1: wielostawowe dominujące — przysiad ze sztangą, front squat, leg press, hack squat
+   - ćw. 2: izolacja — prostowanie nóg na maszynie (leg extension), sissy squat
 2. HAMSTRING/POŚLADKI ×2 — struktura:
-   - ćw. 1: hip hinge (hamstring przez rozciągnięcie) — RDL, martwy ciąg rumuński, martwy na prostych nogach
-   - ćw. 2: zgięcie kolana LUB hip thrust (hamstring przez skurcz / pośladki) — leg curl, hip thrust, glute bridge
-3. JEDNOSTRONNE ×1 — wykroki, Bulgarian split squat, step-up (jednonóż).
-4. ŁYDKI ×1 — wspięcia na palce (stojąc lub siedząc).
-5. CORE ×1 — plank, hanging leg raise, ab wheel, rollout.`,
+   - ćw. 1: hip hinge (hamstring przez rozciągnięcie) — martwy ciąg rumuński (RDL) sztangą/hantlami, good morning
+   - ćw. 2: zgięcie kolana LUB hip thrust (hamstring przez skurcz / pośladki) — uginanie nóg (leg curl) leżąc/siedząc, Nordic curl, hip thrust, glute bridge
+3. JEDNOSTRONNE ×1 — wykroki, Bulgarian split squat, step-up (pełny zakres ruchu, kontrola stabilizacji).
+4. ŁYDKI ×1 — wspięcia na palce stojąc lub siedząc.
+5. CORE ×1 — plank, hanging leg raise, ab wheel (rollout), dragon flag.`,
     upper_a: `SCHEMAT UPPER A — DOKŁADNIE 7 ćwiczeń, nacisk na siłę bazową, w tej kolejności:
 1. KLATKA ×2 — wyciskanie sztangi płaska LUB skośna (główne ćwiczenie wielostawowe).
 2. PLECY ×2 — wiosłowanie sztangą/hantlem + podciąganie/ściąganie drążka.
@@ -3265,9 +3270,11 @@ WYKORZYSTAJ HISTORIĘ:
 ${schemaByType[type]}
 
 ZASADY OGÓLNE:
-- BEZWZGLĘDNIE trzymaj się schematu — nie mieszaj partii mięśniowych
+- BEZWZGLĘDNIE trzymaj się schematu i kolejności grup — nie mieszaj partii mięśniowych
 ${lastNote ? `- WAŻNE: Użytkownik po ostatnim treningu napisał: "${lastNote}". Uwzględnij to przy planowaniu.` : ''}
 - Podaj zalecaną liczbę powtórzeń zgodnie z celem
+- Preferuj wolne ciężary i wyciągi; maszyny są dozwolone, gdy pasują do celu ćwiczenia
+- Unikaj dwóch niemal identycznych ćwiczeń (np. dwa pushdowny, „bench + wyciskanie hantli" jako obie pozycje klatki, dwa bardzo podobne uginania bicepsa) — różnicuj chwyt, kąt i płaszczyznę pracy
 - Krótka wskazówka techniczna do każdego ćwiczenia (max 6 słów)
 - NAZEWNICTWO — każda nazwa musi jednoznacznie identyfikować sprzęt gdy jest to nieoczywiste:
   * sztanga → "Wyciskanie sztangi na ławce poziomej" NIE "Wyciskanie na ławce"
