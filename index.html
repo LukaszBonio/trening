@@ -1087,6 +1087,15 @@ body { background-image: radial-gradient(circle at 0% 0%, rgba(212,255,58,0.04) 
 .body-log-item { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); padding: 6px 0; border-bottom: 1px solid var(--border); }
 .body-log-item:last-child { border-bottom: none; }
 
+/* ===== WYBÓR SPRZĘTU ===== */
+.equip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.equip-opt { display: flex; align-items: center; gap: 9px; padding: 13px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-strong); background: var(--bg-elev2); color: var(--text); font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: border-color .15s, background .15s; }
+.equip-opt:hover { border-color: var(--accent); }
+.equip-opt.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.equip-opt-emoji { font-size: 18px; }
+.card-equip-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; border-radius: 100px; border: 1px solid var(--border-strong); background: var(--bg-elev2); color: var(--text-muted); font-family: inherit; font-size: 12px; cursor: pointer; transition: border-color .15s, color .15s; }
+.card-equip-chip:hover { border-color: var(--accent); color: var(--text); }
+
 /* ===== HEATMAPA AKTYWNOŚCI ===== */
 .heatmap-wrap { overflow-x: auto; padding-bottom: 6px; }
 .heatmap { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 1fr); gap: 3px; min-width: max-content; }
@@ -2033,6 +2042,16 @@ Notatka: dobra forma"></textarea>
   </div>
 </div>
 
+<!-- WYBÓR SPRZĘTU -->
+<div class="modal-bg" id="equipPickerModal" role="dialog" aria-modal="true">
+  <div class="modal" style="max-width: 380px;">
+    <button class="modal-close" onclick="closeEquipPicker()" aria-label="Zamknij"><i class="ti ti-x"></i></button>
+    <div class="modal-title">Czym to robisz?</div>
+    <div class="help" id="equipPickerTitle" style="margin-bottom:2px;"></div>
+    <div class="equip-grid" id="equipPickerGrid"></div>
+  </div>
+</div>
+
 <div class="modal-bg" id="goalModal" role="dialog" aria-modal="true">
   <div class="modal">
     <button class="modal-close" onclick="closeGoalModal()" aria-label="Zamknij"><i class="ti ti-x"></i></button>
@@ -2605,6 +2624,9 @@ function openProfileModal() {
 function closeProfileModal() { /* zachowane dla zgodności — profil jest teraz widokiem */ }
 document.getElementById('recapModal').addEventListener('click', (e) => {
   if (e.target.id === 'recapModal') closeRecap();
+});
+document.getElementById('equipPickerModal').addEventListener('click', (e) => {
+  if (e.target.id === 'equipPickerModal') closeEquipPicker();
 });
 
 function renderProfileList() {
@@ -3688,6 +3710,59 @@ function toggleEquipment(i, exerciseName) {
   if (hint) hint.textContent = getLastWeightHint(exerciseName);
 }
 
+// ===== Ręczny wybór sprzętu (nadpisuje autodetekcję) =====
+const EQUIP_TYPES = [
+  { key: 'sztanga',    label: 'Sztanga' },
+  { key: 'hantle',     label: 'Hantle' },
+  { key: 'wyciąg',     label: 'Wyciąg' },
+  { key: 'maszyna',    label: 'Maszyna' },
+  { key: 'własne',     label: 'Masa ciała' },
+  { key: 'kettlebell', label: 'Kettlebell' },
+];
+function hintColorFor(type) {
+  return type === 'stagnation' ? 'var(--warning, #f59e0b)'
+    : type === 'progress' ? 'var(--success, #22c55e)'
+    : type === 'regress' ? 'var(--danger, #ef4444)'
+    : 'var(--text-muted)';
+}
+let _equipPickerName = null, _equipPickerIdx = null, _equipPickerMode = 'list';
+function openEquipPicker(exerciseName, idx, mode) {
+  _equipPickerName = exerciseName;
+  _equipPickerIdx = idx;
+  _equipPickerMode = mode || 'list';
+  const cur = getEquipmentType(exerciseName);
+  document.getElementById('equipPickerTitle').textContent = exerciseName;
+  document.getElementById('equipPickerGrid').innerHTML = EQUIP_TYPES.map(t =>
+    `<button class="equip-opt ${t.key === cur ? 'active' : ''}" onclick="pickEquipment('${t.key}')">
+      <span class="equip-opt-emoji">${EQUIPMENT_EMOJI[t.key] || '❓'}</span><span>${t.label}</span>
+    </button>`).join('');
+  document.getElementById('equipPickerModal').classList.add('active');
+}
+function openEquipPickerCard() {
+  const ex = currentExercises[cardExIdx];
+  if (ex) openEquipPicker(ex.name, cardExIdx, 'card');
+}
+function closeEquipPicker() { document.getElementById('equipPickerModal').classList.remove('active'); }
+function pickEquipment(type) {
+  const name = _equipPickerName;
+  if (name) setEquipmentPref(name, type);
+  closeEquipPicker();
+  if (!name) return;
+  const s = getProgressionSuggestion(name);
+  if (_equipPickerMode === 'card') {
+    const chip = document.getElementById('cardEquip');
+    if (chip) chip.innerHTML = (EQUIPMENT_EMOJI[type] || '❓') + ' ' + type;
+    const hint = document.querySelector('.card-last-hint');
+    if (hint) { hint.textContent = s.text; hint.style.color = hintColorFor(s.type); }
+  } else {
+    const btn = document.getElementById('eqToggle_' + _equipPickerIdx);
+    if (btn) btn.textContent = (EQUIPMENT_EMOJI[type] || '❓') + ' ' + type;
+    const hint = document.getElementById('lastHint_' + _equipPickerIdx);
+    if (hint) { hint.textContent = s.text; hint.style.color = hintColorFor(s.type); }
+  }
+  showToast('Sprzęt: ' + type, 'success');
+}
+
 function toggleSubPanel(i) {
   const panel = document.getElementById('subPanel_' + i);
   const btn = document.getElementById('subBtn_' + i);
@@ -3786,7 +3861,7 @@ function renderCurrentMuscleGroup() {
           </a>
         </div>
         <div class="ex-detail">${ex.sets} serie × <span class="reps-target">${escapeHtml(ex.reps)}</span>${ex.tip ? ' · <i style="opacity:0.7">' + escapeHtml(ex.tip) + '</i>' : ''}</div>
-        <button class="eq-toggle-btn" id="eqToggle_${i}" onclick="toggleEquipment(${i}, '${escapeHtml(ex.name).replace(/'/g, "\\'")}')" title="Zmień sprzęt">${eqEmoji} ${eqLabel}</button>
+        <button class="eq-toggle-btn" id="eqToggle_${i}" onclick="openEquipPicker('${escapeHtml(ex.name).replace(/'/g, "\\'")}', ${i}, 'list')" title="Wybierz sprzęt">${eqEmoji} ${eqLabel}</button>
         ${ex.substitutes && ex.substitutes.length ? `<button class="sub-btn" id="subBtn_${i}" onclick="toggleSubPanel(${i})" title="Zamień ćwiczenie"><i class="ti ti-arrows-exchange" style="font-size:10px"></i> zamień</button>` : ''}
       </div>
       <div class="inputs-group">
@@ -6371,10 +6446,14 @@ function renderCard() {
   html += '</div>';
   if (ex.tip) html += '<div class="card-ex-tip">' + escapeHtml(ex.tip) + '</div>';
 
-  // Zamień — tylko seria 1
+  // Pasek meta: wybór sprzętu (zawsze) + zamiana ćwiczenia (seria 1)
+  const eqType = getEquipmentType(ex.name);
+  html += '<div class="card-sub-row" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">';
+  html += '<button class="card-equip-chip" id="cardEquip" onclick="openEquipPickerCard()" title="Wybierz sprzęt">' + (EQUIPMENT_EMOJI[eqType] || '❓') + ' ' + (eqType || 'wybierz sprzęt') + '</button>';
   if (isFirstSet && ex.substitutes && ex.substitutes.length) {
-    html += '<div class="card-sub-row"><button class="card-sub-btn" onclick="cardShowSubstitutes()"><i class="ti ti-arrows-exchange" style="font-size:11px"></i> zamień ćwiczenie</button></div>';
+    html += '<button class="card-sub-btn" onclick="cardShowSubstitutes()"><i class="ti ti-arrows-exchange" style="font-size:11px"></i> zamień ćwiczenie</button>';
   }
+  html += '</div>';
 
   html += '<div class="card-set-label">Seria ' + (cardSetIdx + 1) + ' / ' + totalSets + '</div>';
 
