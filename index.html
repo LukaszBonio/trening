@@ -3547,15 +3547,23 @@ const EQUIPMENT_EMOJI = {
 // Wykryj typ sprzętu z nazwy ćwiczenia — zwraca ustrukturyzowany string po polsku
 function detectEquipmentFromName(name) {
   const n = name.toLowerCase();
-  if (/drążek|podciąg|pull.?up|chin.?up|dipy|pompk|plank|brzuszk|leg.?raise|ab.?wheel|rollout/.test(n)) return 'własne';
-  if (/sztang[ai]|barbell|olimp|gryf|żołnierskie|wąskim chwytem/.test(n)) return 'sztanga';
-  if (/ez|ez.?bar|curl.?bar/.test(n)) return 'sztanga'; // sztanga EZ to rodzaj sztangi
-  if (/maszyn[ayię]|hack.?squat|leg.?press|leg.?curl|leg.?extension|pec.?deck|seated.?row|hip.?thrust|hip thrust|odwodzenie|przywodzenie/.test(n)) return 'maszyna';
-  if (/hantle[lk]?|hantl[aieąo]|hantlami|hantlowy|dumbbell|jednoręcz|jednorącz|arnolda|młotkow/.test(n)) return 'hantle';
-  if (/kabel|cable|wyciąg|linka|linie|crossover|pushdown|face.?pull|ściąganie|lat.?pull/.test(n)) return 'wyciąg';
-  if (/kettlebell|kettle/.test(n)) return 'kettlebell';
-  // Rozpiętki bez dookreślenia — najczęściej hantle
-  if (/rozpiętki|rozpiętk/.test(n)) return 'hantle';
+  // Kolejność ma znaczenie: jawne wskazanie sprzętu (hantle/sztangielki/wyciąg/maszyna)
+  // ma priorytet NAD nazwą ruchu (np. „żołnierskie hantlami" to hantle, nie sztanga).
+
+  // 1. Masa ciała — jednoznaczne ruchy bez obciążenia zewnętrznego
+  if (/drąż|podci[ąa]g|pull.?up|chin.?up|dip(y|ach|ami|\b)|pompk|plank|deska|brzuszk|leg.?raise|ab.?wheel|rollout|hiperekstensj|hyperextension|mostek|superman|burpee|unoszenie nóg|wznosy nóg/.test(n)) return 'własne';
+  // 2. Kettlebell
+  if (/kettle|odważ/.test(n)) return 'kettlebell';
+  // 3. Hantle / sztangielki / dumbbell — jawny sprzęt wygrywa
+  if (/hantl|sztangielk|dumbbell|jednor[ąa]cz|jednor[ęe]cz|arnold|młotkow|hammer/.test(n)) return 'hantle';
+  // 4. Wyciąg / kabel / linka
+  if (/wyci[ąa]g|kabel|cable|link[aąi]|crossover|pushdown|face.?pull|ści[ąa]ganie|lat.?pull|przyci[ąa]ganie/.test(n)) return 'wyciąg';
+  // 5. Maszyna / suwnica / smith
+  if (/maszyn|suwnic|smith|hack.?squat|leg.?press|leg.?curl|leg.?extension|pec.?deck|peck.?deck|seated.?row|hip.?thrust|hip thrust|odwodzenie|przywodzenie|wypychanie nóg/.test(n)) return 'maszyna';
+  // 6. Sztanga / gryf / EZ
+  if (/sztang|barbell|olimp|gryf|żołniersk|wąskim chwytem|\bez\b|ez.?bar|curl.?bar/.test(n)) return 'sztanga';
+  // 7. Rozpiętki bez dookreślenia — najczęściej hantle
+  if (/rozpiętk/.test(n)) return 'hantle';
   return null;
 }
 
@@ -3693,23 +3701,39 @@ function substituteExercise(origIdx, subIdx, rerenderFn) {
   if (!ex || !ex.substitutes || !ex.substitutes[subIdx]) return;
   const sub = ex.substitutes[subIdx];
 
-  if (!ex.substituteOf) currentExercises[origIdx].substituteOf = ex.name;
-  currentExercises[origIdx].name = sub.name;
-  currentExercises[origIdx].substitutes = [];
+  // Zapamiętaj oryginał i pełną pulę zamienników przy PIERWSZEJ zamianie,
+  // aby później dało się zamieniać wielokrotnie i wrócić do oryginału.
+  if (!ex._origName) {
+    ex._origName = ex.name;
+    ex._subPool = (ex.substitutes || []).map(s => ({ name: s.name, note: s.note || '' }));
+  }
+  const origName = ex._origName;
+  const newName = sub.name;
+  const isBackToOriginal = newName.toLowerCase() === origName.toLowerCase();
+  // Nowe menu zamiany: oryginał + cała pula, bez aktualnie wybranego ćwiczenia
+  const pool = [{ name: origName, note: 'oryginalne ćwiczenie' }, ...ex._subPool];
+  const newSubs = pool.filter(s => s.name.toLowerCase() !== newName.toLowerCase());
+
+  const apply = (target) => {
+    target.name = newName;
+    target.substituteOf = isBackToOriginal ? undefined : origName;
+    target.substitutes = newSubs;
+    target._origName = origName;
+    target._subPool = ex._subPool;
+    // wyczyść ewentualne wpisane wcześniej wartości (zamiana następuje przed logowaniem serii)
+    target._userReps = '';
+    target._userKg = '';
+  };
+  apply(currentExercises[origIdx]);
 
   // Sync z exerciseGroups
   for (const g of exerciseGroups) {
     const found = g.exercises.find(e => e._origIdx === origIdx);
-    if (found) {
-      found.name = sub.name;
-      found.substitutes = [];
-      if (!found.substituteOf) found.substituteOf = ex.substituteOf || ex.name;
-      break;
-    }
+    if (found) { apply(found); break; }
   }
 
   saveDraft();
-  showToast('Zamieniono na: ' + sub.name, 'success');
+  showToast(isBackToOriginal ? 'Przywrócono: ' + newName : 'Zamieniono na: ' + newName, 'success');
   if (typeof rerenderFn === 'function') rerenderFn();
 }
 
@@ -6658,7 +6682,16 @@ function cardShowSubstitutes() {
 
 function cardApplySubstitute(subIdx) {
   substituteExercise(cardExIdx, subIdx, () => {
-    if (cardSetsData[cardExIdx]) cardSetsData[cardExIdx].name = currentExercises[cardExIdx].name;
+    const data = cardSetsData[cardExIdx];
+    if (data) {
+      const newName = currentExercises[cardExIdx].name;
+      data.name = newName;
+      // Odśwież pre-fill: dane poprzedniego ćwiczenia nie mają zastosowania do nowego.
+      // Zamiana jest dostępna tylko przed zalogowaniem serii, więc bezpiecznie czyścimy.
+      const ls = getLastSessions(newName, 1);
+      const prefill = (ls.length && ls[0].kg > 0) ? { kg: ls[0].kg, reps: ls[0].reps } : { kg: '', reps: '' };
+      data.sets = data.sets.map((s, idx) => idx === 0 ? { ...prefill } : { kg: '', reps: '' });
+    }
     renderCard();
   });
 }
