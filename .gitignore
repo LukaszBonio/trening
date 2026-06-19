@@ -1,0 +1,6 @@
+# Graphify — knowledge graph artifacts (regenerable, large)
+graphify-out/
+
+# Claude Code — lokalne hooks per-developer (graphify auto-install)
+.claude/settings.local.json
+.claude/settings.json
