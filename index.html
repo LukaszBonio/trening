@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data:; connect-src 'self' https://*.workers.dev https://api.anthropic.com;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data:; connect-src 'self' https://*.workers.dev https://api.anthropic.com https://*.supabase.co wss://*.supabase.co;">
 <title>Trening Pro</title>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js" defer integrity="sha384-Rv68Y7adOjMMJc1/xFMcdNvXre/HF51to4GZjBALmXr7ABnVl5V4UajJwBu7zbhN" crossorigin="anonymous"></script>
 <script src="db.js"></script>
@@ -25,6 +25,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js" integrity="sha384-+VfUPEb0PdtChMwmBcBmykRMDd+v6D/oFmB3rZM/puCMDYcIvF968OimRh4KQY9a" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
 <style>
 :root {
   /* ===== SURFACES — deep layered slate-black (OLED-friendly) ===== */
@@ -1900,6 +1901,24 @@ body {
   <div id="view-profile" class="view">
     <div class="section-divider" style="margin-top:0;border-top:none;padding-top:0;">
       <div class="section-divider-title"><i class="ti ti-user" style="color:var(--accent);"></i> Twój profil</div>
+    </div>
+
+    <div class="panel" id="accountPanel">
+      <div class="panel-title"><i class="ti ti-cloud"></i>Konto i synchronizacja</div>
+      <div id="accountContent">
+        <div class="help" style="margin-bottom:10px;">
+          Załóż konto, by treningi były bezpieczne i dostępne z innych urządzeń. Dane lokalne pozostają jako kopia offline.
+        </div>
+        <div class="form-row" style="flex-direction:column; gap:8px; align-items:stretch;">
+          <input type="email" class="input" id="cloudEmail" placeholder="Email" autocomplete="email">
+          <input type="password" class="input" id="cloudPassword" placeholder="Hasło (min. 6 znaków)" autocomplete="current-password">
+          <div class="btn-group" style="gap:8px;">
+            <button class="btn btn-primary" style="flex:1;" onclick="cloudSignIn()"><i class="ti ti-login"></i> Zaloguj</button>
+            <button class="btn btn-ghost" style="flex:1;" onclick="cloudSignUp()"><i class="ti ti-user-plus"></i> Załóż konto</button>
+          </div>
+          <div id="cloudAuthError" style="display:none; color:var(--danger); font-size:12px; margin-top:4px;"></div>
+        </div>
+      </div>
     </div>
 
     <div class="panel">
@@ -8009,6 +8028,223 @@ document.addEventListener('visibilitychange', () => {
 setTimeout(() => {
   showDraftBanner();
 }, 100);
+
+// ============ CLOUD SYNC (Supabase) ============
+const SUPABASE_URL = 'https://envscdgmonrlczfleoib.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Nob9dd2IzFjYQsqPGwb4qg_4Mf5giRz';
+const STORAGE_LAST_SYNC = 'tp_last_sync_v1';
+
+let sbClient = null;
+let cloudUser = null;
+let _syncTimer = null;
+let _lastSyncedSnapshot = null;
+
+function _setCloudAuthError(msg) {
+  const el = document.getElementById('cloudAuthError');
+  if (!el) return;
+  if (msg) { el.textContent = msg; el.style.display = 'block'; }
+  else { el.textContent = ''; el.style.display = 'none'; }
+}
+
+function _renderAccountPanel() {
+  const content = document.getElementById('accountContent');
+  if (!content) return;
+  if (cloudUser) {
+    content.innerHTML = `
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+        <i class="ti ti-cloud-check" style="color:var(--success); font-size:20px;"></i>
+        <div>
+          <div style="font-weight:600;">${cloudUser.email}</div>
+          <div style="font-size:12px; color:var(--text-muted);" id="cloudSyncInfo">Zsynchronizowano</div>
+        </div>
+      </div>
+      <div class="btn-group" style="gap:8px;">
+        <button class="btn btn-ghost" style="flex:1;" onclick="cloudManualSync()"><i class="ti ti-refresh"></i> Synchronizuj</button>
+        <button class="btn btn-ghost" style="flex:1;" onclick="cloudSignOut()"><i class="ti ti-logout"></i> Wyloguj</button>
+      </div>
+    `;
+  } else {
+    content.innerHTML = `
+      <div class="help" style="margin-bottom:10px;">
+        Załóż konto, by treningi były bezpieczne i dostępne z innych urządzeń. Dane lokalne pozostają jako kopia offline.
+      </div>
+      <div class="form-row" style="flex-direction:column; gap:8px; align-items:stretch;">
+        <input type="email" class="input" id="cloudEmail" placeholder="Email" autocomplete="email">
+        <input type="password" class="input" id="cloudPassword" placeholder="Hasło (min. 6 znaków)" autocomplete="current-password">
+        <div class="btn-group" style="gap:8px;">
+          <button class="btn btn-primary" style="flex:1;" onclick="cloudSignIn()"><i class="ti ti-login"></i> Zaloguj</button>
+          <button class="btn btn-ghost" style="flex:1;" onclick="cloudSignUp()"><i class="ti ti-user-plus"></i> Załóż konto</button>
+        </div>
+        <div id="cloudAuthError" style="display:none; color:var(--danger); font-size:12px; margin-top:4px;"></div>
+      </div>
+    `;
+  }
+}
+
+function _setSyncStatusText(text, color) {
+  const el = document.getElementById('cloudSyncInfo');
+  if (!el) return;
+  el.textContent = text;
+  el.style.color = color || 'var(--text-muted)';
+}
+
+async function initCloud() {
+  if (!window.supabase) { console.warn('[cloud] Supabase SDK niedostępne'); return; }
+  sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true, storage: localStorage }
+  });
+  const { data: { session } } = await sbClient.auth.getSession();
+  if (session) {
+    cloudUser = session.user;
+    _renderAccountPanel();
+    await cloudInitialSyncIfNeeded();
+  }
+  let _lastAuthUserId = cloudUser?.id || null;
+  sbClient.auth.onAuthStateChange(async (event, session) => {
+    const prevId = _lastAuthUserId;
+    cloudUser = session?.user || null;
+    _lastAuthUserId = cloudUser?.id || null;
+    _renderAccountPanel();
+    if (cloudUser && cloudUser.id !== prevId) {
+      _lastSyncedSnapshot = null;
+      await cloudInitialSyncIfNeeded();
+    }
+  });
+}
+
+async function cloudSignUp() {
+  if (!sbClient) return showToast('Supabase niedostępne', 'error');
+  const email = document.getElementById('cloudEmail')?.value?.trim();
+  const password = document.getElementById('cloudPassword')?.value;
+  if (!email || !password) return _setCloudAuthError('Podaj email i hasło');
+  if (password.length < 6) return _setCloudAuthError('Hasło musi mieć min. 6 znaków');
+  _setCloudAuthError('');
+  const { data, error } = await sbClient.auth.signUp({ email, password });
+  if (error) return _setCloudAuthError(error.message);
+  showToast('Konto utworzone — synchronizuję dane', 'success');
+}
+
+async function cloudSignIn() {
+  if (!sbClient) return showToast('Supabase niedostępne', 'error');
+  const email = document.getElementById('cloudEmail')?.value?.trim();
+  const password = document.getElementById('cloudPassword')?.value;
+  if (!email || !password) return _setCloudAuthError('Podaj email i hasło');
+  _setCloudAuthError('');
+  const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
+  if (error) return _setCloudAuthError(error.message);
+  showToast('Zalogowano', 'success');
+}
+
+async function cloudSignOut() {
+  if (!sbClient) return;
+  await sbClient.auth.signOut();
+  localStorage.removeItem(STORAGE_LAST_SYNC);
+  _lastSyncedSnapshot = null;
+  showToast('Wylogowano', 'success');
+}
+
+async function cloudPullAll() {
+  if (!sbClient || !cloudUser) return [];
+  const { data, error } = await sbClient
+    .from('workouts')
+    .select('id, data, updated_at')
+    .eq('user_id', cloudUser.id);
+  if (error) { console.warn('[cloud] pull error', error); throw error; }
+  return (data || []).map(row => ({ ...row.data, id: row.id }));
+}
+
+async function cloudPushAll(history) {
+  if (!sbClient || !cloudUser) return;
+  if (!history.length) return;
+  const rows = history.map(w => ({
+    id: String(w.id),
+    user_id: cloudUser.id,
+    data: w,
+    updated_at: new Date().toISOString()
+  }));
+  const { error } = await sbClient.from('workouts').upsert(rows, { onConflict: 'user_id,id' });
+  if (error) { console.warn('[cloud] push error', error); throw error; }
+}
+
+async function cloudDeleteIds(ids) {
+  if (!sbClient || !cloudUser || !ids.length) return;
+  const { error } = await sbClient
+    .from('workouts')
+    .delete()
+    .eq('user_id', cloudUser.id)
+    .in('id', ids.map(String));
+  if (error) console.warn('[cloud] delete error', error);
+}
+
+async function cloudInitialSyncIfNeeded() {
+  if (!cloudUser) return;
+  _setSyncStatusText('Synchronizuję...', 'var(--text-muted)');
+  try {
+    const local = (getCurrentProfile().history || []);
+    const cloud = await cloudPullAll();
+    const cloudIds = new Set(cloud.map(w => String(w.id)));
+    const localIds = new Set(local.map(w => String(w.id)));
+    const merged = [...local];
+    for (const w of cloud) {
+      if (!localIds.has(String(w.id))) merged.push(w);
+    }
+    merged.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    const toUpload = local.filter(w => !cloudIds.has(String(w.id)));
+    if (toUpload.length) await cloudPushAll(toUpload);
+    const localChanged = merged.length !== local.length;
+    if (localChanged) {
+      updateCurrentProfile(p => { p.history = merged.slice(0, CFG.HISTORY_MAX); return p; });
+      refreshAllStats();
+    }
+    _lastSyncedSnapshot = new Set(merged.map(w => String(w.id)));
+    localStorage.setItem(STORAGE_LAST_SYNC, new Date().toISOString());
+    _setSyncStatusText('Zsynchronizowano · ' + merged.length + ' treningów', 'var(--success)');
+  } catch (e) {
+    _setSyncStatusText('Błąd synchronizacji', 'var(--danger)');
+  }
+}
+
+function scheduleCloudSync() {
+  if (!cloudUser) return;
+  clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(() => cloudSyncDelta(), 1500);
+}
+
+async function cloudSyncDelta() {
+  if (!cloudUser) return;
+  _setSyncStatusText('Synchronizuję...', 'var(--text-muted)');
+  try {
+    const local = getCurrentProfile().history || [];
+    const localIds = new Set(local.map(w => String(w.id)));
+    const prev = _lastSyncedSnapshot || new Set();
+    const toUpload = local.filter(w => !prev.has(String(w.id)));
+    const toDelete = [...prev].filter(id => !localIds.has(id));
+    if (toUpload.length) await cloudPushAll(toUpload);
+    if (toDelete.length) await cloudDeleteIds(toDelete);
+    const changedExisting = local.filter(w => prev.has(String(w.id)));
+    if (changedExisting.length) await cloudPushAll(changedExisting);
+    _lastSyncedSnapshot = localIds;
+    localStorage.setItem(STORAGE_LAST_SYNC, new Date().toISOString());
+    _setSyncStatusText('Zsynchronizowano · ' + local.length + ' treningów', 'var(--success)');
+  } catch (e) {
+    _setSyncStatusText('Błąd synchronizacji', 'var(--danger)');
+  }
+}
+
+async function cloudManualSync() {
+  if (!cloudUser) return;
+  await cloudInitialSyncIfNeeded();
+}
+
+// Hook into saveProfiles to push changes
+const _origSaveProfiles = saveProfiles;
+saveProfiles = function(p) {
+  _origSaveProfiles(p);
+  scheduleCloudSync();
+};
+
+// Wystartuj cloud po załadowaniu UI
+setTimeout(() => { initCloud(); }, 200);
 </script>
 
 </body>

@@ -106,6 +106,9 @@ za serwerem proxy (Cloudflare Worker) — **użytkownik nie potrzebuje własnego
 - **Udostępnianie treningu** — Web Share z podsumowaniem treningu i rekordami
 
 ### 📥 Dane
+- **Synchronizacja w chmurze (Supabase)** — opcjonalne konto email/hasło; treningi dostępne z każdego urządzenia po zalogowaniu
+- **Sync deltami** — po każdym zapisie wysyłane są tylko zmiany; dane lokalne pozostają jako kopia offline
+- **Initial sync** — przy pierwszym logowaniu istniejące treningi trafiają jednorazowo do chmury (dedup po `id`)
 - **Import** z tekstu (AI) lub pliku CSV · **Eksport** do CSV i PDF · wykrywanie duplikatów
 - **Kopia zapasowa JSON** — pełny backup wszystkich profili i historii w jednym pliku
 - **Scalanie profili** — import łączy treningi z innego urządzenia bez duplikatów i nadpisywania
@@ -388,15 +391,14 @@ To ograniczenie iOS. Instalacja ręczna: **Safari → Udostępnij → Dodaj do e
 - [x] **Log masy ciała / samopoczucia**, udostępnianie treningu (Web Share)
 - [x] Kopia zapasowa JSON + scalanie profili; nawigacja 5-zakładkowa (zakładka „Ty")
 - [x] Skeleton loading; PWA (offline, instalacja) + UI premium
+- [x] **Konta użytkowników + synchronizacja w chmurze (Supabase)** — sync deltami, izolacja per-user (RLS)
 
 ### 🅱️ Beta — *następne kroki*
-- [ ] Opcjonalna synchronizacja w chmurze (backup konta) — wymaga backendu
 - [ ] Powiadomienia push (PWA) — „czas na trening", „nie zgub serii"
 - [ ] Testy automatyczne kluczowej logiki
 - [ ] Rozszerzony eksport (PDF z wykresami) i raporty okresowe
 
 ### 1️⃣ Wersja 1.0
-- [ ] Konta użytkowników i synchronizacja end-to-end
 - [ ] Internacjonalizacja (EN) i przełącznik języka
 - [ ] Pełny social (obserwowanie, leaderboardy) — wymaga backendu
 - [ ] Integracje z wearables / Health (poza zasięgiem web PWA — wymaga aplikacji natywnej)
@@ -406,9 +408,8 @@ To ograniczenie iOS. Instalacja ręczna: **Safari → Udostępnij → Dodaj do e
 
 ## Known Issues
 
-- **Brak synchronizacji w chmurze** — dane są lokalne (per przeglądarka/urządzenie); wyczyszczenie
-  danych przeglądarki = utrata historii. Rób regularne kopie zapasowe (eksport JSON łączy dane
-  między urządzeniami, ale nie synchronizuje automatycznie).
+- **Sync w chmurze opcjonalny** — bez konta dane są lokalne (per przeglądarka/urządzenie); wyczyszczenie
+  danych przeglądarki = utrata historii. Załóż konto w zakładce „Ty" albo regularnie eksportuj JSON.
 - **`worker.js` / `DEPLOY_WORKER.md` poza repo** — kod odwołuje się do `DEPLOY_WORKER.md`, którego
   nie ma w repozytorium; instrukcję deployu proxy znajdziesz w sekcji [Installation](#installation).
 - **Monolit `index.html`** (~290 KB) — brak bundlera/modularyzacji; świadomy kompromis „zero-build".
@@ -422,8 +423,9 @@ To ograniczenie iOS. Instalacja ręczna: **Safari → Udostępnij → Dodaj do e
 ## Prywatność i bezpieczeństwo
 
 - 🔐 **Klucz API** wyłącznie po stronie serwera (Cloudflare) — niewidoczny dla użytkownika
-- 📦 **Dane lokalnie** — historia i profile nie są nigdzie wysyłane
-- 🚫 **Brak rejestracji, kont, śledzenia i reklam**
+- 📦 **Dane lokalnie domyślnie** — historia i profile w `localStorage`; sync z chmurą uruchamia się dopiero po założeniu konta
+- ☁️ **Supabase** — opcjonalne konta email/hasło z izolacją per-user (Row Level Security wymuszone po stronie bazy)
+- 🚫 **Brak śledzenia i reklam** — konto służy tylko do synchronizacji
 - 🛡️ **DOMPurify** — odpowiedzi AI sanityzowane przed wyświetleniem; **CSP** + **SRI** na zasobach CDN
 - ⚡ **CORS whitelist** na Workerze — proxy używa tylko zaufana domena
 
