@@ -1131,6 +1131,10 @@ body { background-image: radial-gradient(circle at 0% 0%, rgba(212,255,58,0.04) 
 .coach-meta { font-size: 11px; color: var(--text-dim); margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
 
 /* ===== BACKUP REMINDER BANNER ===== */
+.collapsible > summary { user-select: none; }
+.collapsible > summary::-webkit-details-marker { display: none; }
+.collapsible[open] .collapsible-chevron { transform: rotate(180deg); }
+.collapsible-chevron { transition: transform 0.2s ease; color: var(--text-dim); }
 .backup-banner { background: linear-gradient(135deg, rgba(74,142,255,0.08) 0%, rgba(212,255,58,0.08) 100%); border: 1px solid var(--border); border-left: 3px solid var(--pull); border-radius: var(--radius); padding: 14px 18px; margin: 0 0 20px; display: flex; align-items: center; gap: 14px; animation: backupSlide 0.4s ease; }
 @keyframes backupSlide { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 .backup-banner-icon { width: 36px; height: 36px; border-radius: 8px; background: rgba(74,142,255,0.15); display: flex; align-items: center; justify-content: center; color: var(--pull); font-size: 18px; flex-shrink: 0; }
@@ -1921,15 +1925,6 @@ body {
       </div>
     </div>
 
-    <div class="panel">
-      <div class="panel-title"><i class="ti ti-users"></i>Profile</div>
-      <div class="profile-list" id="profileList"></div>
-      <div class="form-row" style="margin-top:10px;">
-        <input type="text" class="input" id="newProfileName" placeholder="Nazwa nowego profilu" maxlength="20">
-        <button aria-label="Dodaj profil" class="btn btn-primary" onclick="addProfile()"><i class="ti ti-plus"></i></button>
-      </div>
-    </div>
-
     <div class="panel" style="margin-top:1rem;">
       <div class="panel-title"><i class="ti ti-trophy"></i>Osiągnięcia <span id="achCount" style="color:var(--text-dim);font-weight:400;margin-left:4px;"></span></div>
       <div class="ach-grid" id="achievementsGrid"></div>
@@ -1955,9 +1950,35 @@ body {
     </div>
 
     <div class="panel" style="margin-top:1rem;">
-      <div class="panel-title"><i class="ti ti-database-export"></i>Kopia zapasowa (JSON)</div>
-      <div class="help" style="margin-bottom:10px">
-        Pełna kopia wszystkich profili i historii w jednym pliku.<br>
+      <div class="panel-title"><i class="ti ti-sparkles"></i>Połączenie z AI</div>
+      <div class="help">
+        Aplikacja łączy się z AI przez bezpieczny serwer proxy.<br>
+        Klucz API jest ukryty — nie musisz go podawać.
+      </div>
+    </div>
+
+    <!-- Zaawansowane: profile lokalne + kopia zapasowa (akordeony) -->
+    <details class="panel collapsible" style="margin-top:1rem;">
+      <summary class="panel-title" style="cursor:pointer; list-style:none; display:flex; align-items:center;">
+        <i class="ti ti-users"></i>Profile lokalne
+        <span style="margin-left:auto; color:var(--text-dim); font-size:12px; font-weight:400;">Zarządzaj wieloma osobami na tym urządzeniu</span>
+        <i class="ti ti-chevron-down collapsible-chevron" style="margin-left:8px;"></i>
+      </summary>
+      <div class="profile-list" id="profileList" style="margin-top:10px;"></div>
+      <div class="form-row" style="margin-top:10px;">
+        <input type="text" class="input" id="newProfileName" placeholder="Nazwa nowego profilu" maxlength="20">
+        <button aria-label="Dodaj profil" class="btn btn-primary" onclick="addProfile()"><i class="ti ti-plus"></i></button>
+      </div>
+    </details>
+
+    <details class="panel collapsible" style="margin-top:1rem;">
+      <summary class="panel-title" style="cursor:pointer; list-style:none; display:flex; align-items:center;">
+        <i class="ti ti-database-export"></i>Kopia zapasowa (JSON)
+        <span style="margin-left:auto; color:var(--text-dim); font-size:12px; font-weight:400;">Eksport / import pliku</span>
+        <i class="ti ti-chevron-down collapsible-chevron" style="margin-left:8px;"></i>
+      </summary>
+      <div class="help" style="margin-top:10px; margin-bottom:10px;">
+        Pełna kopia wszystkich profili i historii w jednym pliku. Przydatne jako kopia offline lub do przeniesienia danych.<br>
         Import scala dane — treningi z drugiego urządzenia dodają się bez nadpisywania.
       </div>
       <div class="btn-group" style="display:flex; gap:8px;">
@@ -1969,15 +1990,7 @@ body {
         </button>
       </div>
       <input type="file" id="jsonImportInput" accept="application/json,.json" style="display:none" onchange="handleJsonImport(this)">
-    </div>
-
-    <div class="panel" style="margin-top:1rem;">
-      <div class="panel-title"><i class="ti ti-sparkles"></i>Połączenie z AI</div>
-      <div class="help">
-        Aplikacja łączy się z AI przez bezpieczny serwer proxy.<br>
-        Klucz API jest ukryty — nie musisz go podawać.
-      </div>
-    </div>
+    </details>
 
     <div style="margin-top:1rem;">
       <a class="bug-report-btn" href="#" onclick="openBugReport();return false;"><i class="ti ti-bug"></i> Zgłoś bug</a>
@@ -6275,6 +6288,11 @@ function backupAndMark(format) {
 }
 
 function checkBackupReminder() {
+  // Gdy użytkownik korzysta z synchronizacji w chmurze, baner nie jest potrzebny
+  if (typeof cloudUser !== 'undefined' && cloudUser) {
+    hideBackupBanner();
+    return;
+  }
   if (shouldShowBackupReminder()) {
     showBackupBanner();
   } else {
@@ -8105,6 +8123,7 @@ async function initCloud() {
     cloudUser = session?.user || null;
     _lastAuthUserId = cloudUser?.id || null;
     _renderAccountPanel();
+    if (typeof checkBackupReminder === 'function') checkBackupReminder();
     if (cloudUser && cloudUser.id !== prevId) {
       _lastSyncedSnapshot = null;
       await cloudInitialSyncIfNeeded();
