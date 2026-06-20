@@ -1,7 +1,7 @@
 // Trening Pro - Service Worker
 // Strategia: cache-first dla statycznych zasobów, network-first dla index.html
 
-const CACHE_VERSION = 'trening-pro-v13';
+const CACHE_VERSION = 'trening-pro-v14';
 const CACHE_NAME = `${CACHE_VERSION}`;
 
 const STATIC_ASSETS = [
@@ -48,7 +48,14 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  if (url.hostname === 'api.anthropic.com' || url.hostname.endsWith('.workers.dev')) {
+  // Pass-through dla API zewnętrznych (AI proxy, Supabase auth/REST/Realtime)
+  // — caching tych odpowiedzi psułby tokeny sesji i zwracał nieaktualne dane.
+  if (
+    url.hostname === 'api.anthropic.com' ||
+    url.hostname.endsWith('.workers.dev') ||
+    url.hostname.endsWith('.supabase.co') ||
+    url.hostname.endsWith('.supabase.in')
+  ) {
     event.respondWith(fetch(request));
     return;
   }
