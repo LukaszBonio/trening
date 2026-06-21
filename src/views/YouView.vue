@@ -3,10 +3,26 @@ import { ref, onMounted } from 'vue'
 import { useCloudStore } from '../stores/cloud.js'
 import { useProfileStore } from '../stores/profile.js'
 import { useWorkoutsStore } from '../stores/workouts.js'
+import { useBodyStore } from '../stores/body.js'
+import BodyLogChart from '../components/BodyLogChart.vue'
 
 const cloud = useCloudStore()
 const profile = useProfileStore()
 const workouts = useWorkoutsStore()
+const body = useBodyStore()
+
+const newWeight = ref('')
+const newDate = ref(new Date().toISOString().slice(0, 10))
+
+function addBodyEntry() {
+  const w = Number(newWeight.value)
+  if (!w || w < 20 || w > 300) {
+    alert('Wpisz wagę między 20 a 300 kg')
+    return
+  }
+  body.addEntry(w, newDate.value)
+  newWeight.value = ''
+}
 
 const email = ref('')
 const password = ref('')
@@ -51,7 +67,8 @@ function exportBackup() {
     exportedAt: new Date().toISOString(),
     profiles: profile.profiles,
     activeProfileId: profile.activeId,
-    history: workouts.history
+    history: workouts.history,
+    body: body.entries
   }
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
@@ -75,8 +92,9 @@ function onFileChange(e) {
   reader.onload = (ev) => {
     try {
       const data = JSON.parse(ev.target.result)
-      if (!confirm(`Import: ${data.history?.length || 0} treningów, ${data.profiles?.length || 0} profili. Zastąpić obecne dane?`)) return
+      if (!confirm(`Import: ${data.history?.length || 0} treningów, ${data.body?.length || 0} pomiarów wagi. Zastąpić obecne dane?`)) return
       if (Array.isArray(data.history)) workouts.setHistory(data.history)
+      if (Array.isArray(data.body)) body.entries = data.body
       message.value = 'Import zakończony ✓'
     } catch (err) {
       message.value = 'Błąd importu: ' + err.message
@@ -151,6 +169,53 @@ function onFileChange(e) {
         </form>
         <p v-if="message" class="auth-msg">{{ message }}</p>
       </div>
+    </div>
+
+    <!-- Body log -->
+    <div class="card">
+      <h2 class="card-title">Waga ciała</h2>
+      <div v-if="body.latest" class="body-current">
+        <div>
+          <div class="dim">Aktualna</div>
+          <div class="body-weight">{{ body.latest.weight }}<small>kg</small></div>
+        </div>
+        <div v-if="body.trend !== null" class="body-trend" :class="{ down: body.trend < 0, up: body.trend > 0 }">
+          {{ body.trend > 0 ? '+' : '' }}{{ body.trend }}<small>kg</small>
+          <div class="dim" style="font-size: 11px; font-weight: 400;">od początku</div>
+        </div>
+      </div>
+
+      <form @submit.prevent="addBodyEntry" class="body-form">
+        <input
+          type="number"
+          step="0.1"
+          inputmode="decimal"
+          v-model="newWeight"
+          placeholder="Waga (kg)"
+          required
+        />
+        <input type="date" v-model="newDate" required />
+        <button type="submit" class="btn btn-primary">
+          <i class="ti ti-plus"></i> Dodaj
+        </button>
+      </form>
+
+      <BodyLogChart :entries="body.sortedAsc" style="margin-top: var(--space-4)" />
+
+      <details v-if="body.entries.length" style="margin-top: var(--space-4)">
+        <summary style="cursor: pointer; color: var(--text-muted); font-size: 13px;">
+          Historia pomiarów ({{ body.entries.length }})
+        </summary>
+        <ul class="body-history">
+          <li v-for="e in body.sortedDesc" :key="e.id" class="body-entry">
+            <span class="body-date">{{ e.date }}</span>
+            <span class="body-w">{{ e.weight }}kg</span>
+            <button class="btn-tiny-icon" @click="body.removeEntry(e.id)">
+              <i class="ti ti-x"></i>
+            </button>
+          </li>
+        </ul>
+      </details>
     </div>
 
     <!-- Backup -->
@@ -314,4 +379,76 @@ function onFileChange(e) {
   gap: 4px;
 }
 .btn-tiny:hover { color: var(--text); border-color: var(--border-strong); }
+
+.body-current {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+.body-current .dim { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.body-weight {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 38px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.body-weight small { font-size: 14px; opacity: 0.6; margin-left: 2px; }
+.body-trend {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  text-align: right;
+}
+.body-trend.down { color: var(--success); }
+.body-trend.up { color: var(--warning); }
+.body-trend small { font-size: 12px; opacity: 0.7; margin-left: 2px; }
+
+.body-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+}
+.body-form input {
+  padding: 10px 14px;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+}
+.body-form input:focus { outline: none; border-color: var(--accent); }
+
+.body-history { list-style: none; display: flex; flex-direction: column; gap: 4px; margin-top: var(--space-3); }
+.body-entry {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: var(--space-3);
+  padding: 8px 12px;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  align-items: center;
+}
+.body-date { font-size: 12px; color: var(--text-muted); }
+.body-w { font-size: 14px; font-weight: 600; }
+.btn-tiny-icon {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  width: 28px; height: 28px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-tiny-icon:hover { color: var(--danger); border-color: var(--danger); }
+
+@media (max-width: 540px) {
+  .body-form { grid-template-columns: 1fr 1fr; }
+  .body-form button { grid-column: 1 / -1; }
+}
 </style>
