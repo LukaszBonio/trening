@@ -2,9 +2,15 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "trening",
+      "name": "vite-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 5173
+    },
+    {
+      "name": "trening-legacy",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "3456"],
+      "runtimeArgs": ["-m", "http.server", "3456", "--directory", "legacy"],
       "port": 3456
     }
   ]
