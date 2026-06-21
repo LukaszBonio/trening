@@ -10,6 +10,7 @@ import ExerciseCard from '../components/ExerciseCard.vue'
 import RestTimer from '../components/RestTimer.vue'
 import AIGenerator from '../components/AIGenerator.vue'
 import CompletionSummary from '../components/CompletionSummary.vue'
+import PlateCalculator from '../components/PlateCalculator.vue'
 import { useCustomPlansStore } from '../stores/customPlans.js'
 
 const session = useSessionStore()
@@ -147,6 +148,8 @@ function discardWorkout() {
     </div>
 
     <RestTimer ref="restTimerRef" />
+
+    <PlateCalculator />
 
     <ExerciseCard
       v-for="(ex, i) in session.active.exercises"

@@ -12,6 +12,7 @@ import VolumeChart from '../components/VolumeChart.vue'
 import WeeklyChart from '../components/WeeklyChart.vue'
 import ExerciseProgressChart from '../components/ExerciseProgressChart.vue'
 import AchievementsGrid from '../components/AchievementsGrid.vue'
+import CalendarHeatmap from '../components/CalendarHeatmap.vue'
 
 const workouts = useWorkoutsStore()
 
@@ -91,6 +92,11 @@ const progressPoints = computed(() =>
         <div class="stat-label">Wolumen (kg)</div>
         <div class="stat-value">{{ totalVolume.toLocaleString('pl-PL') }}</div>
       </div>
+    </div>
+
+    <div class="card" v-if="totalWorkouts">
+      <h3 class="card-title">Kalendarz treningowy</h3>
+      <CalendarHeatmap :workouts="workouts.history" />
     </div>
 
     <div class="card" v-if="totalWorkouts">

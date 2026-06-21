@@ -6,6 +6,7 @@ import { useWorkoutsStore } from '../stores/workouts.js'
 import { useBodyStore } from '../stores/body.js'
 import { useSettingsStore } from '../stores/settings.js'
 import BodyLogChart from '../components/BodyLogChart.vue'
+import { permission as notifPermission, requestPermission as requestNotifPermission, isSupported as notifSupported } from '../lib/notifications.js'
 
 const cloud = useCloudStore()
 const profile = useProfileStore()
@@ -17,6 +18,13 @@ const COLORS = [
   '#d4ff3a', '#ff5f4a', '#4a8eff', '#b566ff',
   '#4ade80', '#fb923c', '#f472b6', '#22d3ee'
 ]
+
+const notifState = ref(notifSupported() ? notifPermission() : 'unsupported')
+
+async function enableNotifications() {
+  const result = await requestNotifPermission()
+  notifState.value = result
+}
 
 const newWeight = ref('')
 const newDate = ref(new Date().toISOString().slice(0, 10))
@@ -222,6 +230,24 @@ function onFileChange(e) {
           <span>Pokazuj RPE w sesji</span>
           <input type="checkbox" v-model="settingsStore.settings.showRpe" />
         </label>
+
+        <div class="setting">
+          <span>Powiadomienia o końcu przerwy</span>
+          <button
+            v-if="notifState === 'default'"
+            class="btn-tiny"
+            @click="enableNotifications"
+          >
+            Włącz
+          </button>
+          <span v-else-if="notifState === 'granted'" class="setting-status ok">
+            <i class="ti ti-check"></i> Aktywne
+          </span>
+          <span v-else-if="notifState === 'denied'" class="setting-status denied">
+            Zablokowane w przeglądarce
+          </span>
+          <span v-else class="setting-status denied">Niedostępne</span>
+        </div>
 
         <div class="setting">
           <span>Kolor akcentu</span>
@@ -580,6 +606,15 @@ function onFileChange(e) {
   transform: scale(1.15);
 }
 .color-swatch:hover { transform: scale(1.1); }
+
+.setting-status {
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.setting-status.ok { color: var(--success); }
+.setting-status.denied { color: var(--text-dim); }
 
 @media (max-width: 540px) {
   .body-form { grid-template-columns: 1fr 1fr; }

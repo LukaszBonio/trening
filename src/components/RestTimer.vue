@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onUnmounted } from 'vue'
+import { notify } from '../lib/notifications.js'
 
 const remaining = ref(0)
 const running = ref(false)
@@ -22,9 +23,7 @@ function start(sec = target.value) {
     remaining.value--
     if (remaining.value <= 0) {
       stop()
-      try {
-        if (navigator.vibrate) navigator.vibrate([200, 100, 200])
-      } catch {}
+      notify('Koniec przerwy', { body: 'Czas na kolejną serię!', tag: 'rest-timer' })
     }
   }, 1000)
 }

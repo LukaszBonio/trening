@@ -2,6 +2,25 @@
 import { ref, computed } from 'vue'
 import { useWorkoutsStore } from '../stores/workouts.js'
 import { exportWorkoutToPDF } from '../lib/pdf.js'
+import { useCustomPlansStore } from '../stores/customPlans.js'
+
+const customPlans = useCustomPlansStore()
+
+function saveAsTemplate(workout) {
+  const name = prompt('Nazwa planu:', `${workout.planName} (z ${new Date(workout.date).toLocaleDateString('pl-PL')})`)
+  if (!name) return
+  customPlans.add({
+    name: name.trim(),
+    type: workout.type,
+    exercises: workout.exercises.map(ex => ({
+      name: ex.name,
+      sets: ex.sets.length,
+      reps: ex.sets[0] ? `${ex.sets[0].reps}` : '8-12',
+      tip: ''
+    }))
+  })
+  alert(`Plan "${name}" zapisany ✓\nZnajdziesz go w "Trening → ${workout.type.toUpperCase()} → Plany".`)
+}
 
 const workouts = useWorkoutsStore()
 const expandedId = ref(null)
@@ -134,6 +153,9 @@ const typeColor = (type) => ({
               </button>
               <button class="btn" @click="exportWorkoutToPDF(w)">
                 <i class="ti ti-file-download"></i> PDF
+              </button>
+              <button class="btn" @click="saveAsTemplate(w)">
+                <i class="ti ti-template"></i> Zapisz jako plan
               </button>
               <button class="btn btn-danger" @click="remove(w.id)">
                 <i class="ti ti-trash"></i> Usuń
