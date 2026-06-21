@@ -8,7 +8,8 @@ Twój osobisty trener siłowy w przeglądarce — generuje plany dopasowane do T
 prowadzi Cię przez trening seria po serii i analizuje postępy. Działa offline jako PWA.
 
 [![PWA](https://img.shields.io/badge/PWA-installable-5A0FC8?logo=pwa&logoColor=white)](https://lukaszbonio.github.io/trening/)
-[![Vanilla JS](https://img.shields.io/badge/Vanilla_JS-zero_build-F7DF1E?logo=javascript&logoColor=black)](#technology-stack)
+[![Vue 3](https://img.shields.io/badge/Vue_3-Composition_API-4FC08D?logo=vue.js&logoColor=white)](#technology-stack)
+[![Vite](https://img.shields.io/badge/Vite-5.4-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![AI](https://img.shields.io/badge/AI-Claude_Sonnet_4.6-D97757?logo=anthropic&logoColor=white)](https://www.anthropic.com/)
 [![Offline](https://img.shields.io/badge/Offline-ready-4ade80)](#features)
 [![License](https://img.shields.io/badge/license-Personal-lightgrey)](#license)
@@ -26,6 +27,7 @@ prowadzi Cię przez trening seria po serii i analizuje postępy. Działa offline
 - [Features](#features)
 - [Quick Start](#quick-start)
 - [Instalacja na telefonie](#instalacja-na-telefonie-jak-natywna-aplikacja)
+- [Development](#development)
 - [Environment Variables](#environment-variables)
 - [Architecture](#architecture)
 - [Technology Stack](#technology-stack)
@@ -42,12 +44,11 @@ prowadzi Cię przez trening seria po serii i analizuje postępy. Działa offline
 ## O projekcie
 
 **Trening Pro** to aplikacja webowa (PWA) do planowania i rejestrowania treningów siłowych.
-Plany generuje **Claude** (model `claude-sonnet-4-6`) z uwzględnieniem Twojego celu, historii
-i notatek po treningu — dzięki czemu każdy kolejny plan jest lepiej dopasowany niż poprzedni.
+Plany generuje **Claude** (model `claude-sonnet-4-6`) z uwzględnieniem Twojego celu i historii.
 
-Aplikacja jest **zero-build**: to jeden statyczny plik HTML z osadzonym CSS i JavaScriptem,
-bez frameworków i bez kroku kompilacji. Hostowana jest na GitHub Pages, a klucz API ukryty jest
-za serwerem proxy (Cloudflare Worker) — **użytkownik nie potrzebuje własnego klucza API.**
+Aplikacja zbudowana jest na **Vue 3 + Vite + Pinia** — modularna struktura komponentów z reaktywnym
+state management i lazy-loaded routingiem. PWA z Service Workerem zapewnia działanie offline.
+Klucz API jest ukryty za serwerem proxy (Cloudflare Worker) — **użytkownik nie potrzebuje własnego klucza API.**
 
 > **Dla kogo?** Dla osób trenujących siłowo, które chcą gotowego planu na dziś, prostego
 > rejestrowania serii i czytelnej analizy postępów — bez zakładania konta i bez opłat.
@@ -68,56 +69,63 @@ za serwerem proxy (Cloudflare Worker) — **użytkownik nie potrzebuje własnego
 ## Features
 
 ### 🎯 Plany treningowe
-- **3 systemy treningowe** — PPL (Push/Pull/Legs), Upper/Lower (4-dniowy), Full Body (3×/tydz.)
-- **Generowanie planu przez AI** — ćwiczenia pogrupowane wg partii, z opisem techniki
-- **Spersonalizowane** — Claude analizuje historię i unika powtarzania ćwiczeń
-- **Sugestia następnego treningu** — aplikacja pamięta ostatni typ i podpowiada kolejny
-- **Zamienniki ćwiczeń (⇄)** — alternatywy angażujące tę samą partię, gdy sprzęt zajęty
-- **Cel treningowy** — Redukcja / Masa / Siła / Rzeźba / Kondycja (steruje seriami i przerwami)
-- **Plan offline** — 67 gotowych planów i 276+ ćwiczeń bez internetu i bez AI
+- **10 typów treningu** — Push/Pull/Legs, Upper A/B, Lower A/B, FBW A/B/C
+- **67 gotowych planów offline** + **276 ćwiczeń** w bazie ze słownikiem 25 głów mięśniowych
+- **Generator AI** — Claude tworzy spersonalizowany plan z cel + sprzęt + wykluczenia
+- **Edytor własnych planów** — twórz, edytuj, duplikuj plany z drag-drop reorderingu ćwiczeń
+- **Ulubione** — gwiazdka przypina najczęściej używane plany na górze listy
+- **Powtórz ostatni trening** — jeden klik, ciężary z poprzedniej sesji pre-fillowane
 
-### 🏋️ Rejestrowanie treningu (tryb krok po kroku)
-- **Tryb kart** — jedna seria na ekranie, maksymalny fokus
-- **Steppery ± przy polach** — powtórzenia ±1 i ciężar ±2,5 kg jednym tknięciem (tryb kart i listy)
-- **Proaktywna podpowiedź progresji** — przy ćwiczeniu sugeruje docelowy ciężar (np. „spróbuj 62,5 kg") na bazie historii i wykrywa stagnację
-- **Pre-fill ciężaru** — wczytuje ostatni używany ciężar, kolejne serie kopiują poprzednią
-- **Timer odpoczynku** — startuje automatycznie, presety 60/90/120 s oraz korekta **−15 s / +15 s**
-- **Wibracja + dźwięk + komunikat głosowy** po zakończeniu przerwy
-- **Kalkulator 1RM** (Brzycki + Epley), stoper czasu treningu, wybór daty
-- **Autozapis roboczy** — baner przywracania niedokończonego treningu (TTL 72 h)
-- **Workout Recap** — po zapisie podsumowanie: tonaż, serie, porównanie do poprzedniego treningu, nowe rekordy (z konfetti)
+### 🏋️ Rejestrowanie treningu
+- **Tryb kart** (domyślny) — jedna partia mięśniowa na ekran, swipe między kartami
+- **Tryb listy** — wszystkie ćwiczenia w jednym widoku (toggle w ustawieniach)
+- **Logowanie serii** — ciężar, powtórzenia, RPE (1-10), notatki tekstowe
+- **Timer odpoczynku** — auto-start po zaznaczeniu serii, presety 60/90/120/180s, ±15s
+- **Powiadomienia + wibracja** — koniec przerwy działa nawet w tle
+- **Live duration** — zegar treningu w nagłówku sesji (mm:ss)
+- **Kalkulator talerzy** — wpisz ciężar, zobacz rozkład per stronę (kolory IPF)
+- **Auto-zapis draft** — przerwana sesja persystuje w localStorage, wraca po reload
+- **Workout summary** — modal po zakończeniu: serie, tonaż, RPE, **nowe rekordy + konfetti**
 
-### 📊 Dashboard i analiza
-- **Dashboard (Pulpit)** — ekran startowy: dzisiejszy trening, statystyki tygodnia,
-  ostatni rekord, proaktywny insight coacha, seria dni, pasek 7 dni, szybkie akcje
-- **Strength Score** — zagregowany wskaźnik siły (suma najlepszych 1RM kluczowych bojów) z trendem 30-dniowym
-- **Rekordy (PR)** — automatyczne wykrywanie nowych rekordów 1RM, kafel na Pulpicie, celebracja w Recap
-- **Statystyki tygodniowe** i **wykres ostatnich 45 dni** (Push/Pull/Legs)
-- **Wolumen tygodniowy (tonaż)** i **trend siły (1RM)** — wykresy postępu
-- **Heatmapa aktywności** — siatka roku pokazująca konsekwencję treningową
-- **Analiza partii mięśniowych** — wykres siły per ćwiczenie, historyczny rekord 1RM
-- **AI Coach** — analiza postępów oraz **czat konwersacyjny** (pytaj o trening, technikę, progresję)
+### 📊 Statystyki i analiza
+- **5 kafelków na górze** — treningi total, streak (tygodni), 7 dni, łączne serie, wolumen
+- **Wolumen w czasie** (line chart) i **treningi w tygodniach** (bar chart)
+- **Kalendarz heatmap** — GitHub-style siatka 26 tygodni, klik dnia → szczegóły
+- **Per-exercise progress** — wybierz ćwiczenie, zobacz krzywą **1RM / top weight / wolumen**
+- **Top 10 PR** — ranking rekordów osobistych ze wzorem Epley (1RM ≈ weight × (1 + reps/30))
+- **Wolumen wg partii mięśniowej** — paski z rankingiem najbardziej trenowanych grup
+- **14 osiągnięć** — milestones (10/25/50/100/250 treningów, streak 2/4/8/12 tyg., 100kg club, body log)
 
-### 🔥 Motywacja
-- **Onboarding** — przy pierwszym uruchomieniu prowadzi przez cel i system treningowy (bez konta)
-- **Osiągnięcia / odznaki** — 9 odznak (treningi, seria, rekordy, tonaż, balans PPL) z powiadomieniem o zdobyciu
-- **Seria treningowa wybaczająca** — pojedyncze dni przerwy (regeneracja) jej nie zerują
-- **Masa ciała i samopoczucie** — ręczny log masy + readiness (substytut wearables)
-- **Udostępnianie treningu** — Web Share z podsumowaniem treningu i rekordami
+### ☁️ Synchronizacja w chmurze
+- **Konta Supabase** (email + hasło) — opcjonalne, dane lokalne działają bez konta
+- **Sync deltami** — workouts, body log, settings synchronizują się automatycznie (debounce 1.5s)
+- **Offline queue** — gdy brak internetu, operacje kolejkowane → auto-flush po `online` event
+- **Exponential backoff** — retry 6× z 1s/2s/4s/8s/16s/32s, drop po wyczerpaniu
+- **Last-write-wins** by `id` — proste, działa dla solo dewa
+- **Row Level Security** — Supabase RLS, każdy user widzi tylko swoje dane
 
 ### 📥 Dane
-- **Synchronizacja w chmurze (Supabase)** — opcjonalne konto email/hasło; treningi dostępne z każdego urządzenia po zalogowaniu
-- **Sync deltami** — po każdym zapisie wysyłane są tylko zmiany; dane lokalne pozostają jako kopia offline
-- **Initial sync** — przy pierwszym logowaniu istniejące treningi trafiają jednorazowo do chmury (dedup po `id`)
-- **Import** z tekstu (AI) lub pliku CSV · **Eksport** do CSV i PDF · wykrywanie duplikatów
-- **Kopia zapasowa JSON** — pełny backup wszystkich profili i historii w jednym pliku
-- **Scalanie profili** — import łączy treningi z innego urządzenia bez duplikatów i nadpisywania
-- **Wiele profili** · historia 200 ostatnich treningów · przypomnienia o kopii zapasowej
+- **Import/Export JSON** — backup wszystkiego (history + body log + profile)
+- **PDF export** per trening — jsPDF z tabelą serii, RPE, notatkami, paginacją
+- **Zapisz trening jako plan** — historię można zamienić w custom plan jednym klikiem
+- **Body log** — waga ciała w czasie z wykresem + trendem
+- **Wiele profili** lokalnych
+
+### 🎨 Personalizacja
+- **Motyw ciemny / jasny** — toggle w ustawieniach
+- **Kolor akcentu** — 8 wariantów, applied via CSS variables na żywo
+- **Domyślny czas timera** — 60/90/120/150/180/240s
+- **Jednostki** — kilogramy lub funty
+- **RPE display toggle** — pokaż/ukryj pole RPE
+- **Reduced motion** — auto-respect `prefers-reduced-motion`
 
 ### 📱 PWA
-- Instalacja na telefonie i komputerze · pełny tryb offline (poza AI) · auto-aktualizacje
-- **Responsywny UI premium** — stały sidebar (desktop), dolny pasek nawigacji (mobile), tryb ciemny
-- **Nawigacja 5-zakładkowa** — Pulpit · Plan · Postępy (statystyki + historia) · Coach · Ty (profil, osiągnięcia, backup)
+- **Instalacja** na telefonie i komputerze; pełny tryb offline (poza AI)
+- **Splash screen** z animacją logo
+- **Mobile bottom nav** — sticky bottom z safe-area-inset
+- **Page transitions** — fade + slide między widokami
+- **Onboarding tour** — 4 ekrany przy pierwszym uruchomieniu
+- **Skeleton loaders** dla wykresów Chart.js
 
 ---
 
@@ -147,14 +155,41 @@ Możesz dodać aplikację do ekranu głównego telefonu — będzie wyglądać i
 3. Wybierz **"Dodaj do ekranu głównego"**
 4. Potwierdź — gotowe!
 
-> Po instalacji aplikacja działa **w pełni offline** — możesz trenować bez internetu. Tylko funkcje AI (generowanie planów, AI Coach) wymagają połączenia.
+> Po instalacji aplikacja działa **w pełni offline** — możesz trenować bez internetu. Tylko funkcje AI (generowanie planów) wymagają połączenia.
+
+---
+
+## Development
+
+```bash
+# Klonuj repo
+git clone https://github.com/LukaszBonio/trening.git
+cd trening
+
+# Instaluj zależności
+npm install
+
+# Dev server (z HMR)
+npm run dev          # → http://localhost:5173
+
+# Production build
+npm run build        # → dist/
+
+# Preview produkcyjnego buildu
+npm run preview
+```
+
+**Wymagania:** Node 18+, npm 9+.
+
+**Dev:** Vite + HMR, lazy-loaded routes, Pinia DevTools (przez Vue DevTools).
+
+**Build:** ~2.3s, **27 plików w PWA precache (~1.4 MB)** — Chart.js i jsPDF wydzielone do osobnych chunków, lazy-loaded per route.
 
 ---
 
 ## Environment Variables
 
-Frontend jest **statyczny i nie używa zmiennych środowiskowych w czasie build**. Konfiguracja
-dotyczy wyłącznie serwera proxy oraz (opcjonalnie) nadpisania adresu proxy po stronie klienta.
+Frontend nie używa zmiennych w build time. Konfiguracja dotyczy proxy + opcjonalnie klienta.
 
 ### Cloudflare Worker
 
@@ -163,92 +198,118 @@ dotyczy wyłącznie serwera proxy oraz (opcjonalnie) nadpisania adresu proxy po 
 | `ANTHROPIC_API_KEY` | secret | ✅ | Klucz API Anthropic — ukryty po stronie serwera |
 | `ALLOWED_ORIGIN` | var | ⬜ | Whitelist CORS, np. `https://lukaszbonio.github.io` |
 
-Przykładowy plik `.dev.vars` (lokalne testy Wrangler — **nie commituj**):
+### Supabase (opcjonalnie — sync między urządzeniami)
 
-```ini
-# .dev.vars
-ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxxxxxxxxxxxxx
-ALLOWED_ORIGIN=https://lukaszbonio.github.io
-```
+Schemat tabel w `docs/SUPABASE_SCHEMA.sql`. Tabele:
+- `workouts` — historia treningów (id text, user_id uuid, data jsonb)
+- `body_log` — pomiary wagi ciała (id text, user_id uuid, data jsonb)
+- `user_settings` — preferencje per user (user_id uuid, data jsonb)
+
+Każda tabela ma Row Level Security wymuszające `auth.uid() = user_id`.
 
 ### Konfiguracja po stronie klienta
 
 | Klucz | Miejsce | Opis |
 |---|---|---|
-| `CLAUDE_API_URL` | stała w `index.html` | Domyślny adres workera proxy |
-| `tp_proxy_url` | `localStorage` | Opcjonalne nadpisanie adresu proxy (Ustawienia → profil) |
+| `SUPABASE_URL` / `SUPABASE_KEY` | `src/stores/cloud.js` | Publishable key Supabase |
+| `DEFAULT_PROXY` | `src/lib/ai.js` | Cloudflare Worker URL |
+| `tp_proxy_url` | `localStorage` | Opcjonalne nadpisanie proxy do testów |
 
 ---
 
 ## Architecture
 
-Aplikacja jest klientocentryczna: cała logika i dane żyją w przeglądarce, a sieć służy wyłącznie
-do wywołań AI przez proxy. Service Worker zapewnia działanie offline.
+Vue 3 SPA z modularnym state managementem. Cała logika i dane domyślnie żyją w przeglądarce.
+Service Worker (vite-plugin-pwa) zapewnia działanie offline. Sieć używana jest tylko dla
+opcjonalnego sync z Supabase oraz generowania planów przez Claude API.
 
 ```mermaid
 flowchart LR
-    subgraph Client["📱 Przeglądarka (PWA)"]
-        UI["index.html<br/>UI + logika · Vanilla JS"]
-        DB["db.js<br/>67 planów offline · 276+ ćwiczeń"]
-        SW["sw.js<br/>Service Worker · cache"]
-        LS[("localStorage<br/>profile · historia · draft")]
+    subgraph Client["📱 Przeglądarka (Vue PWA)"]
+        UI["Vue 3 components<br/>+ Vue Router (4 widoki)"]
+        Stores["Pinia stores (9)<br/>workouts · session · profile<br/>cloud · timer · body · settings<br/>customPlans · favorites"]
+        Libs["Lib modules<br/>db · analytics · achievements<br/>ai · pdf · plates · workoutSchema<br/>offlineQueue · notifications"]
+        SW["Service Worker<br/>(generated by Vite PWA)"]
+        LS[("localStorage<br/>history · drafts · settings · queue")]
     end
     subgraph Edge["☁️ Cloudflare"]
-        W["Worker (proxy)<br/>klucz API ukryty · CORS"]
+        W["Worker (proxy)<br/>klucz API ukryty"]
     end
-    AI["🧠 Claude API<br/>claude-sonnet-4-6"]
+    subgraph Cloud["☁️ Supabase (opcjonalny)"]
+        Auth["Auth<br/>email+hasło"]
+        DB[("PostgreSQL + RLS<br/>workouts · body_log · settings")]
+    end
+    AI["🧠 Claude API"]
 
-    UI <-->|odczyt/zapis| LS
-    UI -->|plan offline| DB
-    SW -.->|serwuje z cache| UI
-    UI -->|POST plan / analiza| W
+    UI <-->|reactive| Stores
+    Stores <-->|persist| LS
+    Stores -->|import| Libs
+    SW -.->|cache| UI
+    Stores -->|generate plan| W
     W -->|x-api-key| AI
-    AI -->|JSON| W
-    W -->|JSON| UI
+    Stores -->|sync queue| Auth
+    Auth --> DB
 ```
 
 ### Przepływ użytkownika
 
 ```mermaid
 flowchart TD
-    A["Wybierz system<br/>PPL / Upper-Lower / FBW"] --> B["Wybierz dzień + cel"]
-    B --> C{"Online?"}
-    C -->|Tak| D["Generuj plan AI (Claude)"]
-    C -->|Nie| E["Plan offline (baza)"]
-    D --> F["Tryb kart: seria po serii"]
-    E --> F
-    F --> G["Timer odpoczynku"]
-    G --> F
-    F --> H["Podsumowanie → zapis do historii"]
-    H --> I["Dashboard · Statystyki · AI Coach"]
+    A["Wybierz typ<br/>(Push/Pull/Legs/Upper/Lower/FBW)"] --> B{"Źródło planu?"}
+    B -->|Biblioteka| C1["67 gotowych planów"]
+    B -->|AI| C2["Claude generuje plan"]
+    B -->|Custom| C3["Edytor: dodaj ćwiczenia"]
+    C1 --> D["Tryb kart: partia po partii"]
+    C2 --> D
+    C3 --> D
+    D --> E["Loguj serie + RPE + notatki"]
+    E --> F["Rest timer + powiadomienie"]
+    F --> E
+    D --> G["Zakończ → summary z konfetti"]
+    G --> H["Historia · Statystyki · Achievements"]
+    H -.->|opcjonalnie| I["Sync z Supabase"]
 ```
 
 ### Struktura repozytorium
 
 ```
 trening/
-├── index.html              # Cała aplikacja: UI + CSS + logika (Vanilla JS)
-├── db.js                   # Baza planów offline + słownik 25 głów mięśniowych
-├── sw.js                   # Service Worker (offline, cache, auto-aktualizacje)
-├── manifest.json           # Konfiguracja PWA (ikony, skróty, motyw)
-├── icon-192.png            # Ikona 192×192
-├── icon-512.png            # Ikona 512×512
-├── icon-maskable-512.png   # Ikona maskable (Android)
-└── README.md               # Ten plik
+├── index.html                  # Entry point z inline splash screen
+├── vite.config.js              # Vite + PWA plugin config
+├── package.json
+├── src/
+│   ├── main.js                 # Bootstrap (Pinia + Router + App)
+│   ├── App.vue                 # Layout, tabs desktop, bottom nav mobile, onboarding
+│   ├── router/                 # Vue Router (hash mode, lazy-loaded views)
+│   ├── views/                  # 4 widoki
+│   │   ├── WorkoutView.vue     #   Wybór planu + aktywna sesja
+│   │   ├── StatsView.vue       #   Statystyki, wykresy, achievements, PR
+│   │   ├── HistoryView.vue     #   Lista treningów, edycja, PDF, zapis jako plan
+│   │   └── YouView.vue         #   Konto, ustawienia, body log, backup
+│   ├── components/             # 13 komponentów (ExerciseCard, RestTimer, ...)
+│   ├── stores/                 # 9 Pinia stores (workouts, session, cloud, ...)
+│   ├── lib/                    # Pure modules (db, analytics, ai, pdf, ...)
+│   └── styles/global.css       # CSS variables (dark/light themes)
+├── public/                     # Static assets (icons, manifest)
+├── docs/SUPABASE_SCHEMA.sql    # SQL do wykonania w Supabase
+└── legacy/                     # Stary monolit (8270 LOC index.html) — referencja
 ```
 
-> Serwer proxy (`worker.js`) deployowany jest osobno na Cloudflare i nie znajduje się w repo.
-
-### Główne moduły (wewnątrz `index.html`)
+### Główne moduły
 
 | Moduł | Odpowiedzialność |
 |---|---|
-| **State / Profiles** | Profile, historia, cache, wersjonowanie schematu w `localStorage` |
-| **Plan engine** | `WORKOUT_SCHEMA`, generowanie planów AI + sugestie, zamienniki |
-| **Workout (card mode)** | Tryb krok po kroku, timer odpoczynku, dane per seria, draft |
-| **Dashboard / Stats** | Pulpit, statystyki, wykresy Chart.js, analiza partii i 1RM |
-| **AI Coach** | Wywołania `callClaude()` + parsowanie/sanityzacja odpowiedzi |
-| **PWA** | Rejestracja Service Workera, install prompt, obsługa aktualizacji |
+| **stores/session.js** | Aktywna sesja: dodawanie serii, toggle, persistencja draft |
+| **stores/workouts.js** | Historia treningów, CRUD, persistencja, computed (last, count) |
+| **stores/cloud.js** | Supabase auth, init/delta sync, integracja z offlineQueue |
+| **stores/customPlans.js** | Własne plany użytkownika (CRUD) |
+| **stores/favorites.js** | Ulubione plany (library + custom) |
+| **lib/workoutSchema.js** | Grupowanie ćwiczeń po partii dla trybu kart (hybrid: muscle + index) |
+| **lib/analytics.js** | Estimated 1RM (Epley), PR detection, streak, exerciseProgress |
+| **lib/ai.js** | Claude API client + JSON validation |
+| **lib/offlineQueue.js** | Persistent queue z exponential backoff retry |
+| **lib/plates.js** | Kalkulator talerzy (kolory IPF) |
+| **lib/pdf.js** | Eksport treningu do PDF (jsPDF) |
 
 ---
 
@@ -256,44 +317,50 @@ trening/
 
 | Warstwa | Technologia |
 |---|---|
-| **Język / runtime** | HTML5 · CSS3 · Vanilla JavaScript (ES2020+) — **bez frameworka, bez build** |
-| **Wykresy** | [Chart.js 4.4](https://www.chartjs.org/) |
-| **PDF / bezpieczeństwo** | [jsPDF 2.5](https://github.com/parallax/jsPDF) · [DOMPurify 3.1](https://github.com/cure53/DOMPurify) |
-| **Ikony / UI** | [Tabler Icons](https://tabler-icons.io/) · [canvas-confetti](https://github.com/catdad/canvas-confetti) · Google Fonts (Inter, Space Grotesk) |
-| **AI** | [Claude API](https://www.anthropic.com/) — `claude-sonnet-4-6` |
-| **Backend (proxy)** | Cloudflare Workers (serverless, klucz API ukryty) |
-| **Web API** | Service Worker · localStorage · Web Audio · Web Speech · Vibration |
-| **Hosting** | GitHub Pages (frontend) + Cloudflare (proxy) |
+| **Framework** | [Vue 3.5](https://vuejs.org/) (Composition API + `<script setup>`) |
+| **Build / Dev** | [Vite 5.4](https://vitejs.dev/) + [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) |
+| **State** | [Pinia 2.2](https://pinia.vuejs.org/) — 9 stores, reactive, persistent |
+| **Routing** | [Vue Router 4](https://router.vuejs.org/) — hash mode, lazy-loaded views |
+| **Wykresy** | [Chart.js 4.4](https://www.chartjs.org/) — line, bar, lazy-loaded chunk |
+| **PDF** | [jsPDF 2.5](https://github.com/parallax/jsPDF) — eksport treningu |
+| **Konfetti** | [canvas-confetti](https://github.com/catdad/canvas-confetti) — workout completion |
+| **Cloud** | [Supabase](https://supabase.com/) — auth + PostgreSQL z RLS |
+| **AI** | [Claude API](https://www.anthropic.com/) — `claude-sonnet-4-6` przez Cloudflare Worker proxy |
+| **Ikony / fonty** | [Tabler Icons](https://tabler-icons.io/) · Google Fonts (Inter, Space Grotesk) |
+| **Web API** | Service Worker · localStorage · Notification API · Vibration · Drag-Drop |
+| **Hosting** | GitHub Pages (frontend) + Cloudflare (proxy) + Supabase (cloud sync) |
 
 ---
 
 ## Jak korzystać (UX)
 
-1. **Otwórz Dashboard** — zobacz dzisiejszy sugerowany trening, statystyki tygodnia i serię dni.
-2. **Wybierz system i dzień** w widoku *Plan* (PPL / Upper-Lower / FBW) oraz **cel treningowy**.
-3. **Wygeneruj plan** (AI) lub użyj **Planu offline**.
-4. **Rozpocznij trening** — wpisuj powtórzenia i ciężar seria po serii; timer odpoczynku startuje sam.
-5. **Zapisz** — wynik trafia do *Historii*, a *Statystyki* i *AI Coach* aktualizują się automatycznie.
+1. **Onboarding** — przy pierwszym wejściu 4 ekrany wprowadzenia (skip / dalej).
+2. **Wybierz typ treningu** w zakładce "Trening" (Push / Pull / Legs / Upper / Lower / FBW).
+3. **Wybierz źródło planu:** Plany (biblioteka), AI (generator) lub Nowy (własny edytor).
+4. **Trening** w trybie kart — jedna partia mięśniowa na ekran, swipe lub strzałki ◄ ► między.
+5. **Loguj serie** — ciężar, powtórzenia, RPE; check ⭕ uruchamia timer odpoczynku.
+6. **Zakończ trening** — modal z podsumowaniem, konfetti, detekcja nowych PR.
+7. **Statystyki** automatycznie się aktualizują — wykresy, heatmap, achievements.
 
-**Główne ekrany:** `Pulpit` · `Plan na dziś` · `Historia` · `Statystyki i mięśnie` · `AI Coach`.
+**4 zakładki:** Trening · Statystyki · Historia · Ty (konto, body log, ustawienia, backup).
 
-### Cele treningowe
+### Cele AI generatora
 
-| Cel | Powtórzenia | Serie | Przerwa (serie) | Przerwa (ćwiczenia) |
-|---|---|---|---|---|
-| **Redukcja** | 12–15 | 3 | 60 s | 90 s |
-| **Rzeźba** | 12–15 | 3–4 | 60 s | 90 s |
-| **Masa** | 8–12 | 3–4 | 90 s | 120 s |
-| **Siła** | 3–5 | 4–5 | 120 s | 180 s |
-| **Kondycja** | 15–20 | 3 | 45 s | 60 s |
+| Cel | Powtórzenia | Filozofia |
+|---|---|---|
+| **Masa mięśniowa** | 8–12 | 3-4 serie, tempo umiarkowane |
+| **Siła** | 3–6 | 4-5 serii, ciężary submaksymalne |
+| **Wytrzymałość** | 12–20 | 3 serie, krótsze przerwy |
+| **Redukcja / rzeźba** | 10–15 | Podwyższona intensywność |
+| **Rekompozycja** | 6–12 | Mix siłowo-objętościowy |
 
-### Kalkulator 1RM
+### Estimated 1RM (formuła Epley)
 
 ```
-Brzycki:  1RM = ciężar × (36 / (37 − powtórzenia))
-Epley:    1RM = ciężar × (1 + powtórzenia / 30)
+1RM = ciężar × (1 + powtórzenia / 30)
 ```
-Wynik = średnia z obu wzorów, zaokrąglona do 0,5 kg (działa dla 2–12 powtórzeń).
+
+Używana do PR detection, per-exercise progress, achievement "100 kg klub".
 
 ---
 
@@ -302,7 +369,7 @@ Wynik = średnia z obu wzorów, zaokrąglona do 0,5 kg (działa dla 2–12 powt�
 <details>
 <summary><b>PPL — Push / Pull / Legs (3-dniowy)</b></summary>
 
-| Dzień | Partie | Ćwiczenia |
+| Dzień | Partie (karty) | Ćwiczenia |
 |---|---|---|
 | Push | Klatka, barki, triceps | 7 |
 | Pull | Plecy, tylne barki, biceps, przedramię | 8 |
@@ -313,27 +380,23 @@ Wynik = średnia z obu wzorów, zaokrąglona do 0,5 kg (działa dla 2–12 powt�
 <details>
 <summary><b>Upper / Lower — split 4-dniowy (cel: masa + siła)</b></summary>
 
-| Dzień | Skupienie | Ćwiczenia |
+| Dzień | Skupienie (karty) | Ćwiczenia |
 |---|---|---|
-| Siłowy | Klatka + plecy (bazowe), barki, biceps, triceps | 7 |
-| Objętościowy | Klatka + plecy (hantle/maszyny), barki, biceps, triceps | 7 |
-| Quad | Czworogłowy priorytet, hamstring, jednostronne, łydki, core | 6 |
-| Hinge | Hip hinge priorytet, czworogłowy, pośladki, łydki, core | 6 |
-
-**Tydzień:** Pon — Siłowy · Wt — Quad · Czw — Objętościowy · Pt — Hinge
+| Upper A | Klatka + plecy (bazowe), barki, biceps, triceps | 7 |
+| Upper B | Klatka + plecy (hantle/maszyny), barki, biceps, triceps | 7 |
+| Lower A | Czworogłowy priorytet, hamstring, łydki, core | 6 |
+| Lower B | Hip hinge priorytet, czworogłowy, łydki, core | 6 |
 
 </details>
 
 <details>
-<summary><b>Full Body — 3 razy w tygodniu</b></summary>
+<summary><b>FBW — Full Body (3 razy w tygodniu)</b></summary>
 
-| Dzień | Główne ruchy | Ćwiczenia |
+| Dzień | Główne ruchy (karty) | Ćwiczenia |
 |---|---|---|
-| Przysiad | Przysiad + bench + wiosłowanie + OHP + hamstring + biceps + core | 7 |
-| Martwy | Martwy + skos + podciąganie + split squat + wznosy + triceps + core | 7 |
-| Hip Thrust | Front squat + bench hantle + wiosło + hip thrust + face pull + biceps/tri + łydki | 7 |
-
-**Tydzień:** Pon — Przysiad · Śr — Martwy · Pt — Hip Thrust
+| FBW A | Przysiad + bench + wiosłowanie + OHP + hamstring + biceps + core | 7 |
+| FBW B | Martwy + skos + podciąganie + split squat + wznosy + triceps + core | 7 |
+| FBW C | Front squat + bench hantle + wiosło + hip thrust + face pull + biceps + łydki | 7 |
 
 </details>
 
@@ -345,89 +408,94 @@ Wynik = średnia z obu wzorów, zaokrąglona do 0,5 kg (działa dla 2–12 powt�
 <summary><b>Czy potrzebuję klucza API, żeby korzystać z AI?</b></summary>
 
 Nie. Aplikacja łączy się z Claude przez serwer proxy (Cloudflare Worker), gdzie klucz jest
-ukryty. Jeśli hostujesz własną kopię, musisz wdrożyć własnego workera (patrz *Installation*).
+ukryty. Jeśli hostujesz własną kopię, musisz wdrożyć własnego workera.
 </details>
 
 <details>
 <summary><b>Czy moje dane trafiają na serwer?</b></summary>
 
-Nie. Historia i profile zapisywane są **wyłącznie lokalnie** (`localStorage`). Do internetu
-wysyłany jest tylko prompt do generowania planu / analizy AI.
+Domyślnie nie. Wszystko żyje w `localStorage`. Jeśli założysz konto w zakładce "Ty",
+treningi + waga + ustawienia synchronizują się do Supabase (z RLS — tylko ty widzisz swoje dane).
 </details>
 
 <details>
 <summary><b>Czy działa offline?</b></summary>
 
-Tak — dzięki Service Workerowi. Offline dostępne jest pełne rejestrowanie treningów oraz
-**Plan offline** (67 gotowych planów). Funkcje AI wymagają połączenia.
+Tak. Service Worker cacheuje całą aplikację. Sync operacje są kolejkowane w `offlineQueue`
+i wykonują się gdy wraca internet. Funkcje AI (generator) wymagają połączenia.
 </details>
 
 <details>
 <summary><b>Jak przenieść dane na inne urządzenie?</b></summary>
 
-Najlepiej użyj **kopii zapasowej JSON** (Profile → Eksport JSON) na starym urządzeniu i zaimportuj
-ją na nowym (Import JSON). Import **scala** dane — treningi z obu urządzeń łączą się bez duplikatów
-i bez nadpisywania. Alternatywnie działa eksport/import CSV. Synchronizacja w chmurze jest na *Roadmap*.
+**Najwygodniej:** załóż konto w zakładce "Ty" → wszystko zsynchronizuje się automatycznie.
+**Alternatywnie:** eksport JSON z jednego urządzenia, import na drugim.
 </details>
 
 <details>
-<summary><b>Dlaczego na iPhonie nie ma przycisku „Zainstaluj"?</b></summary>
+<summary><b>Dlaczego trening jest pokazywany jako karty zamiast listy?</b></summary>
 
-To ograniczenie iOS. Instalacja ręczna: **Safari → Udostępnij → Dodaj do ekranu głównego**.
+Tryb kart (jedna partia mięśniowa na ekran) jest domyślny — minimalizuje scroll i poznawcze obciążenie
+podczas treningu. Możesz przełączyć na tryb listy w **Ty → Ustawienia → Tryb sesji treningowej**.
 </details>
 
 ---
 
 ## Roadmap
 
-### 🅰️ Alpha — *obecna wersja*
-- [x] 3 systemy treningowe (PPL / Upper-Lower / FBW)
-- [x] Generowanie planów AI + Plan offline (67 planów)
-- [x] Tryb kart, timer odpoczynku (±15 s), steppery ±, dane per seria, draft
-- [x] Statystyki, wykresy (45 dni, tonaż, trend 1RM), heatmapa, analiza partii
-- [x] **Strength Score** i automatyczne **rekordy (PR)** + **Workout Recap**
-- [x] **AI Coach** — analiza postępów + **czat konwersacyjny**
-- [x] **Onboarding**, **osiągnięcia/odznaki**, seria wybaczająca, proaktywny insight
-- [x] **Log masy ciała / samopoczucia**, udostępnianie treningu (Web Share)
-- [x] Kopia zapasowa JSON + scalanie profili; nawigacja 5-zakładkowa (zakładka „Ty")
-- [x] Skeleton loading; PWA (offline, instalacja) + UI premium
-- [x] **Konta użytkowników + synchronizacja w chmurze (Supabase)** — sync deltami, izolacja per-user (RLS)
+### ✅ V2 — *obecna wersja (Vue migration)*
 
-### 🅱️ Beta — *następne kroki*
-- [ ] Powiadomienia push (PWA) — „czas na trening", „nie zgub serii"
-- [ ] Testy automatyczne kluczowej logiki
-- [ ] Rozszerzony eksport (PDF z wykresami) i raporty okresowe
+**Architektura:**
+- [x] Vue 3 + Vite + Pinia (port z 8270-LOC monolitu vanilla JS)
+- [x] 9 Pinia stores, 13 komponentów, 4 widoki z lazy-loadingiem
+- [x] Vue Router (hash mode), page transitions
 
-### 1️⃣ Wersja 1.0
+**Funkcjonalność:**
+- [x] 10 typów treningu, 67 gotowych planów, 276 ćwiczeń, custom plans editor
+- [x] AI Generator (Claude przez Cloudflare Worker proxy)
+- [x] Tryb kart (partia po partii) + tryb listy
+- [x] RPE, notatki, timer odpoczynku, kalkulator talerzy, live duration
+- [x] Statystyki: per-exercise progress, PR ranking, kalendarz heatmap, achievements
+- [x] Cloud sync (Supabase) z offline queue + retry
+- [x] PDF export, body log, backup JSON, save workout as template
+- [x] Dark / light theme, color accent picker, mobile bottom nav
+- [x] Push notifications, konfetti, onboarding tour, skeleton loaders
+
+### 🚧 V3 — *następne kroki*
 - [ ] Internacjonalizacja (EN) i przełącznik języka
-- [ ] Pełny social (obserwowanie, leaderboardy) — wymaga backendu
-- [ ] Integracje z wearables / Health (poza zasięgiem web PWA — wymaga aplikacji natywnej)
-- [ ] Konfigurowalne motywy i akcenty
+- [ ] AI Coach — analiza postępów + czat (port z legacy)
+- [ ] Background Sync API — timer odpoczynku działający z telefonem zablokowanym
+- [ ] Voice input dla serii (Web Speech API)
+- [ ] Lepsze conflict resolution dla cloud sync (timestamp-based)
+- [ ] Testy automatyczne (Vitest)
+
+### 🔮 V4
+- [ ] Pełny social (obserwowanie, leaderboardy)
+- [ ] Integracje z wearables / Health
+- [ ] Apple Watch / WearOS companion
 
 ---
 
 ## Known Issues
 
 - **Sync w chmurze opcjonalny** — bez konta dane są lokalne (per przeglądarka/urządzenie); wyczyszczenie
-  danych przeglądarki = utrata historii. Załóż konto w zakładce „Ty" albo regularnie eksportuj JSON.
-- **`worker.js` / `DEPLOY_WORKER.md` poza repo** — kod odwołuje się do `DEPLOY_WORKER.md`, którego
-  nie ma w repozytorium; instrukcję deployu proxy znajdziesz w sekcji [Installation](#installation).
-- **Monolit `index.html`** (~290 KB) — brak bundlera/modularyzacji; świadomy kompromis „zero-build".
-- **AI wymaga online** — generowanie planów i AI Coach nie działają bez internetu.
+  danych przeglądarki = utrata historii. Załóż konto w zakładce "Ty" albo regularnie eksportuj JSON.
+- **AI wymaga online** — generator planów nie działa bez internetu.
+- **Timer odpoczynku w tle** — gdy telefon zablokowany, JS się usypia. Powiadomienie jest zapisane
+  w SW, ale dokładność może spaść. Background Sync API w roadmap.
 - **iOS** — instalacja PWA tylko ręcznie; dźwięk wymaga wcześniejszej interakcji z ekranem.
-- **`color-mix()` / `:has()`** — premium UI używa nowoczesnych funkcji CSS; na bardzo starych
-  przeglądarkach degradują się łagodnie (bez utraty funkcji).
+- **`color-mix()`** — używane w CSS, na bardzo starych przeglądarkach degraduje się łagodnie.
 
 ---
 
 ## Prywatność i bezpieczeństwo
 
 - 🔐 **Klucz API** wyłącznie po stronie serwera (Cloudflare) — niewidoczny dla użytkownika
-- 📦 **Dane lokalnie domyślnie** — historia i profile w `localStorage`; sync z chmurą uruchamia się dopiero po założeniu konta
-- ☁️ **Supabase** — opcjonalne konta email/hasło z izolacją per-user (Row Level Security wymuszone po stronie bazy)
+- 📦 **Dane lokalnie domyślnie** — `localStorage`; sync z chmurą uruchamia się dopiero po założeniu konta
+- ☁️ **Supabase** — konta email/hasło z izolacją per-user (Row Level Security w bazie)
 - 🚫 **Brak śledzenia i reklam** — konto służy tylko do synchronizacji
-- 🛡️ **DOMPurify** — odpowiedzi AI sanityzowane przed wyświetleniem; **CSP** + **SRI** na zasobach CDN
-- ⚡ **CORS whitelist** na Workerze — proxy używa tylko zaufana domena
+- 🛡️ **CSP** + **integrity** na zasobach CDN
+- ⚡ **CORS whitelist** na Cloudflare Workerze
 
 ---
 
@@ -439,7 +507,7 @@ Projekt prywatny, do użytku własnego. Wszelkie prawa zastrzeżone © Łukasz B
 
 ---
 
-**Zbudowano z 💪 i ☕ — plany napędzane przez [Claude](https://www.anthropic.com/).**
+**Zbudowano z 💪 i ☕ — Vue 3 + Vite + Pinia + [Claude](https://www.anthropic.com/).**
 
 [⬆ Powrót na górę](#-trening-pro)
 
