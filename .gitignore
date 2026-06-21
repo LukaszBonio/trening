@@ -4,3 +4,17 @@ graphify-out/
 # Claude Code — lokalne hooks per-developer (graphify auto-install)
 .claude/settings.local.json
 .claude/settings.json
+
+# Vite / Node
+node_modules/
+dist/
+dist-ssr/
+*.local
+.DS_Store
+.vite/
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.sw?
