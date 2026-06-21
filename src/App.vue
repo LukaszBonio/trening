@@ -5,6 +5,13 @@ import OnboardingTour from './components/OnboardingTour.vue'
 
 const showOnboarding = ref(false)
 onMounted(() => {
+  // Hide splash screen
+  const splash = document.getElementById('splash')
+  if (splash) {
+    splash.classList.add('fade')
+    setTimeout(() => splash.remove(), 320)
+  }
+  // Show onboarding if first visit
   try {
     if (!localStorage.getItem('tp_onboarding_done_v1')) {
       showOnboarding.value = true
@@ -50,11 +57,7 @@ const tabs = [
     </nav>
 
     <main class="main">
-      <RouterView v-slot="{ Component }">
-        <Transition name="fade" mode="out-in">
-          <component :is="Component" />
-        </Transition>
-      </RouterView>
+      <RouterView />
     </main>
 
     <nav class="tabs-mobile">

@@ -26,18 +26,55 @@ const selectedType = ref(null)
 const planSource = ref('library')  // 'library' | 'ai' | 'custom'
 const restTimerRef = ref(null)
 
-const types = [
-  { key: 'push',    label: 'Push',    color: 'var(--push)' },
-  { key: 'pull',    label: 'Pull',    color: 'var(--pull)' },
-  { key: 'legs',    label: 'Legs',    color: 'var(--legs)' },
-  { key: 'upper_a', label: 'Upper A', color: 'var(--accent)' },
-  { key: 'upper_b', label: 'Upper B', color: 'var(--accent)' },
-  { key: 'lower_a', label: 'Lower A', color: 'var(--accent)' },
-  { key: 'lower_b', label: 'Lower B', color: 'var(--accent)' },
-  { key: 'fbw_a',   label: 'FBW A',   color: 'var(--text-muted)' },
-  { key: 'fbw_b',   label: 'FBW B',   color: 'var(--text-muted)' },
-  { key: 'fbw_c',   label: 'FBW C',   color: 'var(--text-muted)' }
+// Trzy systemy treningowe — każdy ma swoje dni
+const trainingSystems = [
+  {
+    id: 'ppl',
+    name: 'Push / Pull / Legs',
+    desc: '3-dniowy split — klasyczny układ pchanie / ciągnięcie / nogi',
+    badge: '3×/tydz',
+    icon: 'ti-layers-subtract',
+    days: [
+      { key: 'push', label: 'Push',  desc: 'Klatka + barki + triceps', color: 'var(--push)', icon: 'ti-arrow-up' },
+      { key: 'pull', label: 'Pull',  desc: 'Plecy + biceps + tylne barki', color: 'var(--pull)', icon: 'ti-arrow-down' },
+      { key: 'legs', label: 'Legs',  desc: 'Czworogłowy + hamstring + łydki', color: 'var(--legs)', icon: 'ti-run' }
+    ]
+  },
+  {
+    id: 'upperLower',
+    name: 'Upper / Lower',
+    desc: '4-dniowy split — góra / dół ciała w 2 wariantach',
+    badge: '4×/tydz',
+    icon: 'ti-layers-difference',
+    days: [
+      { key: 'upper_a', label: 'Upper A', desc: 'Klatka + plecy (bazowe)', color: 'var(--accent)', icon: 'ti-square-letter-a' },
+      { key: 'upper_b', label: 'Upper B', desc: 'Klatka + plecy (objętość)', color: 'var(--accent)', icon: 'ti-square-letter-b' },
+      { key: 'lower_a', label: 'Lower A', desc: 'Czworogłowy priorytet',     color: 'var(--legs)',   icon: 'ti-square-letter-a' },
+      { key: 'lower_b', label: 'Lower B', desc: 'Hip hinge priorytet',       color: 'var(--legs)',   icon: 'ti-square-letter-b' }
+    ]
+  },
+  {
+    id: 'fbw',
+    name: 'Full Body Workout',
+    desc: '3-dniowy plan całego ciała w jednej sesji',
+    badge: '3×/tydz',
+    icon: 'ti-body-scan',
+    days: [
+      { key: 'fbw_a', label: 'FBW A', desc: 'Przysiad + bench + wiosło',   color: 'var(--text)', icon: 'ti-square-letter-a' },
+      { key: 'fbw_b', label: 'FBW B', desc: 'Martwy + skos + podciąganie', color: 'var(--text)', icon: 'ti-square-letter-b' },
+      { key: 'fbw_c', label: 'FBW C', desc: 'Front squat + hip thrust',    color: 'var(--text)', icon: 'ti-square-letter-c' }
+    ]
+  }
 ]
+
+// Helper: znajdź dzień po kluczu (do np. repeatLastWorkout)
+function findDay(key) {
+  for (const sys of trainingSystems) {
+    const d = sys.days.find(d => d.key === key)
+    if (d) return d
+  }
+  return null
+}
 
 const progress = computed(() => {
   if (!session.totalSets) return 0
@@ -130,11 +167,12 @@ function discardWorkout() {
 </script>
 
 <template>
-  <CompletionSummary
-    v-if="completionWorkout"
-    :workout="completionWorkout"
-    @close="completionWorkout = null"
-  />
+  <div class="workout-view">
+    <CompletionSummary
+      v-if="completionWorkout"
+      :workout="completionWorkout"
+      @close="completionWorkout = null"
+    />
 
   <!-- Active session -->
   <div v-if="session.isActive" class="active-session">
@@ -239,36 +277,60 @@ function discardWorkout() {
     </div>
   </div>
 
-  <!-- Type selection -->
+  <!-- Type selection — pogrupowane wg systemu treningowego -->
   <div v-else class="type-select">
-    <div class="card">
-      <h2 class="card-title">Wybierz typ treningu</h2>
-      <p class="muted" style="margin-bottom: var(--space-4)">
-        Wybierz typ, potem konkretny plan, by rozpocząć sesję.
-      </p>
-      <div v-if="workouts.lastWorkout" class="last-info-row">
-        <p class="last-info">
-          <i class="ti ti-clock"></i>
-          Ostatni: <strong>{{ workouts.lastWorkout.planName }}</strong>
-          ({{ workouts.lastWorkout.type.toUpperCase() }})
-        </p>
-        <button class="btn-tiny" @click="repeatLastWorkout">
-          <i class="ti ti-repeat"></i> Powtórz
-        </button>
+    <!-- Powtórz ostatni (jeśli jest) -->
+    <div v-if="workouts.lastWorkout" class="repeat-banner card">
+      <div class="repeat-info">
+        <i class="ti ti-clock-play"></i>
+        <div>
+          <div class="dim repeat-label">Ostatni trening</div>
+          <div class="repeat-name">
+            {{ workouts.lastWorkout.planName }}
+            <span class="repeat-tag">{{ workouts.lastWorkout.type.toUpperCase().replace('_', ' ') }}</span>
+          </div>
+        </div>
       </div>
-      <div class="type-grid">
+      <button class="btn btn-primary repeat-btn" @click="repeatLastWorkout">
+        <i class="ti ti-repeat"></i> Powtórz
+      </button>
+    </div>
+
+    <!-- 3 systemy treningowe -->
+    <div v-for="sys in trainingSystems" :key="sys.id" class="card system-card">
+      <div class="system-header">
+        <div class="system-icon">
+          <i class="ti" :class="sys.icon"></i>
+        </div>
+        <div class="system-info">
+          <div class="system-title-row">
+            <h2 class="system-name">{{ sys.name }}</h2>
+            <span class="system-badge">{{ sys.badge }}</span>
+          </div>
+          <p class="system-desc">{{ sys.desc }}</p>
+        </div>
+      </div>
+
+      <div class="days-grid">
         <button
-          v-for="t in types"
-          :key="t.key"
-          class="type-btn"
-          :style="{ '--c': t.color }"
-          @click="selectedType = t.key"
+          v-for="day in sys.days"
+          :key="day.key"
+          class="day-btn"
+          :style="{ '--c': day.color }"
+          @click="selectedType = day.key"
         >
-          <span class="type-dot" :style="{ background: t.color }"></span>
-          {{ t.label }}
+          <div class="day-icon">
+            <i class="ti" :class="day.icon"></i>
+          </div>
+          <div class="day-text">
+            <div class="day-label">{{ day.label }}</div>
+            <div class="day-desc">{{ day.desc }}</div>
+          </div>
+          <i class="ti ti-chevron-right day-arrow"></i>
         </button>
       </div>
     </div>
+  </div>
   </div>
 </template>
 
@@ -326,11 +388,173 @@ function discardWorkout() {
 }
 .session-actions .btn { flex: 1; padding: 14px; font-size: 15px; }
 
-.type-grid {
+.type-select {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.repeat-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--accent-soft);
+  border-color: var(--accent-soft-2);
+}
+.repeat-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+.repeat-info > i {
+  font-size: 24px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.repeat-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.repeat-name {
+  font-weight: 600;
+  font-size: 15px;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.repeat-tag {
+  font-size: 10px;
+  background: var(--accent);
+  color: #000;
+  padding: 2px 6px;
+  border-radius: 100px;
+  font-weight: 700;
+  margin-left: 6px;
+  vertical-align: 1px;
+}
+.repeat-btn {
+  padding: 10px 18px;
+  flex-shrink: 0;
+}
+
+.system-card { padding: var(--space-4); }
+.system-header {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+.system-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.system-info { flex: 1; min-width: 0; }
+.system-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.system-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+}
+.system-badge {
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--bg-elev-2);
+  color: var(--text-muted);
+  padding: 3px 8px;
+  border-radius: 100px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+}
+.system-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 4px 0 0;
+}
+
+.days-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 10px;
 }
+.day-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: all var(--dur) var(--ease);
+}
+.day-btn:hover {
+  border-color: var(--c);
+  background: color-mix(in srgb, var(--c) 8%, var(--bg-elev-2));
+  transform: translateY(-1px);
+}
+.day-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--bg-elev);
+  color: var(--c);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+.day-text { flex: 1; min-width: 0; }
+.day-label {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+.day-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.day-arrow {
+  color: var(--text-dim);
+  font-size: 16px;
+  flex-shrink: 0;
+  transition: transform var(--dur), color var(--dur);
+}
+.day-btn:hover .day-arrow {
+  color: var(--c);
+  transform: translateX(2px);
+}
+
+/* Stary type-btn (na wszelki wypadek) */
 .type-btn {
   padding: 18px;
   background: var(--bg-elev-2);
