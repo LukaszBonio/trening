@@ -31,11 +31,12 @@ export const useSessionStore = defineStore('session', () => {
     return active.value.exercises.reduce((sum, ex) => sum + ex.sets.length, 0)
   })
 
-  function startSession(plan, type) {
+  function startSession(plan, type, source = 'library') {
     active.value = {
       id: `w_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       type,
       planName: plan.name,
+      source,           // 'library' | 'ai' | 'custom' — decyduje o algorytmie grupowania
       startedAt: Date.now(),
       exercises: plan.exercises.map(ex => ({
         name: ex.name,

@@ -10,7 +10,8 @@ const DEFAULTS = {
   autoStartTimer: true,     // auto-start rest po zaznaczeniu serii
   accentColor: '#d4ff3a',   // kolor akcentu
   weekStartsMonday: true,
-  theme: 'dark'             // 'dark' | 'light'
+  theme: 'dark',            // 'dark' | 'light'
+  workoutMode: 'cards'      // 'cards' | 'list' — tryb aktywnej sesji
 }
 
 function load() {

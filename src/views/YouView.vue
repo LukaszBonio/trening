@@ -224,6 +224,14 @@ function onFileChange(e) {
           </select>
         </label>
 
+        <label class="setting">
+          <span>Tryb sesji treningowej</span>
+          <select v-model="settingsStore.settings.workoutMode">
+            <option value="cards">Karty (po partiach)</option>
+            <option value="list">Pełna lista</option>
+          </select>
+        </label>
+
         <label class="setting setting-toggle">
           <span>Auto-start timera po serii</span>
           <input type="checkbox" v-model="settingsStore.settings.autoStartTimer" />

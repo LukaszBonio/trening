@@ -11,6 +11,7 @@ import RestTimer from '../components/RestTimer.vue'
 import AIGenerator from '../components/AIGenerator.vue'
 import CompletionSummary from '../components/CompletionSummary.vue'
 import PlateCalculator from '../components/PlateCalculator.vue'
+import WorkoutCards from '../components/WorkoutCards.vue'
 import { useCustomPlansStore } from '../stores/customPlans.js'
 
 const session = useSessionStore()
@@ -59,7 +60,10 @@ const duration = computed(() => {
 })
 
 function onPickPlan(plan) {
-  session.startSession(plan, selectedType.value)
+  // planSource: 'library' | 'ai' | 'custom'
+  // plan._custom = true → custom; else if planSource === 'ai' → ai; else library
+  const source = plan._custom ? 'custom' : (planSource.value === 'ai' ? 'ai' : 'library')
+  session.startSession(plan, selectedType.value, source)
   selectedType.value = null
 }
 
@@ -151,12 +155,19 @@ function discardWorkout() {
 
     <PlateCalculator />
 
-    <ExerciseCard
-      v-for="(ex, i) in session.active.exercises"
-      :key="i"
-      :ex-idx="i"
-      @set-done="onSetDone"
+    <!-- Cards mode (default) lub flat list -->
+    <WorkoutCards
+      v-if="settings.settings.workoutMode === 'cards'"
+      :on-set-done="onSetDone"
     />
+    <template v-else>
+      <ExerciseCard
+        v-for="(ex, i) in session.active.exercises"
+        :key="i"
+        :ex-idx="i"
+        @set-done="onSetDone"
+      />
+    </template>
 
     <div class="session-actions">
       <button class="btn" @click="discardWorkout">Anuluj</button>
