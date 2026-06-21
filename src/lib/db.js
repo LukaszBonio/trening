@@ -1142,3 +1142,37 @@ return list[Math.floor(Math.random() * list.length)];
 export function getMuscleName(key) {
 return MUSCLE_NAMES[key] || key;
 }
+
+/**
+ * Znajduje alternatywne ćwiczenia angażujące tę samą partię mięśniową.
+ * Zwraca tablicę nazw ćwiczeń (max N, bez bieżącego).
+ */
+export function findSubstitutes(exerciseName, max = 5) {
+  const targetMuscle = detectMuscle(exerciseName)
+  if (!targetMuscle) return []
+  const currentNorm = exerciseName.toLowerCase().trim()
+  const candidates = []
+  for (const [exName, muscle] of Object.entries(EXERCISE_TO_MUSCLE)) {
+    if (muscle !== targetMuscle) continue
+    if (exName === currentNorm) continue
+    const display = exName.charAt(0).toUpperCase() + exName.slice(1)
+    if (!candidates.includes(display)) candidates.push(display)
+  }
+  if (candidates.length <= max) return candidates
+  // Deterministyczny shuffle bazujący na nazwie wejścia
+  const seed = exerciseName.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
+  const shuffled = [...candidates].sort((a, b) => {
+    const ha = (a.length + a.charCodeAt(0) + seed) % 100
+    const hb = (b.length + b.charCodeAt(0) + seed) % 100
+    return ha - hb
+  })
+  return shuffled.slice(0, max)
+}
+
+/**
+ * URL do wyszukiwania YouTube dla danej techniki ćwiczenia.
+ */
+export function youtubeSearchUrl(exerciseName) {
+  const query = encodeURIComponent(exerciseName + ' technika ćwiczenia')
+  return `https://www.youtube.com/results?search_query=${query}`
+}

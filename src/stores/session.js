@@ -68,6 +68,20 @@ export const useSessionStore = defineStore('session', () => {
     Object.assign(active.value.exercises[exIdx].sets[setIdx], patch)
   }
 
+  /**
+   * Podmienia ćwiczenie na inne (zachowuje liczbę serii i target reps).
+   * Loguje original w polu _swappedFrom dla śladu w historii.
+   */
+  function swapExercise(exIdx, newName) {
+    if (!active.value) return
+    const ex = active.value.exercises[exIdx]
+    if (!ex) return
+    if (!ex._swappedFrom) ex._swappedFrom = ex.name
+    ex.name = newName
+    // Reset serii nieukończonych
+    ex.sets = ex.sets.map(s => s.done ? s : { ...s, weight: '', reps: '' })
+  }
+
   function discard() {
     active.value = null
   }
@@ -104,7 +118,7 @@ export const useSessionStore = defineStore('session', () => {
 
   return {
     active, isActive, totalSetsDone, totalSets,
-    startSession, addSet, removeSet, toggleSet, updateSet,
+    startSession, addSet, removeSet, toggleSet, updateSet, swapExercise,
     discard, finishToPayload
   }
 })
