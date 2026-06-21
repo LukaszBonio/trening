@@ -3,7 +3,8 @@ import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
-  base: './',
+  // GitHub Pages serwuje pod /trening/ — przy lokalnym dev Vite ignoruje base
+  base: process.env.GITHUB_ACTIONS ? '/trening/' : './',
   plugins: [
     vue(),
     VitePWA({
