@@ -7,6 +7,7 @@ import { useBodyStore } from '../stores/body.js'
 import { useSettingsStore } from '../stores/settings.js'
 import BodyLogChart from '../components/BodyLogChart.vue'
 import { permission as notifPermission, requestPermission as requestNotifPermission, isSupported as notifSupported } from '../lib/notifications.js'
+import { transformLegacyEntry } from '../lib/migration.js'
 
 const cloud = useCloudStore()
 const profile = useProfileStore()
@@ -107,10 +108,63 @@ function onFileChange(e) {
   reader.onload = (ev) => {
     try {
       const data = JSON.parse(ev.target.result)
-      if (!confirm(`Import: ${data.history?.length || 0} treningów, ${data.body?.length || 0} pomiarów wagi. Zastąpić obecne dane?`)) return
-      if (Array.isArray(data.history)) workouts.setHistory(data.history)
-      if (Array.isArray(data.body)) body.entries = data.body
-      message.value = 'Import zakończony ✓'
+
+      // Detekcja formatu: legacy (profiles.history) vs nowy (history flat)
+      let importHistory = []
+      let importBody = []
+      let detectedFormat = 'unknown'
+
+      if (Array.isArray(data.history) && data.history.length && data.history[0].exercises?.[0]?.sets && Array.isArray(data.history[0].exercises[0].sets)) {
+        // Nowy format Vue: exercises[i].sets to tablica
+        importHistory = data.history
+        importBody = Array.isArray(data.body) ? data.body : []
+        detectedFormat = 'vue'
+      } else if (Array.isArray(data.profiles) || data.activeId) {
+        // Legacy format: profiles.history
+        detectedFormat = 'legacy-profiles'
+        const profiles = Array.isArray(data.profiles) ? data.profiles : []
+        const seenIds = new Set()
+        for (const p of profiles) {
+          for (const entry of (p.history || [])) {
+            if (entry?.id && !seenIds.has(entry.id)) {
+              seenIds.add(entry.id)
+              const transformed = transformLegacyEntry(entry)
+              if (transformed) importHistory.push(transformed)
+            }
+          }
+          // Body log w profilu
+          for (const e of (p.bodyLog || p.weightLog || [])) {
+            if (e?.weight || e?.kg) {
+              importBody.push({
+                id: e.id || `b_imp_${e.date || Date.now()}`,
+                date: e.date || new Date().toISOString().slice(0, 10),
+                weight: Number(e.weight || e.kg)
+              })
+            }
+          }
+        }
+      } else if (Array.isArray(data.history) && data.history.length && (data.history[0].kg !== undefined || typeof data.history[0].exercises?.[0]?.sets === 'number')) {
+        // Legacy format płaski: history bezpośrednio (bez profili wrappera)
+        detectedFormat = 'legacy-flat'
+        importHistory = data.history.map(transformLegacyEntry).filter(Boolean)
+        importBody = Array.isArray(data.body) ? data.body : []
+      } else if (Array.isArray(data.history)) {
+        // Nieznany kształt — spróbuj jako Vue
+        importHistory = data.history
+        importBody = Array.isArray(data.body) ? data.body : []
+        detectedFormat = 'fallback-vue'
+      }
+
+      if (!importHistory.length && !importBody.length) {
+        message.value = 'Plik nie zawiera danych treningowych'
+        return
+      }
+
+      const msg = `Wykryto format: ${detectedFormat}\n${importHistory.length} treningów, ${importBody.length} pomiarów wagi.\n\nZastąpić obecne dane?`
+      if (!confirm(msg)) return
+      if (importHistory.length) workouts.setHistory(importHistory)
+      if (importBody.length) body.entries = importBody
+      message.value = `Import zakończony ✓ (${importHistory.length} treningów)`
     } catch (err) {
       message.value = 'Błąd importu: ' + err.message
     }
