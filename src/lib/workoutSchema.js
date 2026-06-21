@@ -95,25 +95,55 @@ export const GROUP_LABELS = {
  * @param {string} type - typ treningu (push/pull/legs/upper_a/...)
  * @param {string} source - 'ai' | 'library' | 'custom' (decyduje o algorytmie grupowania)
  */
+function makeGroup(groupId, exerciseIndices) {
+  return {
+    groupId,
+    label: GROUP_LABELS[groupId]?.name || groupId,
+    icon: GROUP_LABELS[groupId]?.icon || 'ti-circle-dot',
+    exerciseIndices
+  }
+}
+
+// Grupowanie po wykrytej partii (zachowuje kolejność per typ ze schematu).
+function groupByDetectedMuscle(exercises, type) {
+  const order = GROUP_ORDER[type] || ['inne']
+  const groupMap = {}
+  const unknownIndices = []
+
+  exercises.forEach((ex, idx) => {
+    const muscle = detectMuscle(ex.name)
+    const groupId = muscle ? MUSCLE_TO_GROUP[muscle] : null
+    if (groupId) {
+      if (!groupMap[groupId]) groupMap[groupId] = []
+      groupMap[groupId].push(idx)
+    } else {
+      unknownIndices.push(idx)
+    }
+  })
+
+  return { groupMap, unknownIndices, order }
+}
+
 export function groupExercisesByMuscle(exercises, type, source = 'library') {
-  // === Tryb AI: grupowanie po indeksie (deterministyczne) ===
-  if (source === 'ai' && INDEX_GROUPS[type]) {
+  const { groupMap, unknownIndices, order } = groupByDetectedMuscle(exercises, type)
+
+  // Liczymy "trafność" wykrycia: ile ćwiczeń znaleźliśmy w schemacie
+  const detectedCount = exercises.length - unknownIndices.length
+  const detectionRatio = exercises.length > 0 ? detectedCount / exercises.length : 0
+
+  // === Tryb AI: jeśli detekcja słaba (< 60%), używamy index-based fallback ===
+  // Tak też plany AI z nietypowymi nazwami nadal się sensownie pogrupują.
+  if (source === 'ai' && detectionRatio < 0.6 && INDEX_GROUPS[type]) {
     const schema = INDEX_GROUPS[type]
     const result = []
     let cursor = 0
     schema.forEach(({ group, count }) => {
       const slice = exercises.slice(cursor, cursor + count)
       if (slice.length) {
-        result.push({
-          groupId: group,
-          label: GROUP_LABELS[group]?.name || group,
-          icon: GROUP_LABELS[group]?.icon || 'ti-circle-dot',
-          exerciseIndices: slice.map((_, i) => cursor + i)
-        })
+        result.push(makeGroup(group, slice.map((_, i) => cursor + i)))
       }
       cursor += count
     })
-    // Dorzuć nadmiar do ostatniej grupy
     if (cursor < exercises.length && result.length) {
       const last = result[result.length - 1]
       for (let i = cursor; i < exercises.length; i++) last.exerciseIndices.push(i)
@@ -121,35 +151,46 @@ export function groupExercisesByMuscle(exercises, type, source = 'library') {
     return result
   }
 
-  // === Tryb library/custom: grupowanie po muscle ===
-  const order = GROUP_ORDER[type] || ['inne']
-  const groupMap = {}
-  exercises.forEach((ex, idx) => {
-    const muscle = detectMuscle(ex.name)
-    const groupId = MUSCLE_TO_GROUP[muscle] || 'inne'
-    if (!groupMap[groupId]) groupMap[groupId] = []
-    groupMap[groupId].push(idx)
-  })
+  // === Standardowe grupowanie po muscle (library/custom/AI z dobrymi nazwami) ===
   const result = []
   order.forEach(g => {
     if (groupMap[g] && groupMap[g].length) {
-      result.push({
-        groupId: g,
-        label: GROUP_LABELS[g]?.name || g,
-        icon: GROUP_LABELS[g]?.icon || 'ti-circle-dot',
-        exerciseIndices: groupMap[g]
-      })
+      result.push(makeGroup(g, groupMap[g]))
       delete groupMap[g]
     }
   })
-  // Dorzuć grupy nieujęte w schemacie
+  // Dorzuć grupy nieujęte w schemacie (np. core dla push)
   Object.keys(groupMap).forEach(g => {
-    result.push({
-      groupId: g,
-      label: GROUP_LABELS[g]?.name || g,
-      icon: GROUP_LABELS[g]?.icon || 'ti-circle-dot',
-      exerciseIndices: groupMap[g]
-    })
+    result.push(makeGroup(g, groupMap[g]))
   })
+
+  // Niezdetekowane ćwiczenia (custom nazwy AI lub user): przypisz w pobliżu
+  // najbliższego sąsiada w oryginalnej kolejności zamiast wrzucać do "Inne".
+  if (unknownIndices.length) {
+    for (const orphanIdx of unknownIndices) {
+      // Znajdź grupę najbliższego sąsiada (prev/next) w oryginalnej kolejności
+      let assigned = false
+      for (let delta = 1; delta < exercises.length && !assigned; delta++) {
+        for (const dir of [-1, 1]) {
+          const neighbor = orphanIdx + delta * dir
+          if (neighbor < 0 || neighbor >= exercises.length) continue
+          const targetGroup = result.find(g => g.exerciseIndices.includes(neighbor))
+          if (targetGroup) {
+            targetGroup.exerciseIndices.push(orphanIdx)
+            targetGroup.exerciseIndices.sort((a, b) => a - b)
+            assigned = true
+            break
+          }
+        }
+      }
+      if (!assigned) {
+        // Naprawdę nic nie pasuje → "Inne"
+        const inne = result.find(g => g.groupId === 'inne')
+        if (inne) inne.exerciseIndices.push(orphanIdx)
+        else result.push(makeGroup('inne', [orphanIdx]))
+      }
+    }
+  }
+
   return result
 }
