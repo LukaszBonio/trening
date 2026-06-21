@@ -25,7 +25,7 @@ const tabs = [
       </div>
     </header>
 
-    <nav class="tabs">
+    <nav class="tabs tabs-desktop">
       <RouterLink
         v-for="tab in tabs"
         :key="tab.name"
@@ -45,6 +45,19 @@ const tabs = [
         </Transition>
       </RouterView>
     </main>
+
+    <nav class="tabs-mobile">
+      <RouterLink
+        v-for="tab in tabs"
+        :key="tab.name"
+        :to="{ name: tab.name }"
+        class="tab-mobile"
+        :class="{ active: currentTab === tab.name }"
+      >
+        <i class="ti" :class="tab.icon"></i>
+        <span>{{ tab.label }}</span>
+      </RouterLink>
+    </nav>
   </div>
 </template>
 
@@ -115,9 +128,39 @@ const tabs = [
 .tab i { font-size: 18px; }
 .main { min-height: 60vh; }
 
+/* Mobile bottom nav */
+.tabs-mobile { display: none; }
+
 @media (max-width: 640px) {
-  .app { padding: 1rem; }
-  .tab span { display: none; }
-  .tab { padding: 12px; }
+  .app { padding: 1rem 1rem 84px; }
+  .tabs-desktop { display: none; }
+
+  .tabs-mobile {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(15, 16, 20, 0.92);
+    backdrop-filter: saturate(180%) blur(14px);
+    border-top: 1px solid var(--border);
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+    z-index: 50;
+  }
+  .tab-mobile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 8px 4px;
+    border-radius: var(--radius-sm);
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 10px;
+    font-weight: 500;
+    transition: color var(--dur);
+  }
+  .tab-mobile i { font-size: 22px; }
+  .tab-mobile.active { color: var(--accent); }
 }
 </style>

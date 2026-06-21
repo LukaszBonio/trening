@@ -1,5 +1,7 @@
 <script setup>
+import { ref } from 'vue'
 import { useSessionStore } from '../stores/session.js'
+import { useSettingsStore } from '../stores/settings.js'
 
 const props = defineProps({
   exIdx: { type: Number, required: true }
@@ -7,6 +9,9 @@ const props = defineProps({
 const emit = defineEmits(['set-done'])
 
 const session = useSessionStore()
+const settings = useSettingsStore()
+
+const noteEditIdx = ref(null)
 
 function exercise() {
   return session.active?.exercises[props.exIdx]
@@ -30,35 +35,60 @@ function toggle(setIdx) {
     </div>
 
     <div class="sets">
-      <div class="set-header">
-        <span>#</span><span>Ciężar (kg)</span><span>Powt.</span><span></span>
+      <div class="set-header" :class="{ 'with-rpe': settings.settings.showRpe }">
+        <span>#</span>
+        <span>{{ settings.settings.units === 'lb' ? 'lb' : 'kg' }}</span>
+        <span>Powt.</span>
+        <span v-if="settings.settings.showRpe">RPE</span>
+        <span></span>
       </div>
-      <div
-        v-for="(set, i) in exercise().sets"
-        :key="i"
-        class="set-row"
-        :class="{ done: set.done }"
-      >
-        <span class="set-num">{{ i + 1 }}</span>
-        <input
-          type="number"
-          inputmode="decimal"
-          step="0.5"
-          v-model="set.weight"
-          placeholder="—"
-          :disabled="set.done"
-        />
-        <input
-          type="number"
-          inputmode="numeric"
-          v-model="set.reps"
-          placeholder="—"
-          :disabled="set.done"
-        />
-        <button class="check" :class="{ done: set.done }" @click="toggle(i)">
-          <i class="ti" :class="set.done ? 'ti-check' : 'ti-circle'"></i>
-        </button>
-      </div>
+      <template v-for="(set, i) in exercise().sets" :key="i">
+        <div class="set-row" :class="{ done: set.done, 'with-rpe': settings.settings.showRpe }">
+          <span class="set-num">{{ i + 1 }}</span>
+          <input
+            type="number"
+            inputmode="decimal"
+            step="0.5"
+            v-model="set.weight"
+            placeholder="—"
+            :disabled="set.done"
+          />
+          <input
+            type="number"
+            inputmode="numeric"
+            v-model="set.reps"
+            placeholder="—"
+            :disabled="set.done"
+          />
+          <input
+            v-if="settings.settings.showRpe"
+            type="number"
+            inputmode="decimal"
+            step="0.5"
+            min="1"
+            max="10"
+            v-model="set.rpe"
+            placeholder="—"
+            :disabled="set.done"
+            class="rpe-input"
+          />
+          <button class="check" :class="{ done: set.done }" @click="toggle(i)">
+            <i class="ti" :class="set.done ? 'ti-check' : 'ti-circle'"></i>
+          </button>
+        </div>
+        <div v-if="noteEditIdx === i" class="note-row">
+          <input
+            v-model="set.note"
+            placeholder="Notatka: technika, samopoczucie, modyfikacje…"
+            class="note-input"
+            @blur="noteEditIdx = null"
+            @keyup.enter="noteEditIdx = null"
+          />
+        </div>
+        <div v-else-if="set.note" class="note-display" @click="noteEditIdx = i">
+          <i class="ti ti-note"></i> {{ set.note }}
+        </div>
+      </template>
     </div>
 
     <div class="ex-actions">
@@ -71,6 +101,12 @@ function toggle(setIdx) {
         @click="session.removeSet(exIdx, exercise().sets.length - 1)"
       >
         <i class="ti ti-minus"></i> Usuń serię
+      </button>
+      <button
+        class="btn-tiny"
+        @click="noteEditIdx = noteEditIdx === null ? exercise().sets.length - 1 : null"
+      >
+        <i class="ti ti-note"></i> Notatka
       </button>
     </div>
   </div>
@@ -111,6 +147,10 @@ function toggle(setIdx) {
   gap: 8px;
   align-items: center;
 }
+.set-header.with-rpe, .set-row.with-rpe {
+  grid-template-columns: 28px 1fr 1fr 60px 40px;
+  gap: 6px;
+}
 .set-header {
   font-size: 11px;
   color: var(--text-dim);
@@ -138,6 +178,7 @@ function toggle(setIdx) {
 }
 .set-row input:focus { outline: none; border-color: var(--accent); }
 .set-row input:disabled { color: var(--text-muted); }
+.rpe-input { font-size: 13px !important; }
 .check {
   width: 36px; height: 36px;
   border-radius: 50%;
@@ -155,9 +196,35 @@ function toggle(setIdx) {
   color: #000;
   border-color: var(--accent);
 }
+.note-row {
+  padding: 4px 0;
+}
+.note-input {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+}
+.note-input:focus { outline: none; }
+.note-display {
+  padding: 4px 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.note-display:hover { color: var(--text); }
 .ex-actions {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 .btn-tiny {
   background: transparent;

@@ -2,6 +2,8 @@ import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import { createClient } from '@supabase/supabase-js'
 import { useWorkoutsStore } from './workouts.js'
+import { useBodyStore } from './body.js'
+import { useSettingsStore } from './settings.js'
 
 const SUPABASE_URL = 'https://envscdgmonrlczfleoib.supabase.co'
 const SUPABASE_KEY = 'sb_publishable_Nob9dd2IzFjYQsqPGwb4qg_4Mf5giRz'
@@ -9,14 +11,15 @@ const SUPABASE_KEY = 'sb_publishable_Nob9dd2IzFjYQsqPGwb4qg_4Mf5giRz'
 export const useCloudStore = defineStore('cloud', () => {
   const client = ref(null)
   const user = ref(null)
-  const syncStatus = ref('idle')   // 'idle' | 'syncing' | 'ok' | 'error'
+  const syncStatus = ref('idle')
   const lastError = ref(null)
   const lastSyncedAt = ref(null)
 
   let _syncDebounce = null
-  let _historyWatcher = null
+  let _watchers = []
   let _lastUserId = null
-  let _knownIds = new Set()  // ids already in cloud (tracked locally to compute delta)
+  let _knownWorkoutIds = new Set()
+  let _knownBodyIds = new Set()
 
   const isLoggedIn = computed(() => !!user.value)
 
@@ -45,24 +48,28 @@ export const useCloudStore = defineStore('cloud', () => {
   }
 
   async function onLogin(u) {
-    _knownIds = new Set()
+    _knownWorkoutIds = new Set()
+    _knownBodyIds = new Set()
     await initialSync()
-    armHistoryWatcher()
+    armWatchers()
   }
 
   function onLogout() {
-    _knownIds = new Set()
-    if (_historyWatcher) { _historyWatcher(); _historyWatcher = null }
+    _knownWorkoutIds = new Set()
+    _knownBodyIds = new Set()
+    for (const stop of _watchers) stop()
+    _watchers = []
   }
 
-  function armHistoryWatcher() {
-    if (_historyWatcher) return
+  function armWatchers() {
+    if (_watchers.length) return
     const workouts = useWorkoutsStore()
-    _historyWatcher = watch(
-      () => workouts.history,
-      () => scheduleDeltaSync(),
-      { deep: true }
-    )
+    const body = useBodyStore()
+    const settings = useSettingsStore()
+
+    _watchers.push(watch(() => workouts.history, () => scheduleDeltaSync(), { deep: true }))
+    _watchers.push(watch(() => body.entries, () => scheduleDeltaSync(), { deep: true }))
+    _watchers.push(watch(() => settings.settings, () => scheduleSettingsSync(), { deep: true }))
   }
 
   async function initialSync() {
@@ -71,34 +78,66 @@ export const useCloudStore = defineStore('cloud', () => {
     lastError.value = null
     try {
       const workouts = useWorkoutsStore()
+      const body = useBodyStore()
+      const settings = useSettingsStore()
 
-      // Pull cloud workouts
-      const { data: cloudRows, error: pullErr } = await client.value
-        .from('workouts')
-        .select('id, data')
-      if (pullErr) throw pullErr
+      // --- Workouts ---
+      const { data: cloudWorkouts, error: wErr } = await client.value
+        .from('workouts').select('id, data')
+      if (wErr) throw wErr
 
-      const cloudById = new Map(cloudRows.map(r => [r.id, r.data]))
-      const localById = new Map(workouts.history.map(w => [w.id, w]))
+      const wCloud = new Map(cloudWorkouts.map(r => [r.id, r.data]))
+      const wLocal = new Map(workouts.history.map(w => [w.id, w]))
+      const wMerged = new Map(wCloud)
+      for (const [id, w] of wLocal) wMerged.set(id, w)
+      workouts.setHistory(Array.from(wMerged.values()))
 
-      // Merge: last-write-wins by id; for now prefer local (more recently edited)
-      const merged = new Map(cloudById)
-      for (const [id, w] of localById) merged.set(id, w)
-
-      // Update local
-      workouts.setHistory(Array.from(merged.values()))
-
-      // Compute and push delta (local items not in cloud)
-      const toUpload = Array.from(localById.entries())
-        .filter(([id]) => !cloudById.has(id))
+      const wToUpload = Array.from(wLocal.entries())
+        .filter(([id]) => !wCloud.has(id))
         .map(([id, w]) => ({ id, user_id: user.value.id, data: w }))
+      if (wToUpload.length) {
+        const { error } = await client.value.from('workouts').upsert(wToUpload)
+        if (error) throw error
+      }
+      _knownWorkoutIds = new Set(wMerged.keys())
 
-      if (toUpload.length) {
-        const { error: upErr } = await client.value.from('workouts').upsert(toUpload)
-        if (upErr) throw upErr
+      // --- Body log ---
+      const { data: cloudBody, error: bErr } = await client.value
+        .from('body_log').select('id, data')
+      if (bErr && bErr.code !== '42P01') throw bErr  // 42P01 = table doesn't exist yet
+
+      if (!bErr) {
+        const bCloud = new Map(cloudBody.map(r => [r.id, r.data]))
+        const bLocal = new Map(body.entries.map(e => [e.id, e]))
+        const bMerged = new Map(bCloud)
+        for (const [id, e] of bLocal) bMerged.set(id, e)
+        body.entries = Array.from(bMerged.values())
+
+        const bToUpload = Array.from(bLocal.entries())
+          .filter(([id]) => !bCloud.has(id))
+          .map(([id, e]) => ({ id, user_id: user.value.id, data: e }))
+        if (bToUpload.length) {
+          const { error } = await client.value.from('body_log').upsert(bToUpload)
+          if (error && error.code !== '42P01') throw error
+        }
+        _knownBodyIds = new Set(bMerged.keys())
       }
 
-      _knownIds = new Set(merged.keys())
+      // --- Settings (single row per user) ---
+      const { data: cloudSettings, error: sErr } = await client.value
+        .from('user_settings').select('data').eq('user_id', user.value.id).maybeSingle()
+      if (sErr && sErr.code !== '42P01' && sErr.code !== 'PGRST116') throw sErr
+
+      if (cloudSettings?.data) {
+        // Cloud settings exist — apply to local (cloud wins on initial)
+        settings.settings = { ...settings.settings, ...cloudSettings.data }
+      } else if (!sErr || sErr.code === 'PGRST116') {
+        // No cloud settings → upload local
+        const { error } = await client.value.from('user_settings')
+          .upsert({ user_id: user.value.id, data: settings.settings })
+        if (error && error.code !== '42P01') throw error
+      }
+
       syncStatus.value = 'ok'
       lastSyncedAt.value = Date.now()
     } catch (e) {
@@ -114,43 +153,66 @@ export const useCloudStore = defineStore('cloud', () => {
     _syncDebounce = setTimeout(() => deltaSync(), 1500)
   }
 
+  function scheduleSettingsSync() {
+    if (!user.value) return
+    if (_syncDebounce) clearTimeout(_syncDebounce)
+    _syncDebounce = setTimeout(() => settingsSync(), 800)
+  }
+
   async function deltaSync() {
     if (!user.value) return
     const workouts = useWorkoutsStore()
+    const body = useBodyStore()
     syncStatus.value = 'syncing'
     lastError.value = null
     try {
-      const currentIds = new Set(workouts.history.map(w => w.id))
-
-      // New or changed → upsert all current (cheap; rows are small)
-      const toUpload = workouts.history.map(w => ({
-        id: w.id,
-        user_id: user.value.id,
-        data: w
-      }))
-
-      // Deleted → ids in _knownIds but not in currentIds
-      const toDelete = [..._knownIds].filter(id => !currentIds.has(id))
-
-      if (toUpload.length) {
-        const { error: upErr } = await client.value.from('workouts').upsert(toUpload)
-        if (upErr) throw upErr
+      // Workouts
+      const wIds = new Set(workouts.history.map(w => w.id))
+      const wUp = workouts.history.map(w => ({ id: w.id, user_id: user.value.id, data: w }))
+      const wDel = [..._knownWorkoutIds].filter(id => !wIds.has(id))
+      if (wUp.length) {
+        const { error } = await client.value.from('workouts').upsert(wUp)
+        if (error) throw error
       }
-      if (toDelete.length) {
-        const { error: delErr } = await client.value
-          .from('workouts')
-          .delete()
-          .in('id', toDelete)
-        if (delErr) throw delErr
+      if (wDel.length) {
+        const { error } = await client.value.from('workouts').delete().in('id', wDel)
+        if (error) throw error
       }
+      _knownWorkoutIds = wIds
 
-      _knownIds = currentIds
+      // Body log
+      const bIds = new Set(body.entries.map(e => e.id))
+      const bUp = body.entries.map(e => ({ id: e.id, user_id: user.value.id, data: e }))
+      const bDel = [..._knownBodyIds].filter(id => !bIds.has(id))
+      if (bUp.length) {
+        const { error } = await client.value.from('body_log').upsert(bUp)
+        if (error && error.code !== '42P01') throw error
+      }
+      if (bDel.length) {
+        const { error } = await client.value.from('body_log').delete().in('id', bDel)
+        if (error && error.code !== '42P01') throw error
+      }
+      _knownBodyIds = bIds
+
       syncStatus.value = 'ok'
       lastSyncedAt.value = Date.now()
     } catch (e) {
       syncStatus.value = 'error'
       lastError.value = e.message || String(e)
       console.error('[cloud] deltaSync error:', e)
+    }
+  }
+
+  async function settingsSync() {
+    if (!user.value) return
+    const settings = useSettingsStore()
+    try {
+      const { error } = await client.value.from('user_settings')
+        .upsert({ user_id: user.value.id, data: settings.settings })
+      if (error && error.code !== '42P01') throw error
+      lastSyncedAt.value = Date.now()
+    } catch (e) {
+      console.error('[cloud] settingsSync error:', e)
     }
   }
 
@@ -175,6 +237,7 @@ export const useCloudStore = defineStore('cloud', () => {
 
   async function forceSync() {
     await deltaSync()
+    await settingsSync()
   }
 
   return {

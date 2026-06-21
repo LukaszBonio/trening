@@ -2,12 +2,15 @@
 import { ref, computed } from 'vue'
 import { useSessionStore } from '../stores/session.js'
 import { useWorkoutsStore } from '../stores/workouts.js'
+import { useSettingsStore } from '../stores/settings.js'
+import { PLANS } from '../lib/db.js'
 import PlanPicker from '../components/PlanPicker.vue'
 import ExerciseCard from '../components/ExerciseCard.vue'
 import RestTimer from '../components/RestTimer.vue'
 
 const session = useSessionStore()
 const workouts = useWorkoutsStore()
+const settings = useSettingsStore()
 
 const selectedType = ref(null)
 const restTimerRef = ref(null)
@@ -36,7 +39,27 @@ function onPickPlan(plan) {
 }
 
 function onSetDone() {
-  if (restTimerRef.value) restTimerRef.value.start(90)
+  if (!settings.settings.autoStartTimer) return
+  if (restTimerRef.value) restTimerRef.value.start(settings.settings.restTimerDefault)
+}
+
+function repeatLastWorkout() {
+  const last = workouts.lastWorkout
+  if (!last) return
+  const list = PLANS[last.type] || []
+  const plan = list.find(p => p.name === last.planName) || list[0]
+  if (!plan) return
+  session.startSession(plan, last.type)
+  // Prefill weights from last workout (matching by exercise name)
+  const lastByName = new Map(last.exercises.map(ex => [ex.name.toLowerCase().trim(), ex]))
+  for (const ex of session.active.exercises) {
+    const prev = lastByName.get(ex.name.toLowerCase().trim())
+    if (!prev) continue
+    for (let i = 0; i < ex.sets.length && i < prev.sets.length; i++) {
+      ex.sets[i].weight = prev.sets[i].weight
+      // Don't prefill reps — user should still log actual
+    }
+  }
 }
 
 function finishWorkout() {
@@ -107,11 +130,16 @@ function discardWorkout() {
       <p class="muted" style="margin-bottom: var(--space-4)">
         Wybierz typ, potem konkretny plan, by rozpocząć sesję.
       </p>
-      <p v-if="workouts.lastWorkout" class="last-info">
-        <i class="ti ti-clock"></i>
-        Ostatni: <strong>{{ workouts.lastWorkout.planName }}</strong>
-        ({{ workouts.lastWorkout.type.toUpperCase() }})
-      </p>
+      <div v-if="workouts.lastWorkout" class="last-info-row">
+        <p class="last-info">
+          <i class="ti ti-clock"></i>
+          Ostatni: <strong>{{ workouts.lastWorkout.planName }}</strong>
+          ({{ workouts.lastWorkout.type.toUpperCase() }})
+        </p>
+        <button class="btn-tiny" @click="repeatLastWorkout">
+          <i class="ti ti-repeat"></i> Powtórz
+        </button>
+      </div>
       <div class="type-grid">
         <button
           v-for="t in types"
@@ -225,4 +253,24 @@ function discardWorkout() {
   gap: 6px;
 }
 .last-info strong { color: var(--text); font-weight: 600; }
+.last-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--space-3);
+  gap: var(--space-3);
+}
+.btn-tiny {
+  background: transparent;
+  border: 1px dashed var(--border);
+  color: var(--text-muted);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.btn-tiny:hover { color: var(--text); border-color: var(--border-strong); }
 </style>

@@ -13,7 +13,7 @@ function loadDraft() {
 }
 
 function emptySet() {
-  return { weight: '', reps: '', done: false }
+  return { weight: '', reps: '', rpe: '', note: '', done: false }
 }
 
 export const useSessionStore = defineStore('session', () => {
@@ -84,7 +84,12 @@ export const useSessionStore = defineStore('session', () => {
         name: ex.name,
         sets: ex.sets
           .filter(s => s.done && (s.weight !== '' || s.reps !== ''))
-          .map(s => ({ weight: Number(s.weight) || 0, reps: Number(s.reps) || 0 }))
+          .map(s => {
+            const out = { weight: Number(s.weight) || 0, reps: Number(s.reps) || 0 }
+            if (s.rpe) out.rpe = Number(s.rpe)
+            if (s.note) out.note = s.note
+            return out
+          })
       })).filter(ex => ex.sets.length > 0)
     }
   }

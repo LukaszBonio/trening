@@ -4,12 +4,19 @@ import { useCloudStore } from '../stores/cloud.js'
 import { useProfileStore } from '../stores/profile.js'
 import { useWorkoutsStore } from '../stores/workouts.js'
 import { useBodyStore } from '../stores/body.js'
+import { useSettingsStore } from '../stores/settings.js'
 import BodyLogChart from '../components/BodyLogChart.vue'
 
 const cloud = useCloudStore()
 const profile = useProfileStore()
 const workouts = useWorkoutsStore()
 const body = useBodyStore()
+const settingsStore = useSettingsStore()
+
+const COLORS = [
+  '#d4ff3a', '#ff5f4a', '#4a8eff', '#b566ff',
+  '#4ade80', '#fb923c', '#f472b6', '#22d3ee'
+]
 
 const newWeight = ref('')
 const newDate = ref(new Date().toISOString().slice(0, 10))
@@ -170,6 +177,60 @@ function onFileChange(e) {
         <p v-if="message" class="auth-msg">{{ message }}</p>
       </div>
     </div>
+
+    <!-- Settings -->
+    <details class="card collapsible">
+      <summary>
+        <span class="card-title" style="margin: 0">Ustawienia</span>
+        <i class="ti ti-chevron-down collapsible-chevron"></i>
+      </summary>
+      <div class="collapsible-body settings-grid">
+        <label class="setting">
+          <span>Domyślny czas odpoczynku</span>
+          <select v-model.number="settingsStore.settings.restTimerDefault">
+            <option :value="60">60s</option>
+            <option :value="90">90s</option>
+            <option :value="120">120s</option>
+            <option :value="150">150s</option>
+            <option :value="180">180s</option>
+            <option :value="240">240s</option>
+          </select>
+        </label>
+
+        <label class="setting">
+          <span>Jednostki ciężaru</span>
+          <select v-model="settingsStore.settings.units">
+            <option value="kg">Kilogramy (kg)</option>
+            <option value="lb">Funty (lb)</option>
+          </select>
+        </label>
+
+        <label class="setting setting-toggle">
+          <span>Auto-start timera po serii</span>
+          <input type="checkbox" v-model="settingsStore.settings.autoStartTimer" />
+        </label>
+
+        <label class="setting setting-toggle">
+          <span>Pokazuj RPE w sesji</span>
+          <input type="checkbox" v-model="settingsStore.settings.showRpe" />
+        </label>
+
+        <div class="setting">
+          <span>Kolor akcentu</span>
+          <div class="color-picker">
+            <button
+              v-for="c in COLORS"
+              :key="c"
+              class="color-swatch"
+              :class="{ active: settingsStore.settings.accentColor === c }"
+              :style="{ background: c }"
+              :title="c"
+              @click="settingsStore.settings.accentColor = c"
+            ></button>
+          </div>
+        </div>
+      </div>
+    </details>
 
     <!-- Body log -->
     <div class="card">
@@ -446,6 +507,71 @@ function onFileChange(e) {
   justify-content: center;
 }
 .btn-tiny-icon:hover { color: var(--danger); border-color: var(--danger); }
+
+.settings-grid { display: flex; flex-direction: column; gap: 14px; }
+.setting {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 14px;
+}
+.setting > span { color: var(--text-muted); }
+.setting select {
+  padding: 8px 12px;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  min-width: 160px;
+}
+.setting select:focus { outline: none; border-color: var(--accent); }
+.setting-toggle input[type=checkbox] {
+  width: 44px;
+  height: 24px;
+  appearance: none;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  position: relative;
+  cursor: pointer;
+  transition: all var(--dur);
+}
+.setting-toggle input[type=checkbox]::after {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  background: var(--text-muted);
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  transition: all var(--dur);
+}
+.setting-toggle input[type=checkbox]:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.setting-toggle input[type=checkbox]:checked::after {
+  background: #000;
+  transform: translateX(20px);
+}
+.color-picker { display: flex; gap: 6px; flex-wrap: wrap; }
+.color-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform var(--dur);
+}
+.color-swatch.active {
+  border-color: #fff;
+  transform: scale(1.15);
+}
+.color-swatch:hover { transform: scale(1.1); }
 
 @media (max-width: 540px) {
   .body-form { grid-template-columns: 1fr 1fr; }
