@@ -205,6 +205,14 @@ function onFileChange(e) {
           </select>
         </label>
 
+        <label class="setting">
+          <span>Motyw</span>
+          <select v-model="settingsStore.settings.theme">
+            <option value="dark">Ciemny</option>
+            <option value="light">Jasny</option>
+          </select>
+        </label>
+
         <label class="setting setting-toggle">
           <span>Auto-start timera po serii</span>
           <input type="checkbox" v-model="settingsStore.settings.autoStartTimer" />

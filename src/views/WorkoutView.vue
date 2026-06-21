@@ -5,16 +5,23 @@ import { useWorkoutsStore } from '../stores/workouts.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { PLANS } from '../lib/db.js'
 import PlanPicker from '../components/PlanPicker.vue'
+import PlanEditor from '../components/PlanEditor.vue'
 import ExerciseCard from '../components/ExerciseCard.vue'
 import RestTimer from '../components/RestTimer.vue'
 import AIGenerator from '../components/AIGenerator.vue'
+import CompletionSummary from '../components/CompletionSummary.vue'
+import { useCustomPlansStore } from '../stores/customPlans.js'
 
 const session = useSessionStore()
 const workouts = useWorkoutsStore()
 const settings = useSettingsStore()
+const customPlans = useCustomPlansStore()
+
+const editingPlan = ref(null)  // null | 'new' | <plan object>
+const completionWorkout = ref(null)  // last finished workout for summary modal
 
 const selectedType = ref(null)
-const planSource = ref('library')  // 'library' | 'ai'
+const planSource = ref('library')  // 'library' | 'ai' | 'custom'
 const restTimerRef = ref(null)
 
 const types = [
@@ -55,6 +62,25 @@ function onPickPlan(plan) {
   selectedType.value = null
 }
 
+function onEditCustom(plan) {
+  editingPlan.value = plan
+}
+
+function onDeleteCustom(plan) {
+  if (confirm(`Usunąć plan "${plan.name}"?`)) {
+    customPlans.remove(plan.id)
+  }
+}
+
+function onSavePlan(plan) {
+  if (editingPlan.value && editingPlan.value !== 'new') {
+    customPlans.update(editingPlan.value.id, plan)
+  } else {
+    customPlans.add(plan)
+  }
+  editingPlan.value = null
+}
+
 function onSetDone() {
   if (!settings.settings.autoStartTimer) return
   if (restTimerRef.value) restTimerRef.value.start(settings.settings.restTimerDefault)
@@ -88,7 +114,7 @@ function finishWorkout() {
   }
   workouts.addWorkout(payload)
   session.discard()
-  alert('Trening zapisany ✓')
+  completionWorkout.value = payload
 }
 
 function discardWorkout() {
@@ -99,6 +125,12 @@ function discardWorkout() {
 </script>
 
 <template>
+  <CompletionSummary
+    v-if="completionWorkout"
+    :workout="completionWorkout"
+    @close="completionWorkout = null"
+  />
+
   <!-- Active session -->
   <div v-if="session.isActive" class="active-session">
     <div class="session-header card">
@@ -135,30 +167,61 @@ function discardWorkout() {
       <i class="ti ti-arrow-left"></i> Wybierz inny typ
     </button>
     <div class="card">
-      <div class="source-tabs">
-        <button
-          class="source-tab"
-          :class="{ active: planSource === 'library' }"
-          @click="planSource = 'library'"
-        >
-          <i class="ti ti-book"></i> Biblioteka planów
-        </button>
-        <button
-          class="source-tab"
-          :class="{ active: planSource === 'ai' }"
-          @click="planSource = 'ai'"
-        >
-          <i class="ti ti-sparkles"></i> Generuj AI
-        </button>
-      </div>
+      <template v-if="editingPlan">
+        <h2 class="card-title">{{ editingPlan === 'new' ? 'Nowy plan' : 'Edytuj plan' }}</h2>
+        <PlanEditor
+          :type="selectedType"
+          :initial="editingPlan !== 'new' ? editingPlan : null"
+          @save="onSavePlan"
+          @cancel="editingPlan = null"
+        />
+      </template>
 
-      <h2 class="card-title" style="margin-top: var(--space-3)">
-        {{ selectedType.replace('_', ' ').toUpperCase() }} —
-        {{ planSource === 'ai' ? 'plan AI' : 'wybierz plan' }}
-      </h2>
+      <template v-else>
+        <div class="source-tabs">
+          <button
+            class="source-tab"
+            :class="{ active: planSource === 'library' }"
+            @click="planSource = 'library'"
+          >
+            <i class="ti ti-book"></i> Plany
+          </button>
+          <button
+            class="source-tab"
+            :class="{ active: planSource === 'ai' }"
+            @click="planSource = 'ai'"
+          >
+            <i class="ti ti-sparkles"></i> AI
+          </button>
+          <button
+            class="source-tab"
+            :class="{ active: planSource === 'custom' }"
+            @click="planSource = 'custom'"
+          >
+            <i class="ti ti-plus"></i> Nowy
+          </button>
+        </div>
 
-      <PlanPicker v-if="planSource === 'library'" :type="selectedType" @select="onPickPlan" />
-      <AIGenerator v-else :type="selectedType" @select="onPickPlan" />
+        <h2 class="card-title" style="margin-top: var(--space-3)">
+          {{ selectedType.replace('_', ' ').toUpperCase() }} —
+          {{ planSource === 'ai' ? 'plan AI' : planSource === 'custom' ? 'utwórz plan' : 'wybierz plan' }}
+        </h2>
+
+        <PlanPicker
+          v-if="planSource === 'library'"
+          :type="selectedType"
+          @select="onPickPlan"
+          @edit-custom="onEditCustom"
+          @delete-custom="onDeleteCustom"
+        />
+        <AIGenerator v-else-if="planSource === 'ai'" :type="selectedType" @select="onPickPlan" />
+        <PlanEditor
+          v-else-if="planSource === 'custom'"
+          :type="selectedType"
+          @save="(p) => { onSavePlan(p); planSource = 'library' }"
+          @cancel="planSource = 'library'"
+        />
+      </template>
     </div>
   </div>
 

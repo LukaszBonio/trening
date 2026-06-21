@@ -9,7 +9,8 @@ const DEFAULTS = {
   showRpe: true,            // wyświetlać input RPE podczas sesji
   autoStartTimer: true,     // auto-start rest po zaznaczeniu serii
   accentColor: '#d4ff3a',   // kolor akcentu
-  weekStartsMonday: true
+  weekStartsMonday: true,
+  theme: 'dark'             // 'dark' | 'light'
 }
 
 function load() {
@@ -36,13 +37,19 @@ export const useSettingsStore = defineStore('settings', () => {
     document.documentElement.style.setProperty('--accent', settings.value.accentColor)
   }
 
+  function applyTheme() {
+    document.documentElement.dataset.theme = settings.value.theme || 'dark'
+  }
+
   watch(settings, (v) => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(v)) } catch {}
     applyAccentColor()
+    applyTheme()
   }, { deep: true })
 
   // initial apply
   applyAccentColor()
+  applyTheme()
 
   return { settings, set, reset }
 })
