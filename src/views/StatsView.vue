@@ -11,6 +11,7 @@ import {
 import VolumeChart from '../components/VolumeChart.vue'
 import WeeklyChart from '../components/WeeklyChart.vue'
 import ExerciseProgressChart from '../components/ExerciseProgressChart.vue'
+import AchievementsGrid from '../components/AchievementsGrid.vue'
 
 const workouts = useWorkoutsStore()
 
@@ -124,6 +125,11 @@ const progressPoints = computed(() =>
       <p v-else-if="selectedExercise" class="muted" style="margin-top: var(--space-3)">
         Potrzeba co najmniej 2 treningów z tym ćwiczeniem.
       </p>
+    </div>
+
+    <!-- Achievements -->
+    <div class="card">
+      <AchievementsGrid />
     </div>
 
     <!-- Personal records -->

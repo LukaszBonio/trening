@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useSessionStore } from '../stores/session.js'
 import { useWorkoutsStore } from '../stores/workouts.js'
 import { useSettingsStore } from '../stores/settings.js'
@@ -7,12 +7,14 @@ import { PLANS } from '../lib/db.js'
 import PlanPicker from '../components/PlanPicker.vue'
 import ExerciseCard from '../components/ExerciseCard.vue'
 import RestTimer from '../components/RestTimer.vue'
+import AIGenerator from '../components/AIGenerator.vue'
 
 const session = useSessionStore()
 const workouts = useWorkoutsStore()
 const settings = useSettingsStore()
 
 const selectedType = ref(null)
+const planSource = ref('library')  // 'library' | 'ai'
 const restTimerRef = ref(null)
 
 const types = [
@@ -31,6 +33,21 @@ const types = [
 const progress = computed(() => {
   if (!session.totalSets) return 0
   return Math.round((session.totalSetsDone / session.totalSets) * 100)
+})
+
+const now = ref(Date.now())
+let _tick = null
+onMounted(() => { _tick = setInterval(() => { now.value = Date.now() }, 1000) })
+onBeforeUnmount(() => { if (_tick) clearInterval(_tick) })
+
+const duration = computed(() => {
+  if (!session.active) return '00:00'
+  const s = Math.floor((now.value - session.active.startedAt) / 1000)
+  const h = Math.floor(s / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  const sec = s % 60
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
+  return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
 })
 
 function onPickPlan(plan) {
@@ -86,7 +103,7 @@ function discardWorkout() {
   <div v-if="session.isActive" class="active-session">
     <div class="session-header card">
       <div>
-        <div class="session-type">{{ session.active.type.toUpperCase() }}</div>
+        <div class="session-type">{{ session.active.type.toUpperCase() }} · <span class="duration">{{ duration }}</span></div>
         <h2 class="card-title" style="margin: 0">{{ session.active.planName }}</h2>
       </div>
       <div class="session-progress">
@@ -118,8 +135,30 @@ function discardWorkout() {
       <i class="ti ti-arrow-left"></i> Wybierz inny typ
     </button>
     <div class="card">
-      <h2 class="card-title">{{ selectedType.replace('_', ' ').toUpperCase() }} — wybierz plan</h2>
-      <PlanPicker :type="selectedType" @select="onPickPlan" />
+      <div class="source-tabs">
+        <button
+          class="source-tab"
+          :class="{ active: planSource === 'library' }"
+          @click="planSource = 'library'"
+        >
+          <i class="ti ti-book"></i> Biblioteka planów
+        </button>
+        <button
+          class="source-tab"
+          :class="{ active: planSource === 'ai' }"
+          @click="planSource = 'ai'"
+        >
+          <i class="ti ti-sparkles"></i> Generuj AI
+        </button>
+      </div>
+
+      <h2 class="card-title" style="margin-top: var(--space-3)">
+        {{ selectedType.replace('_', ' ').toUpperCase() }} —
+        {{ planSource === 'ai' ? 'plan AI' : 'wybierz plan' }}
+      </h2>
+
+      <PlanPicker v-if="planSource === 'library'" :type="selectedType" @select="onPickPlan" />
+      <AIGenerator v-else :type="selectedType" @select="onPickPlan" />
     </div>
   </div>
 
@@ -174,6 +213,12 @@ function discardWorkout() {
   font-weight: 600;
   letter-spacing: 1px;
   margin-bottom: 4px;
+}
+.duration {
+  font-family: 'Space Grotesk', sans-serif;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  color: var(--text);
 }
 .session-progress {
   text-align: right;
@@ -273,4 +318,34 @@ function discardWorkout() {
   white-space: nowrap;
 }
 .btn-tiny:hover { color: var(--text); border-color: var(--border-strong); }
+
+.source-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-2);
+}
+.source-tab {
+  flex: 1;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all var(--dur) var(--ease);
+}
+.source-tab.active {
+  background: var(--accent);
+  color: #000;
+  font-weight: 600;
+}
 </style>

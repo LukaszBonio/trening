@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useWorkoutsStore } from '../stores/workouts.js'
+import { exportWorkoutToPDF } from '../lib/pdf.js'
 
 const workouts = useWorkoutsStore()
 const expandedId = ref(null)
@@ -113,14 +114,26 @@ const typeColor = (type) => ({
             <div v-for="(ex, i) in w.exercises" :key="i" class="ex-detail">
               <div class="ex-detail-name">{{ ex.name }}</div>
               <div class="set-pills">
-                <span v-for="(s, j) in ex.sets" :key="j" class="set-pill">
-                  {{ s.weight }}kg × {{ s.reps }}
+                <span v-for="(s, j) in ex.sets" :key="j" class="set-pill" :class="{ 'with-rpe': s.rpe }">
+                  <span>{{ s.weight }}kg × {{ s.reps }}</span>
+                  <span v-if="s.rpe" class="rpe-badge">RPE {{ s.rpe }}</span>
+                  <span v-if="s.note" class="note-icon" :title="s.note">
+                    <i class="ti ti-note"></i>
+                  </span>
                 </span>
+              </div>
+              <div v-if="ex.sets.some(s => s.note)" class="notes-block">
+                <div v-for="(s, j) in ex.sets" :key="j" v-show="s.note" class="note-line">
+                  <span class="dim">#{{ j + 1 }}:</span> {{ s.note }}
+                </div>
               </div>
             </div>
             <div class="detail-actions">
               <button class="btn" @click="startEdit(w)">
                 <i class="ti ti-pencil"></i> Edytuj
+              </button>
+              <button class="btn" @click="exportWorkoutToPDF(w)">
+                <i class="ti ti-file-download"></i> PDF
               </button>
               <button class="btn btn-danger" @click="remove(w.id)">
                 <i class="ti ti-trash"></i> Usuń
@@ -208,7 +221,31 @@ const typeColor = (type) => ({
   padding: 3px 8px;
   border-radius: 100px;
   font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
+.set-pill.with-rpe { border-color: var(--accent-soft-2); }
+.rpe-badge {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.3px;
+}
+.note-icon {
+  font-size: 11px;
+  color: var(--text-dim);
+  cursor: help;
+}
+.notes-block {
+  margin-top: 6px;
+  padding-left: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+.note-line { margin-top: 2px; }
+.note-line .dim { color: var(--text-dim); font-style: normal; margin-right: 4px; }
 .btn-danger {
   background: transparent;
   border: 1px solid var(--danger);
