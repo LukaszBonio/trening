@@ -13,3 +13,12 @@ import { useSettingsStore } from './stores/settings.js'
 useSettingsStore()
 
 app.mount('#app')
+
+// Ukryj splash screen po zamontowaniu Vue
+requestAnimationFrame(() => {
+  const splash = document.getElementById('splash')
+  if (splash) {
+    splash.classList.add('fade')
+    setTimeout(() => splash.remove(), 320)
+  }
+})

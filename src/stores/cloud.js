@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { useWorkoutsStore } from './workouts.js'
 import { useBodyStore } from './body.js'
 import { useSettingsStore } from './settings.js'
+import { offlineQueue } from '../lib/offlineQueue.js'
 
 const SUPABASE_URL = 'https://envscdgmonrlczfleoib.supabase.co'
 const SUPABASE_KEY = 'sb_publishable_Nob9dd2IzFjYQsqPGwb4qg_4Mf5giRz'
@@ -14,6 +15,8 @@ export const useCloudStore = defineStore('cloud', () => {
   const syncStatus = ref('idle')
   const lastError = ref(null)
   const lastSyncedAt = ref(null)
+  const isOnline = ref(typeof navigator === 'undefined' ? true : navigator.onLine)
+  const queueSize = ref(offlineQueue.size())
 
   let _syncDebounce = null
   let _watchers = []
@@ -28,6 +31,39 @@ export const useCloudStore = defineStore('cloud', () => {
     client.value = createClient(SUPABASE_URL, SUPABASE_KEY, {
       auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
     })
+
+    // Online/offline tracking
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', () => { isOnline.value = true })
+      window.addEventListener('offline', () => { isOnline.value = false })
+    }
+
+    // Register queue handlers
+    offlineQueue.registerHandler('upsertWorkouts', async (rows) => {
+      const { error } = await client.value.from('workouts').upsert(rows)
+      if (error) throw error
+    })
+    offlineQueue.registerHandler('deleteWorkouts', async (ids) => {
+      const { error } = await client.value.from('workouts').delete().in('id', ids)
+      if (error) throw error
+    })
+    offlineQueue.registerHandler('upsertBody', async (rows) => {
+      const { error } = await client.value.from('body_log').upsert(rows)
+      if (error && error.code !== '42P01') throw error
+    })
+    offlineQueue.registerHandler('deleteBody', async (ids) => {
+      const { error } = await client.value.from('body_log').delete().in('id', ids)
+      if (error && error.code !== '42P01') throw error
+    })
+    offlineQueue.registerHandler('upsertSettings', async (data) => {
+      const { error } = await client.value.from('user_settings')
+        .upsert({ user_id: user.value?.id, data })
+      if (error && error.code !== '42P01') throw error
+    })
+
+    // Track queue size for UI
+    offlineQueue.on('change', () => { queueSize.value = offlineQueue.size() })
+    offlineQueue.on('flush-end', () => { queueSize.value = offlineQueue.size() })
 
     client.value.auth.getSession().then(({ data }) => {
       const u = data.session?.user || null
@@ -166,35 +202,23 @@ export const useCloudStore = defineStore('cloud', () => {
     syncStatus.value = 'syncing'
     lastError.value = null
     try {
-      // Workouts
+      // Workouts → kolejkujemy zamiast bezpośrednio
       const wIds = new Set(workouts.history.map(w => w.id))
       const wUp = workouts.history.map(w => ({ id: w.id, user_id: user.value.id, data: w }))
       const wDel = [..._knownWorkoutIds].filter(id => !wIds.has(id))
-      if (wUp.length) {
-        const { error } = await client.value.from('workouts').upsert(wUp)
-        if (error) throw error
-      }
-      if (wDel.length) {
-        const { error } = await client.value.from('workouts').delete().in('id', wDel)
-        if (error) throw error
-      }
+      if (wUp.length) offlineQueue.enqueue('upsertWorkouts', wUp)
+      if (wDel.length) offlineQueue.enqueue('deleteWorkouts', wDel)
       _knownWorkoutIds = wIds
 
       // Body log
       const bIds = new Set(body.entries.map(e => e.id))
       const bUp = body.entries.map(e => ({ id: e.id, user_id: user.value.id, data: e }))
       const bDel = [..._knownBodyIds].filter(id => !bIds.has(id))
-      if (bUp.length) {
-        const { error } = await client.value.from('body_log').upsert(bUp)
-        if (error && error.code !== '42P01') throw error
-      }
-      if (bDel.length) {
-        const { error } = await client.value.from('body_log').delete().in('id', bDel)
-        if (error && error.code !== '42P01') throw error
-      }
+      if (bUp.length) offlineQueue.enqueue('upsertBody', bUp)
+      if (bDel.length) offlineQueue.enqueue('deleteBody', bDel)
       _knownBodyIds = bIds
 
-      syncStatus.value = 'ok'
+      syncStatus.value = isOnline.value ? 'ok' : 'queued'
       lastSyncedAt.value = Date.now()
     } catch (e) {
       syncStatus.value = 'error'
@@ -206,14 +230,8 @@ export const useCloudStore = defineStore('cloud', () => {
   async function settingsSync() {
     if (!user.value) return
     const settings = useSettingsStore()
-    try {
-      const { error } = await client.value.from('user_settings')
-        .upsert({ user_id: user.value.id, data: settings.settings })
-      if (error && error.code !== '42P01') throw error
-      lastSyncedAt.value = Date.now()
-    } catch (e) {
-      console.error('[cloud] settingsSync error:', e)
-    }
+    offlineQueue.enqueue('upsertSettings', { ...settings.settings })
+    lastSyncedAt.value = Date.now()
   }
 
   async function signUp(email, password) {
@@ -240,8 +258,13 @@ export const useCloudStore = defineStore('cloud', () => {
     await settingsSync()
   }
 
+  async function flushQueue() {
+    await offlineQueue.flush()
+  }
+
   return {
     client, user, syncStatus, lastError, lastSyncedAt, isLoggedIn,
-    init, signUp, signIn, signOut, forceSync
+    isOnline, queueSize,
+    init, signUp, signIn, signOut, forceSync, flushQueue
   }
 })

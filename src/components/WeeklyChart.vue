@@ -1,6 +1,7 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, computed, nextTick } from 'vue'
 import { Chart, registerables } from 'chart.js'
+import ChartSkeleton from './ChartSkeleton.vue'
 
 Chart.register(...registerables)
 
@@ -9,6 +10,7 @@ const props = defineProps({
 })
 
 const canvas = ref(null)
+const ready = ref(false)
 let chart = null
 
 function isoWeek(date) {
@@ -69,13 +71,19 @@ function build() {
   })
 }
 
-onMounted(build)
-watch(buckets, build, { deep: true })
+onMounted(async () => {
+  await new Promise(r => setTimeout(r, 80))
+  ready.value = true
+  await nextTick()
+  build()
+})
+watch(buckets, () => { if (ready.value) build() }, { deep: true })
 onBeforeUnmount(() => { if (chart) chart.destroy() })
 </script>
 
 <template>
-  <div class="chart-wrap">
+  <ChartSkeleton v-if="!ready" :height="200" variant="bar" />
+  <div v-else class="chart-wrap">
     <canvas ref="canvas"></canvas>
   </div>
 </template>

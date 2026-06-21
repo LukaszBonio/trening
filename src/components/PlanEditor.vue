@@ -45,6 +45,37 @@ function moveDown(i) {
   ;[arr[i], arr[i + 1]] = [arr[i + 1], arr[i]]
 }
 
+const draggedIdx = ref(null)
+const dragOverIdx = ref(null)
+
+function onDragStart(i, e) {
+  draggedIdx.value = i
+  e.dataTransfer.effectAllowed = 'move'
+  e.dataTransfer.setData('text/plain', String(i))
+}
+function onDragOver(i, e) {
+  e.preventDefault()
+  e.dataTransfer.dropEffect = 'move'
+  dragOverIdx.value = i
+}
+function onDragLeave(i) {
+  if (dragOverIdx.value === i) dragOverIdx.value = null
+}
+function onDrop(targetIdx, e) {
+  e.preventDefault()
+  const from = draggedIdx.value
+  if (from === null || from === targetIdx) { reset(); return }
+  const arr = draft.value.exercises
+  const [moved] = arr.splice(from, 1)
+  arr.splice(targetIdx, 0, moved)
+  reset()
+}
+function onDragEnd() { reset() }
+function reset() {
+  draggedIdx.value = null
+  dragOverIdx.value = null
+}
+
 function save() {
   draft.value.name = draft.value.name.trim()
   draft.value.exercises = draft.value.exercises.map(e => ({
@@ -65,20 +96,35 @@ function save() {
     </div>
 
     <div class="exercises">
-      <div v-for="(ex, i) in draft.exercises" :key="i" class="ex-edit">
+      <div
+        v-for="(ex, i) in draft.exercises"
+        :key="i"
+        class="ex-edit"
+        :class="{ dragging: draggedIdx === i, 'drag-over': dragOverIdx === i && draggedIdx !== i }"
+        draggable="true"
+        @dragstart="onDragStart(i, $event)"
+        @dragover="onDragOver(i, $event)"
+        @dragleave="onDragLeave(i)"
+        @drop="onDrop(i, $event)"
+        @dragend="onDragEnd"
+      >
         <div class="ex-edit-header">
+          <span class="drag-handle" title="Przeciągnij">
+            <i class="ti ti-grip-vertical"></i>
+          </span>
           <span class="ex-num">{{ i + 1 }}</span>
           <div class="ex-controls">
-            <button class="btn-tiny" @click="moveUp(i)" :disabled="i === 0">
+            <button class="btn-tiny" @click="moveUp(i)" :disabled="i === 0" title="W górę">
               <i class="ti ti-chevron-up"></i>
             </button>
-            <button class="btn-tiny" @click="moveDown(i)" :disabled="i === draft.exercises.length - 1">
+            <button class="btn-tiny" @click="moveDown(i)" :disabled="i === draft.exercises.length - 1" title="W dół">
               <i class="ti ti-chevron-down"></i>
             </button>
             <button
               v-if="draft.exercises.length > 1"
               class="btn-tiny btn-tiny-danger"
               @click="removeExercise(i)"
+              title="Usuń"
             >
               <i class="ti ti-x"></i>
             </button>
@@ -145,8 +191,21 @@ function save() {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  transition: transform 0.15s ease, opacity 0.15s ease, border-color 0.15s ease;
 }
-.ex-edit-header { display: flex; justify-content: space-between; align-items: center; }
+.ex-edit.dragging { opacity: 0.45; transform: scale(0.98); }
+.ex-edit.drag-over { border-color: var(--accent); background: var(--accent-soft); }
+.ex-edit-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.drag-handle {
+  color: var(--text-dim);
+  cursor: grab;
+  font-size: 16px;
+  padding: 2px;
+  display: inline-flex;
+  align-items: center;
+}
+.drag-handle:active { cursor: grabbing; }
+.drag-handle:hover { color: var(--text-muted); }
 .ex-num {
   font-family: 'Space Grotesk', sans-serif;
   font-weight: 700;

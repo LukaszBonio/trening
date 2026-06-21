@@ -1,6 +1,16 @@
 <script setup>
 import { RouterView, RouterLink, useRoute } from 'vue-router'
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
+import OnboardingTour from './components/OnboardingTour.vue'
+
+const showOnboarding = ref(false)
+onMounted(() => {
+  try {
+    if (!localStorage.getItem('tp_onboarding_done_v1')) {
+      showOnboarding.value = true
+    }
+  } catch {}
+})
 
 const route = useRoute()
 const currentTab = computed(() => route.name || 'workout')
@@ -14,6 +24,7 @@ const tabs = [
 </script>
 
 <template>
+  <OnboardingTour v-if="showOnboarding" @done="showOnboarding = false" />
   <div class="app">
     <header class="header">
       <div class="brand">

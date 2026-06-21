@@ -132,12 +132,15 @@ function onFileChange(e) {
           <div class="user-email">{{ cloud.user.email }}</div>
           <div class="sync-status" :class="cloud.syncStatus">
             <i class="ti" :class="{
-              'ti-cloud-check': cloud.syncStatus === 'ok',
+              'ti-cloud-check': cloud.syncStatus === 'ok' && cloud.queueSize === 0,
               'ti-cloud-upload': cloud.syncStatus === 'syncing',
               'ti-cloud-x': cloud.syncStatus === 'error',
+              'ti-cloud-off': !cloud.isOnline,
               'ti-cloud': cloud.syncStatus === 'idle'
             }"></i>
-            <span v-if="cloud.syncStatus === 'syncing'">Synchronizacja…</span>
+            <span v-if="!cloud.isOnline">Offline · {{ cloud.queueSize }} operacji w kolejce</span>
+            <span v-else-if="cloud.queueSize > 0">Synchronizuję {{ cloud.queueSize }} operacji…</span>
+            <span v-else-if="cloud.syncStatus === 'syncing'">Synchronizacja…</span>
             <span v-else-if="cloud.syncStatus === 'ok'">Zsynchronizowano</span>
             <span v-else-if="cloud.syncStatus === 'error'">Błąd: {{ cloud.lastError }}</span>
             <span v-else>Oczekiwanie</span>

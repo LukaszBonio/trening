@@ -16,6 +16,56 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 </head>
 <body>
+  <style>
+    /* Inline splash — pokazuje się natychmiast, znika gdy Vue zamontuje app */
+    html, body { background: #08090d; color: #f4f5f7; margin: 0; }
+    #splash {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: #08090d;
+      z-index: 9999;
+      transition: opacity 280ms ease;
+    }
+    #splash.fade { opacity: 0; pointer-events: none; }
+    .splash-logo {
+      width: 64px; height: 64px;
+      border-radius: 14px;
+      background: #d4ff3a;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 32px rgba(212,255,58,0.35);
+      animation: splash-pulse 1.2s ease-in-out infinite;
+    }
+    .splash-logo svg { width: 38px; height: 38px; color: #000; }
+    .splash-title {
+      margin-top: 18px;
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      font-size: 16px; font-weight: 700; letter-spacing: -0.3px;
+    }
+    .splash-title span { color: #d4ff3a; }
+    @keyframes splash-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .splash-logo { animation: none; }
+    }
+    [data-theme="light"] #splash { background: #fafbfc; }
+    [data-theme="light"] .splash-title { color: #15171d; }
+  </style>
+  <div id="splash">
+    <div class="splash-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 12h2"></path>
+        <path d="M6 8v8"></path>
+        <path d="M10 5v14"></path>
+        <path d="M14 5v14"></path>
+        <path d="M18 8v8"></path>
+        <path d="M22 12h-2"></path>
+      </svg>
+    </div>
+    <div class="splash-title">Trening <span>Pro</span></div>
+  </div>
   <div id="app"></div>
   <script type="module" src="/src/main.js"></script>
 </body>

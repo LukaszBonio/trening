@@ -1,5 +1,6 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
+import confetti from 'canvas-confetti'
 import { personalRecords } from '../lib/analytics.js'
 import { useWorkoutsStore } from '../stores/workouts.js'
 
@@ -49,6 +50,30 @@ const avgRpe = computed(() => {
   }
   if (!rpes.length) return null
   return (rpes.reduce((a, b) => a + b, 0) / rpes.length).toFixed(1)
+})
+
+onMounted(() => {
+  // Reduced motion respect
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#d4ff3a'
+  const baseColors = [accent, '#ffffff', '#facc15', '#22d3ee']
+
+  // Standard burst
+  confetti({
+    particleCount: 80,
+    spread: 70,
+    origin: { y: 0.5 },
+    colors: baseColors
+  })
+
+  // Side bursts dla PR
+  if (newPRs.value.length > 0) {
+    setTimeout(() => {
+      confetti({ particleCount: 40, angle: 60, spread: 55, origin: { x: 0, y: 0.6 }, colors: baseColors })
+      confetti({ particleCount: 40, angle: 120, spread: 55, origin: { x: 1, y: 0.6 }, colors: baseColors })
+    }, 250)
+  }
 })
 </script>
 

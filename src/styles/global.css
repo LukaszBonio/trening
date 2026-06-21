@@ -93,6 +93,17 @@ a { color: inherit; }
 .fade-enter-from { opacity: 0; transform: translateY(6px); }
 .fade-leave-to { opacity: 0; transform: translateY(-6px); }
 
+/* Reduced motion — wyłącz transitions/animacje dla użytkowników z preferencją */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .fade-enter-from, .fade-leave-to { transform: none; }
+}
+
 .card {
   background: var(--bg-elev);
   border: 1px solid var(--border);
