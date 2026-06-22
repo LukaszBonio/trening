@@ -1,7 +1,8 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useWorkoutsStore } from '../stores/workouts.js'
-import { detectMuscle, getMuscleName } from '../lib/db.js'
+import { detectMuscle } from '../lib/db.js'
+import { MUSCLE_TO_GROUP, GROUP_LABELS } from '../lib/workoutSchema.js'
 import {
   uniqueExercises,
   exerciseProgress,
@@ -46,13 +47,14 @@ const volumeByMuscle = computed(() => {
   const map = {}
   for (const w of workouts.history) {
     for (const ex of w.exercises) {
-      const muscle = detectMuscle(ex.name) || 'inne'
-      if (!map[muscle]) map[muscle] = 0
-      for (const s of ex.sets) map[muscle] += (s.weight || 0) * (s.reps || 0)
+      const muscle = detectMuscle(ex.name)
+      const group = muscle ? (MUSCLE_TO_GROUP[muscle] || 'inne') : 'inne'
+      if (!map[group]) map[group] = 0
+      for (const s of ex.sets) map[group] += (s.weight || 0) * (s.reps || 0)
     }
   }
   return Object.entries(map)
-    .map(([key, vol]) => ({ key, name: getMuscleName(key), vol: Math.round(vol) }))
+    .map(([key, vol]) => ({ key, name: GROUP_LABELS[key]?.name || key, vol: Math.round(vol) }))
     .sort((a, b) => b.vol - a.vol)
 })
 
