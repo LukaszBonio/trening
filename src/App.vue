@@ -17,6 +17,13 @@ onMounted(() => {
       showOnboarding.value = true
     }
   } catch {}
+
+  window.addEventListener('storage-error', (e) => {
+    alert('Uwaga: nie udało się zapisać danych lokalnie. Sprawdź wolne miejsce w przeglądarce.')
+  })
+  window.addEventListener('sync-failed', (e) => {
+    console.warn('Sync operation permanently failed:', e.detail)
+  })
 })
 
 const route = useRoute()

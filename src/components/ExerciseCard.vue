@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useSessionStore } from '../stores/session.js'
 import { useSettingsStore } from '../stores/settings.js'
 
@@ -13,25 +13,23 @@ const settings = useSettingsStore()
 
 const noteEditIdx = ref(null)
 
-function exercise() {
-  return session.active?.exercises[props.exIdx]
-}
+const exercise = computed(() => session.active?.exercises[props.exIdx])
 
 function toggle(setIdx) {
-  const wasDone = exercise().sets[setIdx].done
+  const wasDone = exercise.value.sets[setIdx].done
   session.toggleSet(props.exIdx, setIdx)
   if (!wasDone) emit('set-done')
 }
 </script>
 
 <template>
-  <div class="ex-card" v-if="exercise()">
+  <div class="ex-card" v-if="exercise">
     <div class="ex-header">
       <div>
-        <div class="ex-name">{{ exercise().name }}</div>
-        <div class="ex-tip" v-if="exercise().tip">{{ exercise().tip }}</div>
+        <div class="ex-name">{{ exercise.name }}</div>
+        <div class="ex-tip" v-if="exercise.tip">{{ exercise.tip }}</div>
       </div>
-      <div class="ex-target">{{ exercise().sets.length }} × {{ exercise().reps }}</div>
+      <div class="ex-target">{{ exercise.sets.length }} × {{ exercise.reps }}</div>
     </div>
 
     <div class="sets">
@@ -42,7 +40,7 @@ function toggle(setIdx) {
         <span v-if="settings.settings.showRpe">RPE</span>
         <span></span>
       </div>
-      <template v-for="(set, i) in exercise().sets" :key="i">
+      <template v-for="(set, i) in exercise.sets" :key="'set-' + i">
         <div class="set-row" :class="{ done: set.done, 'with-rpe': settings.settings.showRpe }">
           <span class="set-num">{{ i + 1 }}</span>
           <input
@@ -97,14 +95,14 @@ function toggle(setIdx) {
       </button>
       <button
         class="btn-tiny"
-        v-if="exercise().sets.length > 1"
-        @click="session.removeSet(exIdx, exercise().sets.length - 1)"
+        v-if="exercise.sets.length > 1"
+        @click="session.removeSet(exIdx, exercise.sets.length - 1)"
       >
         <i class="ti ti-minus"></i> Usuń serię
       </button>
       <button
         class="btn-tiny"
-        @click="noteEditIdx = noteEditIdx === null ? exercise().sets.length - 1 : null"
+        @click="noteEditIdx = noteEditIdx === null ? exercise.sets.length - 1 : null"
       >
         <i class="ti ti-note"></i> Notatka
       </button>

@@ -42,6 +42,10 @@ export const useSettingsStore = defineStore('settings', () => {
     document.documentElement.dataset.theme = settings.value.theme || 'dark'
   }
 
+  function save() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings.value)) } catch {}
+  }
+
   watch(settings, (v) => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(v)) } catch {}
     applyAccentColor()
@@ -52,5 +56,12 @@ export const useSettingsStore = defineStore('settings', () => {
   applyAccentColor()
   applyTheme()
 
-  return { settings, set, reset }
+  function applyRemote(remote) {
+    Object.assign(settings.value, remote)
+    applyTheme()
+    applyAccentColor()
+    save()
+  }
+
+  return { settings, set, reset, applyRemote }
 })

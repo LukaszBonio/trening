@@ -1,9 +1,9 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, watch, computed, nextTick } from 'vue'
-import { Chart, registerables } from 'chart.js'
+import { Chart, LineController, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend, Filler } from 'chart.js'
 import ChartSkeleton from './ChartSkeleton.vue'
 
-Chart.register(...registerables)
+Chart.register(LineController, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend, Filler)
 
 const props = defineProps({
   workouts: { type: Array, required: true }

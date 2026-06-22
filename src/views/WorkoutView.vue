@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useSessionStore } from '../stores/session.js'
 import { useWorkoutsStore } from '../stores/workouts.js'
 import { useSettingsStore } from '../stores/settings.js'
@@ -83,8 +83,21 @@ const progress = computed(() => {
 
 const now = ref(Date.now())
 let _tick = null
-onMounted(() => { _tick = setInterval(() => { now.value = Date.now() }, 1000) })
-onBeforeUnmount(() => { if (_tick) clearInterval(_tick) })
+
+function startTick() {
+  if (_tick) return
+  _tick = setInterval(() => { now.value = Date.now() }, 1000)
+}
+function stopTick() {
+  if (_tick) { clearInterval(_tick); _tick = null }
+}
+
+watch(() => session.isActive, (active) => {
+  if (active) { now.value = Date.now(); startTick() }
+  else stopTick()
+}, { immediate: true })
+
+onBeforeUnmount(() => stopTick())
 
 const duration = computed(() => {
   if (!session.active) return '00:00'
@@ -196,7 +209,7 @@ function discardWorkout() {
     <!-- Cards mode (default) lub flat list -->
     <WorkoutCards
       v-if="settings.settings.workoutMode === 'cards'"
-      :on-set-done="onSetDone"
+      @set-done="onSetDone"
     />
     <template v-else>
       <ExerciseCard

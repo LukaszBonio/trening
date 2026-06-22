@@ -113,7 +113,6 @@ export const EXERCISE_TO_MUSCLE = {
   'wznosy bokiem':                                 'shoulder_side',
   'unoszenie ramion bokiem':                       'shoulder_side',
   'unoszenie hantli bokiem':                       'shoulder_side',
-  'wznosy bokiem':                                 'shoulder_side',
   'lateral raise':                                 'shoulder_side',
   'wznosy hantli bokiem siedząc':                  'shoulder_side',
   'wznosy hantli bokiem stojąc':                   'shoulder_side',
@@ -155,7 +154,6 @@ export const EXERCISE_TO_MUSCLE = {
   'wiosłowanie sztangą w opadzie':                 'back_middle',
   'wiosłowanie sztangą':                           'back_middle',
   'wiosłowanie pendlay':                           'back_middle',
-  'wiosłowanie hantlem jednoręcz':                 'back_middle',
   'wiosłowanie hantlą':                            'back_middle',
   'wiosłowanie t-bar':                             'back_middle',
   'wiosłowanie wąskim chwytem':                    'back_middle',
@@ -182,7 +180,6 @@ export const EXERCISE_TO_MUSCLE = {
   // BICEPS - DŁUGA GŁOWA
   'uginanie ramion ze sztangą wąskim chwytem':     'biceps_long',
   'uginanie hantli na modlitewniku':               'biceps_long',
-  'uginanie ramion na modlitewniku':               'biceps_long',
   'preacher curl':                                 'biceps_long',
   'uginanie hantli na ławce skośnej':              'biceps_long',
   'concentration curl':                            'biceps_long',
@@ -207,7 +204,6 @@ export const EXERCISE_TO_MUSCLE = {
   'zottman curl':                                   'forearms',
   'uginanie młotkowe':                             'biceps_brach',
   'hammer curl':                                   'biceps_brach',
-  'uginanie zottmana':                             'biceps_brach',
   // TRICEPS - DŁUGA GŁOWA
   'francuskie wyciskanie sztangi':                 'triceps_long',
   'francuskie wyciskanie':                         'triceps_long',

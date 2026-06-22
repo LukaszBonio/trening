@@ -88,13 +88,14 @@ export const useSessionStore = defineStore('session', () => {
 
   function finishToPayload() {
     if (!active.value) return null
+    const now = Date.now()
     return {
       id: active.value.id,
       type: active.value.type,
       planName: active.value.planName,
       date: new Date(active.value.startedAt).toISOString(),
-      finishedAt: Date.now(),
-      duration: Math.floor((Date.now() - active.value.startedAt) / 1000),
+      finishedAt: now,
+      duration: Math.floor((now - active.value.startedAt) / 1000),
       exercises: active.value.exercises.map(ex => ({
         name: ex.name,
         sets: ex.sets

@@ -52,5 +52,9 @@ export const useBodyStore = defineStore('body', () => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(v)) } catch {}
   }, { deep: true })
 
-  return { entries, sortedAsc, sortedDesc, latest, trend, addEntry, removeEntry }
+  function replaceEntries(newEntries) {
+    entries.value = newEntries
+  }
+
+  return { entries, sortedAsc, sortedDesc, latest, trend, addEntry, removeEntry, replaceEntries }
 })

@@ -1,6 +1,5 @@
-import { jsPDF } from 'jspdf'
-
-export function exportWorkoutToPDF(workout) {
+export async function exportWorkoutToPDF(workout) {
+  const { jsPDF } = await import('jspdf')
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const W = 210
   const margin = 15

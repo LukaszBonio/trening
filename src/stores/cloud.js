@@ -18,11 +18,14 @@ export const useCloudStore = defineStore('cloud', () => {
   const isOnline = ref(typeof navigator === 'undefined' ? true : navigator.onLine)
   const queueSize = ref(offlineQueue.size())
 
-  let _syncDebounce = null
+  let _workoutSyncDebounce = null
+  let _settingsSyncDebounce = null
   let _watchers = []
   let _lastUserId = null
   let _knownWorkoutIds = new Set()
   let _knownBodyIds = new Set()
+  let _dirtyWorkoutIds = new Set()
+  let _dirtyBodyIds = new Set()
 
   const isLoggedIn = computed(() => !!user.value)
 
@@ -86,6 +89,8 @@ export const useCloudStore = defineStore('cloud', () => {
   async function onLogin(u) {
     _knownWorkoutIds = new Set()
     _knownBodyIds = new Set()
+    _dirtyWorkoutIds = new Set()
+    _dirtyBodyIds = new Set()
     await initialSync()
     armWatchers()
   }
@@ -93,6 +98,8 @@ export const useCloudStore = defineStore('cloud', () => {
   function onLogout() {
     _knownWorkoutIds = new Set()
     _knownBodyIds = new Set()
+    _dirtyWorkoutIds = new Set()
+    _dirtyBodyIds = new Set()
     for (const stop of _watchers) stop()
     _watchers = []
   }
@@ -103,8 +110,18 @@ export const useCloudStore = defineStore('cloud', () => {
     const body = useBodyStore()
     const settings = useSettingsStore()
 
-    _watchers.push(watch(() => workouts.history, () => scheduleDeltaSync(), { deep: true }))
-    _watchers.push(watch(() => body.entries, () => scheduleDeltaSync(), { deep: true }))
+    _watchers.push(watch(() => workouts.history, () => {
+      // Deep watcher fires on any change — mark all current IDs as dirty
+      // since pinpointing which specific record changed without JSON diffing is expensive
+      const currentIds = new Set(workouts.history.map(w => w.id))
+      for (const id of currentIds) _dirtyWorkoutIds.add(id)
+      scheduleDeltaSync()
+    }, { deep: true }))
+    _watchers.push(watch(() => body.entries, () => {
+      const currentIds = new Set(body.entries.map(e => e.id))
+      for (const id of currentIds) _dirtyBodyIds.add(id)
+      scheduleDeltaSync()
+    }, { deep: true }))
     _watchers.push(watch(() => settings.settings, () => scheduleSettingsSync(), { deep: true }))
   }
 
@@ -124,8 +141,21 @@ export const useCloudStore = defineStore('cloud', () => {
 
       const wCloud = new Map(cloudWorkouts.map(r => [r.id, r.data]))
       const wLocal = new Map(workouts.history.map(w => [w.id, w]))
-      const wMerged = new Map(wCloud)
-      for (const [id, w] of wLocal) wMerged.set(id, w)
+      const wMerged = new Map()
+      // Merge all IDs from both sources
+      const allWorkoutIds = new Set([...wCloud.keys(), ...wLocal.keys()])
+      for (const id of allWorkoutIds) {
+        const cloud = wCloud.get(id)
+        const local = wLocal.get(id)
+        if (!cloud) { wMerged.set(id, local); continue }
+        if (!local) { wMerged.set(id, cloud); continue }
+        // Both exist — compare timestamps, keep newer; tie-break by field count
+        const cloudTs = cloud.finishedAt || cloud.date || ''
+        const localTs = local.finishedAt || local.date || ''
+        if (localTs > cloudTs) { wMerged.set(id, local) }
+        else if (cloudTs > localTs) { wMerged.set(id, cloud) }
+        else { wMerged.set(id, Object.keys(local).length >= Object.keys(cloud).length ? local : cloud) }
+      }
       workouts.setHistory(Array.from(wMerged.values()))
 
       const wToUpload = Array.from(wLocal.entries())
@@ -145,9 +175,20 @@ export const useCloudStore = defineStore('cloud', () => {
       if (!bErr) {
         const bCloud = new Map(cloudBody.map(r => [r.id, r.data]))
         const bLocal = new Map(body.entries.map(e => [e.id, e]))
-        const bMerged = new Map(bCloud)
-        for (const [id, e] of bLocal) bMerged.set(id, e)
-        body.entries = Array.from(bMerged.values())
+        const bMerged = new Map()
+        const allBodyIds = new Set([...bCloud.keys(), ...bLocal.keys()])
+        for (const id of allBodyIds) {
+          const cloud = bCloud.get(id)
+          const local = bLocal.get(id)
+          if (!cloud) { bMerged.set(id, local); continue }
+          if (!local) { bMerged.set(id, cloud); continue }
+          const cloudTs = cloud.date || ''
+          const localTs = local.date || ''
+          if (localTs > cloudTs) { bMerged.set(id, local) }
+          else if (cloudTs > localTs) { bMerged.set(id, cloud) }
+          else { bMerged.set(id, Object.keys(local).length >= Object.keys(cloud).length ? local : cloud) }
+        }
+        body.replaceEntries(Array.from(bMerged.values()))
 
         const bToUpload = Array.from(bLocal.entries())
           .filter(([id]) => !bCloud.has(id))
@@ -166,7 +207,7 @@ export const useCloudStore = defineStore('cloud', () => {
 
       if (cloudSettings?.data) {
         // Cloud settings exist — apply to local (cloud wins on initial)
-        settings.settings = { ...settings.settings, ...cloudSettings.data }
+        settings.applyRemote(cloudSettings.data)
       } else if (!sErr || sErr.code === 'PGRST116') {
         // No cloud settings → upload local
         const { error } = await client.value.from('user_settings')
@@ -185,14 +226,14 @@ export const useCloudStore = defineStore('cloud', () => {
 
   function scheduleDeltaSync() {
     if (!user.value) return
-    if (_syncDebounce) clearTimeout(_syncDebounce)
-    _syncDebounce = setTimeout(() => deltaSync(), 1500)
+    if (_workoutSyncDebounce) clearTimeout(_workoutSyncDebounce)
+    _workoutSyncDebounce = setTimeout(() => deltaSync(), 1500)
   }
 
   function scheduleSettingsSync() {
     if (!user.value) return
-    if (_syncDebounce) clearTimeout(_syncDebounce)
-    _syncDebounce = setTimeout(() => settingsSync(), 800)
+    if (_settingsSyncDebounce) clearTimeout(_settingsSyncDebounce)
+    _settingsSyncDebounce = setTimeout(() => settingsSync(), 800)
   }
 
   async function deltaSync() {
@@ -202,21 +243,27 @@ export const useCloudStore = defineStore('cloud', () => {
     syncStatus.value = 'syncing'
     lastError.value = null
     try {
-      // Workouts → kolejkujemy zamiast bezpośrednio
+      // Workouts — only upsert dirty (new/changed) records
       const wIds = new Set(workouts.history.map(w => w.id))
-      const wUp = workouts.history.map(w => ({ id: w.id, user_id: user.value.id, data: w }))
       const wDel = [..._knownWorkoutIds].filter(id => !wIds.has(id))
+      const wUp = workouts.history
+        .filter(w => _dirtyWorkoutIds.has(w.id))
+        .map(w => ({ id: w.id, user_id: user.value.id, data: w }))
       if (wUp.length) offlineQueue.enqueue('upsertWorkouts', wUp)
       if (wDel.length) offlineQueue.enqueue('deleteWorkouts', wDel)
       _knownWorkoutIds = wIds
+      _dirtyWorkoutIds = new Set()
 
-      // Body log
+      // Body log — only upsert dirty records
       const bIds = new Set(body.entries.map(e => e.id))
-      const bUp = body.entries.map(e => ({ id: e.id, user_id: user.value.id, data: e }))
       const bDel = [..._knownBodyIds].filter(id => !bIds.has(id))
+      const bUp = body.entries
+        .filter(e => _dirtyBodyIds.has(e.id))
+        .map(e => ({ id: e.id, user_id: user.value.id, data: e }))
       if (bUp.length) offlineQueue.enqueue('upsertBody', bUp)
       if (bDel.length) offlineQueue.enqueue('deleteBody', bDel)
       _knownBodyIds = bIds
+      _dirtyBodyIds = new Set()
 
       syncStatus.value = isOnline.value ? 'ok' : 'queued'
       lastSyncedAt.value = Date.now()

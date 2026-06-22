@@ -5,9 +5,9 @@ import { useSettingsStore } from '../stores/settings.js'
 import { findSubstitutes, youtubeSearchUrl, detectMuscle, getMuscleName } from '../lib/db.js'
 import { notify } from '../lib/notifications.js'
 
-const props = defineProps({
-  onSetDone: { type: Function, default: () => {} }
-})
+const emit = defineEmits(['set-done'])
+
+const weightInputRef = ref(null)
 
 const session = useSessionStore()
 const settings = useSettingsStore()
@@ -119,7 +119,7 @@ function completeSet() {
     if (!confirm('Nie wpisałeś ciężaru ani powtórzeń. Zaznaczyć serię mimo to?')) return
   }
   session.toggleSet(exIdx.value, setIdx.value)
-  props.onSetDone()
+  emit('set-done')
 
   // Sprawdź czy jest jeszcze coś do zrobienia
   const hasMore = (setIdx.value < currentEx.value.sets.length - 1) || (exIdx.value < exercises.value.length - 1)
@@ -145,8 +145,7 @@ function startRest() {
       advance()
       mode.value = 'setup'
       nextTick(() => {
-        const input = document.querySelector('.set-input-focus')
-        if (input) input.focus()
+        weightInputRef.value?.focus()
       })
     }
   }, 1000)
@@ -166,8 +165,7 @@ function skipRest() {
   advance()
   mode.value = 'setup'
   nextTick(() => {
-    const input = document.querySelector('.set-input-focus')
-    if (input) input.focus()
+    weightInputRef.value?.focus()
   })
 }
 
@@ -194,8 +192,7 @@ function jumpToFirstUnchecked() {
 onMounted(() => {
   jumpToFirstUnchecked()
   nextTick(() => {
-    const input = document.querySelector('.set-input-focus')
-    if (input) input.focus()
+    weightInputRef.value?.focus()
   })
 })
 onBeforeUnmount(() => stopRest())
@@ -333,6 +330,7 @@ const restProgress = computed(() => {
           <div class="big-input-block">
             <label>{{ settings.settings.units }}</label>
             <input
+              ref="weightInputRef"
               type="number"
               inputmode="decimal"
               step="0.5"

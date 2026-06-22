@@ -38,7 +38,12 @@ export const useWorkoutsStore = defineStore('workouts', () => {
   }
 
   watch(history, (val) => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(val)) } catch {}
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(val))
+    } catch (e) {
+      console.error('Failed to save workouts to localStorage:', e)
+      window.dispatchEvent(new CustomEvent('storage-error', { detail: { store: 'workouts', error: e } }))
+    }
   }, { deep: true })
 
   return { history, count, lastWorkout, addWorkout, removeWorkout, updateWorkout, setHistory }

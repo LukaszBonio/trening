@@ -71,7 +71,14 @@ function remove(id) {
 
 function startEdit(workout) {
   editingId.value = workout.id
-  editDraft.value = JSON.parse(JSON.stringify(workout))
+  const draft = JSON.parse(JSON.stringify(workout))
+  // Add unique IDs for stable v-for keys during editing
+  draft.exercises = draft.exercises.map(ex => ({
+    ...ex,
+    _uid: Math.random().toString(36).slice(2),
+    sets: ex.sets.map(s => ({ ...s, _uid: Math.random().toString(36).slice(2) }))
+  }))
+  editDraft.value = draft
 }
 
 function cancelEdit() {
@@ -93,7 +100,7 @@ function saveEdit() {
 }
 
 function addSetTo(exIdx) {
-  editDraft.value.exercises[exIdx].sets.push({ weight: 0, reps: 0 })
+  editDraft.value.exercises[exIdx].sets.push({ weight: 0, reps: 0, _uid: Math.random().toString(36).slice(2) })
 }
 function removeSetFrom(exIdx, setIdx) {
   editDraft.value.exercises[exIdx].sets.splice(setIdx, 1)
@@ -165,10 +172,10 @@ const typeColor = (type) => ({
 
           <!-- Edit mode -->
           <template v-else>
-            <div v-for="(ex, i) in editDraft.exercises" :key="i" class="ex-edit">
+            <div v-for="(ex, i) in editDraft.exercises" :key="ex._uid" class="ex-edit">
               <div class="ex-detail-name">{{ ex.name }}</div>
               <div class="set-edit-rows">
-                <div v-for="(s, j) in ex.sets" :key="j" class="set-edit-row">
+                <div v-for="(s, j) in ex.sets" :key="s._uid" class="set-edit-row">
                   <span class="set-num">{{ j + 1 }}</span>
                   <input type="number" step="0.5" v-model="s.weight" placeholder="kg" />
                   <input type="number" v-model="s.reps" placeholder="powt" />

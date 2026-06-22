@@ -1,8 +1,8 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
-import { Chart, registerables } from 'chart.js'
+import { Chart, LineController, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js'
 
-Chart.register(...registerables)
+Chart.register(LineController, LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend)
 
 const props = defineProps({
   points: { type: Array, required: true },

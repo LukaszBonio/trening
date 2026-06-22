@@ -91,6 +91,7 @@ class OfflineQueue {
           this.queue.shift()
           save(this.queue)
           this.emit('failed', op)
+          window.dispatchEvent(new CustomEvent('sync-failed', { detail: { operation: op } }))
         } else {
           save(this.queue)
           const delay = BASE_DELAY * Math.pow(2, op.attempts - 1)
