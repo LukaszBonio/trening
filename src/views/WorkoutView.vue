@@ -26,6 +26,8 @@ const selectedType = ref(null)
 const planSource = ref('library')  // 'library' | 'ai' | 'custom'
 const restTimerRef = ref(null)
 
+const expandedSystem = ref(localStorage.getItem('tp_last_system') || null)
+
 // Trzy systemy treningowe — każdy ma swoje dni
 const trainingSystems = [
   {
@@ -172,6 +174,16 @@ function finishWorkout() {
   completionWorkout.value = payload
 }
 
+function toggleSystem(sysId) {
+  expandedSystem.value = expandedSystem.value === sysId ? null : sysId
+  if (expandedSystem.value) localStorage.setItem('tp_last_system', sysId)
+}
+
+function selectDay(dayKey) {
+  selectedType.value = dayKey
+  localStorage.setItem('tp_last_type', dayKey)
+}
+
 function discardWorkout() {
   if (confirm('Anulować ten trening? Postęp zostanie utracony.')) {
     session.discard()
@@ -309,9 +321,9 @@ function discardWorkout() {
       </button>
     </div>
 
-    <!-- 3 systemy treningowe -->
+    <!-- 3 systemy treningowe — accordion -->
     <div v-for="sys in trainingSystems" :key="sys.id" class="card system-card">
-      <div class="system-header">
+      <button class="system-header" @click="toggleSystem(sys.id)">
         <div class="system-icon">
           <i class="ti" :class="sys.icon"></i>
         </div>
@@ -322,15 +334,16 @@ function discardWorkout() {
           </div>
           <p class="system-desc">{{ sys.desc }}</p>
         </div>
-      </div>
+        <i class="ti system-chevron" :class="expandedSystem === sys.id ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
+      </button>
 
-      <div class="days-grid">
+      <div v-if="expandedSystem === sys.id" class="days-grid">
         <button
           v-for="day in sys.days"
           :key="day.key"
           class="day-btn"
           :style="{ '--c': day.color }"
-          @click="selectedType = day.key"
+          @click="selectDay(day.key)"
         >
           <div class="day-icon">
             <i class="ti" :class="day.icon"></i>
@@ -456,14 +469,34 @@ function discardWorkout() {
   flex-shrink: 0;
 }
 
-.system-card { padding: var(--space-4); }
+.system-card { padding: 0; overflow: hidden; }
 .system-header {
   display: flex;
   gap: 12px;
-  align-items: flex-start;
-  margin-bottom: var(--space-4);
-  padding-bottom: var(--space-3);
-  border-bottom: 1px solid var(--border);
+  align-items: center;
+  padding: var(--space-4);
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--dur);
+}
+.system-header:hover { background: var(--bg-hover); }
+.system-chevron {
+  font-size: 18px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: transform var(--dur);
+}
+.days-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+  padding: 0 var(--space-4) var(--space-4);
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-3);
 }
 .system-icon {
   width: 44px;
@@ -507,11 +540,6 @@ function discardWorkout() {
   margin: 4px 0 0;
 }
 
-.days-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 10px;
-}
 .day-btn {
   display: flex;
   align-items: center;

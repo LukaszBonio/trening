@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useSessionStore } from '../stores/session.js'
 import { useSettingsStore } from '../stores/settings.js'
-import { findSubstitutes, youtubeSearchUrl, detectMuscle, getMuscleName } from '../lib/db.js'
+import { findSubstitutes, youtubeSearchUrl, detectMuscle, getMuscleName, detectEquipment } from '../lib/db.js'
 import { notify } from '../lib/notifications.js'
 
 const emit = defineEmits(['set-done'])
@@ -53,6 +53,7 @@ const muscleName = computed(() => {
   return m ? getMuscleName(m) : ''
 })
 
+const equipment = computed(() => currentEx.value ? detectEquipment(currentEx.value.name) : null)
 const ytUrl = computed(() => currentEx.value ? youtubeSearchUrl(currentEx.value.name) : '#')
 const substitutes = computed(() =>
   currentEx.value ? findSubstitutes(currentEx.value.name, 5) : []
@@ -281,9 +282,15 @@ const restProgress = computed(() => {
     <div v-else class="setup-card">
       <!-- Exercise info -->
       <div class="ex-info-card card">
-        <div class="ex-muscle" v-if="muscleName">
-          <i class="ti ti-target"></i>
-          {{ muscleName }}
+        <div class="ex-tags">
+          <div class="ex-muscle" v-if="muscleName">
+            <i class="ti ti-target"></i>
+            {{ muscleName }}
+          </div>
+          <div class="ex-equip" v-if="equipment">
+            <i class="ti" :class="equipment.icon"></i>
+            {{ equipment.label }}
+          </div>
         </div>
         <h2 class="ex-name">{{ currentEx.name }}</h2>
         <div v-if="currentEx._swappedFrom" class="swapped-note">
@@ -586,20 +593,20 @@ const restProgress = computed(() => {
 }
 
 .ex-info-card { padding: var(--space-4); }
-.ex-muscle {
+.ex-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: var(--space-2); }
+.ex-muscle, .ex-equip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: 11px;
   font-weight: 700;
-  color: var(--accent);
-  background: var(--accent-soft);
   padding: 4px 10px;
   border-radius: 100px;
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  margin-bottom: var(--space-2);
 }
+.ex-muscle { color: var(--accent); background: var(--accent-soft); }
+.ex-equip { color: var(--text-muted); background: var(--bg-elev-2); border: 1px solid var(--border); }
 .ex-name {
   font-family: 'Space Grotesk', sans-serif;
   font-size: 22px;

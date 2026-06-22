@@ -334,6 +334,44 @@ export function detectMuscle(exerciseName) {
   return null;
 }
 
+const EQUIPMENT_KEYWORDS = [
+  { pattern: 'sztang', label: 'Sztanga', icon: 'ti-barbell' },
+  { pattern: 'hantl', label: 'Hantle', icon: 'ti-barbell' },
+  { pattern: 'maszyn', label: 'Maszyna', icon: 'ti-settings-cog' },
+  { pattern: 'wyciąg', label: 'Wyciąg', icon: 'ti-arrow-down-circle' },
+  { pattern: 'cable', label: 'Wyciąg', icon: 'ti-arrow-down-circle' },
+  { pattern: 'pushdown', label: 'Wyciąg', icon: 'ti-arrow-down-circle' },
+  { pattern: 'pulldown', label: 'Wyciąg', icon: 'ti-arrow-down-circle' },
+  { pattern: 'hack squat', label: 'Maszyna', icon: 'ti-settings-cog' },
+  { pattern: 'leg press', label: 'Maszyna', icon: 'ti-settings-cog' },
+  { pattern: 'smith', label: 'Maszyna', icon: 'ti-settings-cog' },
+  { pattern: 'dipy', label: 'Własna waga', icon: 'ti-user' },
+  { pattern: 'podciąg', label: 'Własna waga', icon: 'ti-user' },
+  { pattern: 'pompk', label: 'Własna waga', icon: 'ti-user' },
+  { pattern: 'plank', label: 'Własna waga', icon: 'ti-user' },
+  { pattern: 'hip thrust', label: 'Sztanga', icon: 'ti-barbell' },
+  { pattern: 'face pull', label: 'Wyciąg', icon: 'ti-arrow-down-circle' },
+  { pattern: 'crossover', label: 'Wyciąg', icon: 'ti-arrow-down-circle' },
+  { pattern: 'rozpiętk', label: 'Hantle', icon: 'ti-barbell' },
+  { pattern: 'wznosy', label: 'Hantle', icon: 'ti-barbell' },
+  { pattern: 'curl', label: 'Hantle', icon: 'ti-barbell' },
+  { pattern: 'uginanie nóg', label: 'Maszyna', icon: 'ti-settings-cog' },
+  { pattern: 'prostowanie nóg', label: 'Maszyna', icon: 'ti-settings-cog' },
+  { pattern: 'przysiad', label: 'Sztanga', icon: 'ti-barbell' },
+  { pattern: 'martwy ciąg', label: 'Sztanga', icon: 'ti-barbell' },
+  { pattern: 'wyciskanie', label: 'Sztanga', icon: 'ti-barbell' },
+  { pattern: 'wiosłowanie', label: 'Sztanga', icon: 'ti-barbell' },
+]
+
+export function detectEquipment(exerciseName) {
+  if (!exerciseName) return null
+  const name = exerciseName.toLowerCase().trim()
+  for (const eq of EQUIPMENT_KEYWORDS) {
+    if (name.includes(eq.pattern)) return { label: eq.label, icon: eq.icon }
+  }
+  return null
+}
+
 // ==========================================================================
 // PLANY PUSH — struktura 3/2/2
 // 3 ćwiczenia na klatkę | 2 na barki (przednie + boczne) | 2 na triceps
