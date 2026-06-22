@@ -1210,3 +1210,4 @@ export function youtubeSearchUrl(exerciseName) {
   const query = encodeURIComponent(exerciseName + ' technika ćwiczenia')
   return `https://www.youtube.com/results?search_query=${query}`
 }
+// graphify test
