@@ -67,8 +67,7 @@ function exportBackup() {
     exportedAt: new Date().toISOString(),
     profiles: profile.profiles,
     activeProfileId: profile.activeId,
-    history: workouts.history,
-    body: body.entries
+    history: workouts.history
   }
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
@@ -147,7 +146,6 @@ function onFileChange(e) {
       const msg = `Wykryto format: ${detectedFormat}\n${importHistory.length} treningów, ${importBody.length} pomiarów wagi.\n\nZastąpić obecne dane?`
       if (!confirm(msg)) return
       if (importHistory.length) workouts.setHistory(importHistory)
-      if (importBody.length) body.entries = importBody
       message.value = `Import zakończony ✓ (${importHistory.length} treningów)`
     } catch (err) {
       message.value = 'Błąd importu: ' + err.message
