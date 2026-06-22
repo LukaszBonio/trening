@@ -189,7 +189,7 @@ function discardWorkout() {
       </div>
     </div>
 
-    <RestTimer ref="restTimerRef" />
+    <RestTimer v-if="settings.settings.workoutMode !== 'cards'" ref="restTimerRef" />
 
     <PlateCalculator />
 
