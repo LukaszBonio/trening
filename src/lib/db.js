@@ -114,6 +114,7 @@ export const EXERCISE_TO_MUSCLE = {
   'wiosłowanie hantli pod brodę':                  'shoulder_front',
   // BARKI - BOCZNE
   'wznosy hantli bokiem':                          'shoulder_side',
+  'wznosy hantlami bokiem':                        'shoulder_side',
   'wznosy bokiem z hantlami':                      'shoulder_side',
   'wznosy bokiem':                                 'shoulder_side',
   'unoszenie ramion bokiem':                       'shoulder_side',
@@ -203,6 +204,7 @@ export const EXERCISE_TO_MUSCLE = {
   'uginanie hantli':                               'biceps_short',
   'biceps curl':                                   'biceps_short',
   'uginanie na wyciągu':                           'biceps_short',
+  'uginanie ramion na wyciągu':                    'biceps_short',
   'cable curl':                                    'biceps_short',
   'uginanie ramion ze sztangą stojąc':             'biceps_short',
   'uginanie z liną':                               'biceps_short',
