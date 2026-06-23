@@ -1,11 +1,13 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 
 const props = defineProps({
   workouts: { type: Array, required: true }
 })
 
 const WEEKS_TO_SHOW = 26  // ostatnie ~6 miesięcy
+const todayISO = new Date().toISOString().slice(0, 10)
+const scrollEl = ref(null)
 
 // Map: 'YYYY-MM-DD' → [workouts]
 const byDate = computed(() => {
@@ -82,11 +84,18 @@ function selectCell(cell) {
   }
   selected.value = cell
 }
+
+onMounted(async () => {
+  await nextTick()
+  if (scrollEl.value) {
+    scrollEl.value.scrollLeft = scrollEl.value.scrollWidth
+  }
+})
 </script>
 
 <template>
   <div class="heatmap-wrap">
-    <div class="heatmap-scroll">
+    <div class="heatmap-scroll" ref="scrollEl">
       <div class="heatmap-months">
         <span
           v-for="m in monthLabels"
@@ -103,7 +112,7 @@ function selectCell(cell) {
             v-for="(cell, di) in week"
             :key="di"
             class="hm-cell"
-            :class="cellClass(cell)"
+            :class="[cellClass(cell), { today: cell.date === todayISO }]"
             :title="cell.date + (cell.count ? ` · ${cell.count} ${cell.count === 1 ? 'trening' : 'treningi'}` : '')"
             @click="selectCell(cell)"
           ></button>
@@ -179,6 +188,7 @@ function selectCell(cell) {
 .hm-cell.level-1 { background: color-mix(in srgb, var(--accent) 35%, var(--bg-elev-2)); border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); }
 .hm-cell.level-2 { background: color-mix(in srgb, var(--accent) 65%, var(--bg-elev-2)); border-color: color-mix(in srgb, var(--accent) 65%, var(--border)); }
 .hm-cell.level-3 { background: var(--accent); border-color: var(--accent); }
+.hm-cell.today { box-shadow: 0 0 0 2px var(--accent); border-color: var(--accent); }
 
 .heatmap-legend {
   display: flex;

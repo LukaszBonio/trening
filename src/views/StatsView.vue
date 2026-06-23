@@ -49,14 +49,29 @@ const volumeByMuscle = computed(() => {
     for (const ex of w.exercises) {
       const muscle = detectMuscle(ex.name)
       const group = muscle ? (MUSCLE_TO_GROUP[muscle] || 'inne') : 'inne'
-      if (!map[group]) map[group] = 0
-      for (const s of ex.sets) map[group] += (s.weight || 0) * (s.reps || 0)
+      if (!map[group]) map[group] = { vol: 0, exercises: new Map() }
+      let exVol = 0
+      for (const s of ex.sets) exVol += (s.weight || 0) * (s.reps || 0)
+      map[group].vol += exVol
+      map[group].exercises.set(ex.name, (map[group].exercises.get(ex.name) || 0) + exVol)
     }
   }
   return Object.entries(map)
-    .map(([key, vol]) => ({ key, name: GROUP_LABELS[key]?.name || key, vol: Math.round(vol) }))
+    .map(([key, data]) => ({
+      key,
+      name: GROUP_LABELS[key]?.name || key,
+      vol: Math.round(data.vol),
+      exercises: Array.from(data.exercises.entries())
+        .map(([name, vol]) => ({ name, vol: Math.round(vol) }))
+        .sort((a, b) => b.vol - a.vol)
+    }))
     .sort((a, b) => b.vol - a.vol)
 })
+
+const expandedMuscle = ref(null)
+function toggleMuscle(key) {
+  expandedMuscle.value = expandedMuscle.value === key ? null : key
+}
 
 const maxVol = computed(() => Math.max(...volumeByMuscle.value.map(m => m.vol), 1))
 
@@ -159,13 +174,27 @@ const progressPoints = computed(() =>
 
     <div class="card" v-if="volumeByMuscle.length">
       <h3 class="card-title">Wolumen wg partii mięśniowej</h3>
+      <p class="muted" style="font-size: 12px; margin-bottom: var(--space-2)">
+        Kliknij w partię, aby zobaczyć listę ćwiczeń.
+      </p>
       <div class="muscle-bars">
-        <div v-for="m in volumeByMuscle" :key="m.key" class="muscle-row">
-          <div class="muscle-name">{{ m.name }}</div>
-          <div class="muscle-bar">
-            <div class="muscle-fill" :style="{ width: (m.vol / maxVol * 100) + '%' }"></div>
-          </div>
-          <div class="muscle-val">{{ m.vol.toLocaleString('pl-PL') }}</div>
+        <div v-for="m in volumeByMuscle" :key="m.key" class="muscle-block">
+          <button class="muscle-row" :class="{ open: expandedMuscle === m.key }" @click="toggleMuscle(m.key)">
+            <div class="muscle-name">
+              <i class="ti ti-chevron-right chev" :class="{ rot: expandedMuscle === m.key }"></i>
+              {{ m.name }}
+            </div>
+            <div class="muscle-bar">
+              <div class="muscle-fill" :style="{ width: (m.vol / maxVol * 100) + '%' }"></div>
+            </div>
+            <div class="muscle-val">{{ m.vol.toLocaleString('pl-PL') }}</div>
+          </button>
+          <ul v-if="expandedMuscle === m.key" class="muscle-ex-list">
+            <li v-for="ex in m.exercises" :key="ex.name">
+              <span class="muscle-ex-name">{{ ex.name }}</span>
+              <span class="muscle-ex-vol">{{ ex.vol.toLocaleString('pl-PL') }} kg</span>
+            </li>
+          </ul>
         </div>
       </div>
     </div>
@@ -261,13 +290,36 @@ const progressPoints = computed(() =>
 .pr-1rm small { font-size: 11px; opacity: 0.7; margin-left: 2px; }
 
 .muscle-bars { display: flex; flex-direction: column; gap: 10px; }
+.muscle-block { display: flex; flex-direction: column; gap: 6px; }
 .muscle-row {
   display: grid;
   grid-template-columns: 180px 1fr 80px;
   gap: var(--space-3);
   align-items: center;
+  background: transparent;
+  border: none;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--dur);
+  width: 100%;
 }
-.muscle-name { font-size: 13px; color: var(--text-muted); }
+.muscle-row:hover { background: var(--bg-hover); }
+.muscle-row.open { background: var(--bg-elev-2); }
+.muscle-name {
+  font-size: 13px;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.chev {
+  font-size: 14px;
+  color: var(--text-dim);
+  transition: transform var(--dur);
+}
+.chev.rot { transform: rotate(90deg); }
 .muscle-bar {
   height: 10px;
   background: var(--bg-elev-2);
@@ -281,10 +333,32 @@ const progressPoints = computed(() =>
 }
 .muscle-val { font-size: 12px; text-align: right; font-weight: 600; }
 
+.muscle-ex-list {
+  list-style: none;
+  margin: 0 0 4px 24px;
+  padding: 8px 12px;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.muscle-ex-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 12px;
+}
+.muscle-ex-name { color: var(--text); }
+.muscle-ex-vol { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
 @media (max-width: 640px) {
   .muscle-row { grid-template-columns: 1fr 60px; }
   .muscle-bar { grid-column: 1 / -1; order: 2; }
   .muscle-name { grid-column: 1; }
   .muscle-val { grid-column: 2; }
+  .muscle-ex-list { margin-left: 8px; }
 }
 </style>
