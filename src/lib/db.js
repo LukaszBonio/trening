@@ -93,6 +93,10 @@ export const EXERCISE_TO_MUSCLE = {
   'chest press na maszynie':                       'chest_middle',
   'wyciskanie na suwnicy':                         'chest_middle',
   'pompki z obciążeniem':                          'chest_middle',
+  'maszyna motyl':                                 'chest_middle',
+  'peck deck':                                     'chest_middle',
+  'flyes':                                         'chest_middle',
+  'odwodzenie hantli na klatkę':                   'chest_middle',
   // BARKI - PRZEDNIE
   'wyciskanie żołnierskie':                        'shoulder_front',
   'wyciskanie sztangi nad głowę':                  'shoulder_front',
@@ -103,6 +107,7 @@ export const EXERCISE_TO_MUSCLE = {
   'overhead press':                                'shoulder_front',
   'wznosy hantli przodem':                         'shoulder_front',
   'front raise':                                   'shoulder_front',
+  'unoszenie hantli przodem':                      'shoulder_front',
   'wyciskanie sztangi z klatki':                   'shoulder_front',
   'upright row':                                   'shoulder_front',
   'wiosłowanie sztangi pod brodę':                 'shoulder_front',
@@ -176,6 +181,8 @@ export const EXERCISE_TO_MUSCLE = {
   'deadlift':                                      'back_lower',
   'hyperextension':                                'back_lower',
   'wyprosty pleców':                               'back_lower',
+  'prostowanie pleców':                            'back_lower',
+  'back extension':                                'back_lower',
   'wyprosty na ławce rzymskiej':                   'back_lower',
   // BICEPS - DŁUGA GŁOWA
   'uginanie ramion ze sztangą wąskim chwytem':     'biceps_long',
@@ -185,6 +192,7 @@ export const EXERCISE_TO_MUSCLE = {
   'concentration curl':                            'biceps_long',
   'uginanie koncentryczne':                        'biceps_long',
   'scott curl':                                    'biceps_long',
+  'ławce scotta':                                  'biceps_long',
   'spider curl':                                   'biceps_long',
   // BICEPS - KRÓTKA GŁOWA
   'uginanie ramion ze sztangą':                    'biceps_short',
@@ -234,6 +242,8 @@ export const EXERCISE_TO_MUSCLE = {
   'wyciskanie wąskim chwytem':                     'triceps_med',
   'close grip bench press':                        'triceps_med',
   'pompki diamentowe':                             'triceps_med',
+  'pompki wąsko':                                  'triceps_med',
+  'diamond push':                                  'triceps_med',
   'kickback':                                      'triceps_med',
   'wyprosty hantla w opadzie':                     'triceps_med',
   // NOGI - CZWOROGŁOWY
@@ -246,6 +256,8 @@ export const EXERCISE_TO_MUSCLE = {
   'wyciskanie nogami':                             'quads',
   'wyprosty nóg':                                  'quads',
   'leg extension':                                 'quads',
+  'wypychanie nóg':                                'quads',
+  'prostowanie nóg':                               'quads',
   'hack squat':                                    'quads',
   'przysiad bułgarski':                            'quads',
   'goblet squat':                                  'quads',
