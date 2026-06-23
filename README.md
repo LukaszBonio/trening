@@ -51,7 +51,7 @@ state management i lazy-loaded routingiem. PWA z Service Workerem zapewnia dzia�
 Klucz API jest ukryty za serwerem proxy (Cloudflare Worker) — **użytkownik nie potrzebuje własnego klucza API.**
 
 > **Dla kogo?** Dla osób trenujących siłowo, które chcą gotowego planu na dziś, prostego
-> rejestrowania serii i czytelnej analizy postępów — bez zakładania konta i bez opłat.
+> rejestrowania serii i czytelnej analizy postępów — za darmo, z synchronizacją między urządzeniami.
 
 ---
 
@@ -70,7 +70,7 @@ Klucz API jest ukryty za serwerem proxy (Cloudflare Worker) — **użytkownik ni
 
 ### 🎯 Plany treningowe
 - **10 typów treningu** — Push/Pull/Legs, Upper A/B, Lower A/B, FBW A/B/C
-- **67 gotowych planów offline** + **276 ćwiczeń** w bazie ze słownikiem 25 głów mięśniowych
+- **48 gotowych planów offline** + **258 ćwiczeń** w bazie ze słownikiem 25 głów mięśniowych
 - **Generator AI** — Claude tworzy spersonalizowany plan z cel + sprzęt + wykluczenia
 - **Edytor własnych planów** — twórz, edytuj, duplikuj plany z drag-drop reorderingu ćwiczeń
 - **Ulubione** — gwiazdka przypina najczęściej używane plany na górze listy
@@ -94,21 +94,21 @@ Klucz API jest ukryty za serwerem proxy (Cloudflare Worker) — **użytkownik ni
 - **Per-exercise progress** — wybierz ćwiczenie, zobacz krzywą **1RM / top weight / wolumen**
 - **Top 10 PR** — ranking rekordów osobistych ze wzorem Epley (1RM ≈ weight × (1 + reps/30))
 - **Wolumen wg partii mięśniowej** — paski z rankingiem najbardziej trenowanych grup
-- **14 osiągnięć** — milestones (10/25/50/100/250 treningów, streak 2/4/8/12 tyg., 100kg club, body log)
+- **11 osiągnięć** — milestones (1/10/25/50/100/250 treningów, streak 2/4/8/12 tyg., PPL ×10, 100 kg club)
 
-### ☁️ Synchronizacja w chmurze
-- **Konta Supabase** (email + hasło) — opcjonalne, dane lokalne działają bez konta
-- **Sync deltami** — workouts, body log, settings synchronizują się automatycznie (debounce 1.5s)
+### 🔐 Logowanie i synchronizacja w chmurze
+- **Wymagane konto** (Supabase, email + hasło) — cała aplikacja jest za bramką logowania
+- **Sesja zapamiętana** — po pierwszym logowaniu online aplikacja działa też offline (token w `localStorage`, auto-refresh)
+- **Sync deltami** — workouts, settings synchronizują się automatycznie (debounce 1.5s)
 - **Offline queue** — gdy brak internetu, operacje kolejkowane → auto-flush po `online` event
 - **Exponential backoff** — retry 6× z 1s/2s/4s/8s/16s/32s, drop po wyczerpaniu
 - **Last-write-wins** by `id` — proste, działa dla solo dewa
 - **Row Level Security** — Supabase RLS, każdy user widzi tylko swoje dane
 
 ### 📥 Dane
-- **Import/Export JSON** — backup wszystkiego (history + body log + profile)
+- **Import/Export JSON** — backup historii treningów + profili
 - **PDF export** per trening — jsPDF z tabelą serii, RPE, notatkami, paginacją
 - **Zapisz trening jako plan** — historię można zamienić w custom plan jednym klikiem
-- **Body log** — waga ciała w czasie z wykresem + trendem
 - **Wiele profili** lokalnych
 
 ### 🎨 Personalizacja
@@ -135,7 +135,8 @@ Najprostszy sposób — **po prostu otwórz aplikację w przeglądarce:**
 
 👉 **[https://lukaszbonio.github.io/trening/](https://lukaszbonio.github.io/trening/)**
 
-Nie trzeba nic instalować, zakładać konta ani płacić. Działa od razu.
+Nie trzeba nic instalować ani płacić — wystarczy darmowe konto (email + hasło). Po pierwszym
+zalogowaniu online aplikacja działa również offline.
 
 ---
 
@@ -198,7 +199,7 @@ Frontend nie używa zmiennych w build time. Konfiguracja dotyczy proxy + opcjona
 | `ANTHROPIC_API_KEY` | secret | ✅ | Klucz API Anthropic — ukryty po stronie serwera |
 | `ALLOWED_ORIGIN` | var | ⬜ | Whitelist CORS, np. `https://lukaszbonio.github.io` |
 
-### Supabase (opcjonalnie — sync między urządzeniami)
+### Supabase (wymagane — logowanie + sync między urządzeniami)
 
 Schemat tabel w `docs/SUPABASE_SCHEMA.sql`. Tabele:
 - `workouts` — historia treningów (id text, user_id uuid, data jsonb)
@@ -219,14 +220,15 @@ Każda tabela ma Row Level Security wymuszające `auth.uid() = user_id`.
 
 ## Architecture
 
-Vue 3 SPA z modularnym state managementem. Cała logika i dane domyślnie żyją w przeglądarce.
-Service Worker (vite-plugin-pwa) zapewnia działanie offline. Sieć używana jest tylko dla
-opcjonalnego sync z Supabase oraz generowania planów przez Claude API.
+Vue 3 SPA z modularnym state managementem. Logika i dane żyją w przeglądarce (`localStorage`).
+Service Worker (vite-plugin-pwa) zapewnia działanie offline. Sieć jest potrzebna do logowania
+(bramka auth na całą aplikację), sync z Supabase oraz generowania planów przez Claude API.
+Po pierwszym zalogowaniu online sesja jest zapamiętana, więc aplikacja działa też offline.
 
 ```mermaid
 flowchart LR
     subgraph Client["📱 Przeglądarka (Vue PWA)"]
-        UI["Vue 3 components<br/>+ Vue Router (4 widoki)"]
+        UI["Vue 3 components<br/>+ Vue Router (5 widoków)"]
         Stores["Pinia stores (9)<br/>workouts · session · profile<br/>cloud · timer · body · settings<br/>customPlans · favorites"]
         Libs["Lib modules<br/>db · analytics · achievements<br/>ai · pdf · plates · workoutSchema<br/>offlineQueue · notifications"]
         SW["Service Worker<br/>(generated by Vite PWA)"]
@@ -235,7 +237,7 @@ flowchart LR
     subgraph Edge["☁️ Cloudflare"]
         W["Worker (proxy)<br/>klucz API ukryty"]
     end
-    subgraph Cloud["☁️ Supabase (opcjonalny)"]
+    subgraph Cloud["☁️ Supabase (wymagany — login)"]
         Auth["Auth<br/>email+hasło"]
         DB[("PostgreSQL + RLS<br/>workouts · body_log · settings")]
     end
@@ -255,8 +257,9 @@ flowchart LR
 
 ```mermaid
 flowchart TD
+    L["🔐 Logowanie / rejestracja<br/>(wymagane)"] --> A
     A["Wybierz typ<br/>(Push/Pull/Legs/Upper/Lower/FBW)"] --> B{"Źródło planu?"}
-    B -->|Biblioteka| C1["67 gotowych planów"]
+    B -->|Biblioteka| C1["48 gotowych planów"]
     B -->|AI| C2["Claude generuje plan"]
     B -->|Custom| C3["Edytor: dodaj ćwiczenia"]
     C1 --> D["Tryb kart: partia po partii"]
@@ -267,7 +270,7 @@ flowchart TD
     F --> E
     D --> G["Zakończ → summary z konfetti"]
     G --> H["Historia · Statystyki · Achievements"]
-    H -.->|opcjonalnie| I["Sync z Supabase"]
+    H -.->|auto| I["Sync z Supabase"]
 ```
 
 ### Struktura repozytorium
@@ -281,12 +284,13 @@ trening/
 │   ├── main.js                 # Bootstrap (Pinia + Router + App)
 │   ├── App.vue                 # Layout, tabs desktop, bottom nav mobile, onboarding
 │   ├── router/                 # Vue Router (hash mode, lazy-loaded views)
-│   ├── views/                  # 4 widoki
+│   ├── views/                  # 5 widoków
+│   │   ├── LoginView.vue       #   Ekran logowania / rejestracji (bramka auth)
 │   │   ├── WorkoutView.vue     #   Wybór planu + aktywna sesja
 │   │   ├── StatsView.vue       #   Statystyki, wykresy, achievements, PR
 │   │   ├── HistoryView.vue     #   Lista treningów, edycja, PDF, zapis jako plan
-│   │   └── YouView.vue         #   Konto, ustawienia, body log, backup
-│   ├── components/             # 13 komponentów (ExerciseCard, RestTimer, ...)
+│   │   └── YouView.vue         #   Konto, ustawienia, backup
+│   ├── components/             # 16 komponentów (ExerciseCard, RestTimer, ...)
 │   ├── stores/                 # 9 Pinia stores (workouts, session, cloud, ...)
 │   ├── lib/                    # Pure modules (db, analytics, ai, pdf, ...)
 │   └── styles/global.css       # CSS variables (dark/light themes)
@@ -334,15 +338,16 @@ trening/
 
 ## Jak korzystać (UX)
 
-1. **Onboarding** — przy pierwszym wejściu 4 ekrany wprowadzenia (skip / dalej).
-2. **Wybierz typ treningu** w zakładce "Trening" (Push / Pull / Legs / Upper / Lower / FBW).
-3. **Wybierz źródło planu:** Plany (biblioteka), AI (generator) lub Nowy (własny edytor).
-4. **Trening** w trybie kart — jedna partia mięśniowa na ekran, swipe lub strzałki ◄ ► między.
-5. **Loguj serie** — ciężar, powtórzenia, RPE; check ⭕ uruchamia timer odpoczynku.
-6. **Zakończ trening** — modal z podsumowaniem, konfetti, detekcja nowych PR.
-7. **Statystyki** automatycznie się aktualizują — wykresy, heatmap, achievements.
+1. **Zaloguj się / zarejestruj** — aplikacja wymaga konta (potem działa też offline).
+2. **Onboarding** — przy pierwszym wejściu 4 ekrany wprowadzenia (skip / dalej).
+3. **Wybierz typ treningu** w zakładce "Trening" (Push / Pull / Legs / Upper / Lower / FBW).
+4. **Wybierz źródło planu:** Plany (biblioteka), AI (generator) lub Nowy (własny edytor).
+5. **Trening** w trybie kart — jedna partia mięśniowa na ekran, swipe lub strzałki ◄ ► między.
+6. **Loguj serie** — ciężar, powtórzenia, RPE; check ⭕ uruchamia timer odpoczynku.
+7. **Zakończ trening** — modal z podsumowaniem, konfetti, detekcja nowych PR.
+8. **Statystyki** automatycznie się aktualizują — wykresy, heatmap, achievements.
 
-**4 zakładki:** Trening · Statystyki · Historia · Ty (konto, body log, ustawienia, backup).
+**4 zakładki:** Trening · Statystyki · Historia · Ty (konto, ustawienia, backup).
 
 ### Cele AI generatora
 
@@ -412,23 +417,31 @@ ukryty. Jeśli hostujesz własną kopię, musisz wdrożyć własnego workera.
 </details>
 
 <details>
+<summary><b>Czy potrzebuję konta?</b></summary>
+
+Tak. Cała aplikacja jest za bramką logowania (konto Supabase: email + hasło). Pierwsze
+logowanie wymaga internetu; potem sesja jest zapamiętana i aplikacja działa również offline.
+</details>
+
+<details>
 <summary><b>Czy moje dane trafiają na serwer?</b></summary>
 
-Domyślnie nie. Wszystko żyje w `localStorage`. Jeśli założysz konto w zakładce "Ty",
-treningi + waga + ustawienia synchronizują się do Supabase (z RLS — tylko ty widzisz swoje dane).
+Tak — treningi + ustawienia synchronizują się do Supabase (z RLS, czyli tylko ty widzisz swoje
+dane). Kopia lokalna nadal żyje w `localStorage`, więc aplikacja działa offline między sesjami.
 </details>
 
 <details>
 <summary><b>Czy działa offline?</b></summary>
 
-Tak. Service Worker cacheuje całą aplikację. Sync operacje są kolejkowane w `offlineQueue`
-i wykonują się gdy wraca internet. Funkcje AI (generator) wymagają połączenia.
+Tak, po pierwszym zalogowaniu online. Service Worker cacheuje całą aplikację, a sesja jest
+zapamiętana w `localStorage`. Sync operacje są kolejkowane w `offlineQueue` i wykonują się gdy
+wraca internet. Funkcje AI (generator) i pierwsze logowanie wymagają połączenia.
 </details>
 
 <details>
 <summary><b>Jak przenieść dane na inne urządzenie?</b></summary>
 
-**Najwygodniej:** załóż konto w zakładce "Ty" → wszystko zsynchronizuje się automatycznie.
+**Najwygodniej:** zaloguj się tym samym kontem → wszystko zsynchronizuje się automatycznie.
 **Alternatywnie:** eksport JSON z jednego urządzenia, import na drugim.
 </details>
 
@@ -447,17 +460,18 @@ podczas treningu. Możesz przełączyć na tryb listy w **Ty → Ustawienia → 
 
 **Architektura:**
 - [x] Vue 3 + Vite + Pinia (port z 8270-LOC monolitu vanilla JS)
-- [x] 9 Pinia stores, 13 komponentów, 4 widoki z lazy-loadingiem
+- [x] 9 Pinia stores, 16 komponentów, 5 widoków z lazy-loadingiem
 - [x] Vue Router (hash mode), page transitions
 
 **Funkcjonalność:**
-- [x] 10 typów treningu, 67 gotowych planów, 276 ćwiczeń, custom plans editor
+- [x] 10 typów treningu, 48 gotowych planów, 258 ćwiczeń, custom plans editor
 - [x] AI Generator (Claude przez Cloudflare Worker proxy)
 - [x] Tryb kart (partia po partii) + tryb listy
 - [x] RPE, notatki, timer odpoczynku, kalkulator talerzy, live duration
 - [x] Statystyki: per-exercise progress, PR ranking, kalendarz heatmap, achievements
+- [x] Bramka logowania na całą aplikację (Supabase auth, sesja zapamiętana)
 - [x] Cloud sync (Supabase) z offline queue + retry
-- [x] PDF export, body log, backup JSON, save workout as template
+- [x] PDF export, backup JSON, save workout as template
 - [x] Dark / light theme, color accent picker, mobile bottom nav
 - [x] Push notifications, konfetti, onboarding tour, skeleton loaders
 
@@ -478,8 +492,8 @@ podczas treningu. Możesz przełączyć na tryb listy w **Ty → Ustawienia → 
 
 ## Known Issues
 
-- **Sync w chmurze opcjonalny** — bez konta dane są lokalne (per przeglądarka/urządzenie); wyczyszczenie
-  danych przeglądarki = utrata historii. Załóż konto w zakładce "Ty" albo regularnie eksportuj JSON.
+- **Pierwsze logowanie wymaga internetu** — bramka auth potrzebuje połączenia, by odczytać/utworzyć
+  sesję. Po zalogowaniu token jest zapamiętany i aplikacja działa offline.
 - **AI wymaga online** — generator planów nie działa bez internetu.
 - **Timer odpoczynku w tle** — gdy telefon zablokowany, JS się usypia. Powiadomienie jest zapisane
   w SW, ale dokładność może spaść. Background Sync API w roadmap.
@@ -491,9 +505,9 @@ podczas treningu. Możesz przełączyć na tryb listy w **Ty → Ustawienia → 
 ## Prywatność i bezpieczeństwo
 
 - 🔐 **Klucz API** wyłącznie po stronie serwera (Cloudflare) — niewidoczny dla użytkownika
-- 📦 **Dane lokalnie domyślnie** — `localStorage`; sync z chmurą uruchamia się dopiero po założeniu konta
+- 📦 **Dane w `localStorage`** — kopia lokalna + synchronizacja z chmurą po zalogowaniu
 - ☁️ **Supabase** — konta email/hasło z izolacją per-user (Row Level Security w bazie)
-- 🚫 **Brak śledzenia i reklam** — konto służy tylko do synchronizacji
+- 🚫 **Brak śledzenia i reklam** — konto służy tylko do logowania i synchronizacji
 - 🛡️ **CSP** + **integrity** na zasobach CDN
 - ⚡ **CORS whitelist** na Cloudflare Workerze
 
