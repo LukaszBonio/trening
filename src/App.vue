@@ -28,6 +28,7 @@ onMounted(() => {
 
 const route = useRoute()
 const currentTab = computed(() => route.name || 'workout')
+const isAuthScreen = computed(() => route.name === 'login')
 
 const tabs = [
   { name: 'workout', label: 'Trening', icon: 'ti-barbell' },
@@ -38,8 +39,11 @@ const tabs = [
 </script>
 
 <template>
-  <OnboardingTour v-if="showOnboarding" @done="showOnboarding = false" />
-  <div class="app">
+  <OnboardingTour v-if="showOnboarding && !isAuthScreen" @done="showOnboarding = false" />
+
+  <RouterView v-if="isAuthScreen" />
+
+  <div v-else class="app">
     <header class="header">
       <div class="brand">
         <div class="brand-logo"><i class="ti ti-barbell"></i></div>

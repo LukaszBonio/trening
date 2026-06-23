@@ -1,0 +1,11 @@
+**/*.md
+CLAUDE.md
+README.md
+docs/
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.pdf
+docs/
+public/icons/

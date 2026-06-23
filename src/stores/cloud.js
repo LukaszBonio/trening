@@ -18,6 +18,14 @@ export const useCloudStore = defineStore('cloud', () => {
   const isOnline = ref(typeof navigator === 'undefined' ? true : navigator.onLine)
   const queueSize = ref(offlineQueue.size())
 
+  // authReady = sesja została odczytana z localStorage (getSession zakończony).
+  // Router guard czeka na to przed decyzją o przekierowaniu, żeby nie wyrzucić
+  // zalogowanego użytkownika na ekran logowania zanim sesja się wczyta.
+  const authReady = ref(false)
+  let _resolveAuthReady
+  const _authReadyPromise = new Promise((res) => { _resolveAuthReady = res })
+  function waitForAuth() { return _authReadyPromise }
+
   let _workoutSyncDebounce = null
   let _settingsSyncDebounce = null
   let _watchers = []
@@ -72,6 +80,13 @@ export const useCloudStore = defineStore('cloud', () => {
       const u = data.session?.user || null
       user.value = u
       if (u) onLogin(u)
+    }).catch((e) => {
+      // Offline bez zapisanej sesji: getSession odczytuje z localStorage,
+      // ale na wszelki wypadek nie blokujemy startu aplikacji.
+      console.warn('[cloud] getSession failed:', e)
+    }).finally(() => {
+      authReady.value = true
+      _resolveAuthReady()
     })
 
     client.value.auth.onAuthStateChange((event, session) => {
@@ -311,7 +326,7 @@ export const useCloudStore = defineStore('cloud', () => {
 
   return {
     client, user, syncStatus, lastError, lastSyncedAt, isLoggedIn,
-    isOnline, queueSize,
-    init, signUp, signIn, signOut, forceSync, flushQueue
+    isOnline, queueSize, authReady,
+    init, waitForAuth, signUp, signIn, signOut, forceSync, flushQueue
   }
 })

@@ -1,6 +1,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useCloudStore } from '../stores/cloud.js'
+import { REQUIRE_AUTH } from '../lib/authConfig.js'
 import { useProfileStore } from '../stores/profile.js'
 import { useWorkoutsStore } from '../stores/workouts.js'
 import { useSettingsStore } from '../stores/settings.js'
@@ -8,6 +10,7 @@ import { permission as notifPermission, requestPermission as requestNotifPermiss
 import { transformLegacyEntry } from '../lib/migration.js'
 
 const cloud = useCloudStore()
+const router = useRouter()
 const profile = useProfileStore()
 const workouts = useWorkoutsStore()
 const settingsStore = useSettingsStore()
@@ -58,6 +61,7 @@ async function logout() {
   if (confirm('Wylogować się? Dane lokalne zostaną zachowane.')) {
     await cloud.signOut()
     message.value = 'Wylogowano'
+    if (REQUIRE_AUTH) router.push({ name: 'login' })
   }
 }
 
