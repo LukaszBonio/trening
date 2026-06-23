@@ -25,6 +25,7 @@ const restTotal = ref(90)
 let restInterval = null
 
 const showSubstitutes = ref(false)
+const showRpeHelp = ref(false)
 
 const exercises = computed(() => session.active?.exercises || [])
 const currentEx = computed(() => exercises.value[exIdx.value])
@@ -309,10 +310,12 @@ const restProgress = computed(() => {
             <span>YT</span>
           </a>
           <button
+            v-if="setIdx === 0"
             class="ex-action-btn"
             :class="{ active: showSubstitutes }"
             @click="showSubstitutes = !showSubstitutes"
             :disabled="!substitutes.length"
+            title="Zamiana dostępna tylko przed pierwszą serią"
           >
             <i class="ti ti-arrows-exchange"></i>
             <span>Zamień</span>
@@ -356,7 +359,15 @@ const restProgress = computed(() => {
             />
           </div>
           <div v-if="settings.settings.showRpe" class="big-input-block rpe">
-            <label>RPE</label>
+            <label class="rpe-label">
+              RPE
+              <button
+                type="button"
+                class="rpe-help-btn"
+                @click="showRpeHelp = !showRpeHelp"
+                :aria-label="'Wyjaśnij RPE'"
+              >?</button>
+            </label>
             <input
               type="number"
               inputmode="decimal"
@@ -367,6 +378,27 @@ const restProgress = computed(() => {
               placeholder="—"
             />
           </div>
+        </div>
+
+        <!-- RPE explainer -->
+        <div v-if="showRpeHelp && settings.settings.showRpe" class="rpe-help-panel">
+          <div class="rpe-help-title">
+            RPE — Rate of Perceived Exertion
+            <button class="rpe-help-close" @click="showRpeHelp = false">
+              <i class="ti ti-x"></i>
+            </button>
+          </div>
+          <p class="rpe-help-desc">
+            Subiektywna skala trudności serii (1–10). Określa ile powtórzeń zostało Ci jeszcze w zapasie.
+          </p>
+          <ul class="rpe-scale">
+            <li><strong>10</strong> — maksimum, ani jednego powtórzenia więcej</li>
+            <li><strong>9</strong> — zostało Ci 1 powtórzenie w zapasie</li>
+            <li><strong>8</strong> — zostały Ci 2 powtórzenia</li>
+            <li><strong>7</strong> — zostały Ci 3 powtórzenia</li>
+            <li><strong>≤6</strong> — lekko, dużo zapasu</li>
+          </ul>
+          <p class="rpe-help-tip">Możesz to pole zignorować jeśli nie używasz tej metody.</p>
         </div>
 
         <button class="complete-btn" @click="completeSet">
@@ -752,6 +784,83 @@ const restProgress = computed(() => {
   background: var(--bg-elev);
 }
 .big-input-block.rpe input { font-size: 22px; padding: 22px 8px; }
+.rpe-label {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.rpe-help-btn {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.rpe-help-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.rpe-help-panel {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  background: var(--bg-elev-2);
+  border: 1px solid var(--accent-soft-2);
+  border-radius: var(--radius);
+  font-size: 13px;
+  animation: rpe-help-in 0.18s var(--ease);
+}
+@keyframes rpe-help-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.rpe-help-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.rpe-help-close {
+  width: 22px;
+  height: 22px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.rpe-help-close:hover { color: var(--text); }
+.rpe-help-desc { margin: 0 0 8px; color: var(--text-muted); line-height: 1.4; }
+.rpe-scale {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 0 8px;
+  padding: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.rpe-scale strong {
+  display: inline-block;
+  min-width: 32px;
+  color: var(--accent);
+  font-family: 'Space Grotesk', sans-serif;
+}
+.rpe-help-tip { margin: 0; font-size: 11px; color: var(--text-dim); font-style: italic; }
 
 .complete-btn {
   width: 100%;

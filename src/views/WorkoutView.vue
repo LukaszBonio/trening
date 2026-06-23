@@ -216,8 +216,6 @@ function discardWorkout() {
 
     <RestTimer v-if="settings.settings.workoutMode !== 'cards'" ref="restTimerRef" />
 
-    <PlateCalculator />
-
     <!-- Cards mode (default) lub flat list -->
     <WorkoutCards
       v-if="settings.settings.workoutMode === 'cards'"
@@ -231,6 +229,8 @@ function discardWorkout() {
         @set-done="onSetDone"
       />
     </template>
+
+    <PlateCalculator />
 
     <div class="session-actions">
       <button class="btn" @click="discardWorkout">Anuluj</button>

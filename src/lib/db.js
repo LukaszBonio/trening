@@ -1197,17 +1197,44 @@ export function findSubstitutes(exerciseName, max = 5) {
   const targetMuscle = detectMuscle(exerciseName)
   if (!targetMuscle) return []
   const currentNorm = exerciseName.toLowerCase().trim()
-  const candidates = []
-  for (const [exName, muscle] of Object.entries(EXERCISE_TO_MUSCLE)) {
-    if (muscle !== targetMuscle) continue
-    if (exName === currentNorm) continue
-    const display = exName.charAt(0).toUpperCase() + exName.slice(1)
-    if (!candidates.includes(display)) candidates.push(display)
+
+  // 1) Zbierz wszystkie klucze z tej samej szczegółowej partii
+  const all = Object.entries(EXERCISE_TO_MUSCLE)
+    .filter(([key, muscle]) => muscle === targetMuscle && key !== currentNorm)
+    .map(([key]) => key)
+
+  // 2) Posortuj malejąco wg długości — preferujemy pełne nazwy
+  all.sort((a, b) => b.length - a.length)
+
+  // 3) Filtruj klucze które są podstringiem innego (dłuższego) klucza
+  //    np. 'podciąganie' jest zawarte w 'podciąganie szerokim chwytem' → pomiń skrócony
+  const filtered = []
+  for (const key of all) {
+    const isShortVariant = filtered.some(longer => longer.includes(key))
+    if (!isShortVariant) filtered.push(key)
   }
-  if (candidates.length <= max) return candidates
+
+  // 4) Dedup po znormalizowanej formie (usuń myślniki, spacje)
+  //    np. 'chin up' vs 'chin-up' → traktuj jako duplikat
+  const seen = new Set()
+  const deduped = []
+  for (const key of filtered) {
+    const norm = key.toLowerCase().replace(/[-\s]/g, '')
+    if (seen.has(norm)) continue
+    seen.add(norm)
+    deduped.push(key)
+  }
+
+  // 5) Capitalize i wytnij obecne ćwiczenie (już zrobione w 1, ale po dedupie też)
+  const display = deduped
+    .map(k => k.charAt(0).toUpperCase() + k.slice(1))
+    .filter(d => d.toLowerCase() !== currentNorm)
+
+  if (display.length <= max) return display
+
   // Deterministyczny shuffle bazujący na nazwie wejścia
   const seed = exerciseName.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
-  const shuffled = [...candidates].sort((a, b) => {
+  const shuffled = [...display].sort((a, b) => {
     const ha = (a.length + a.charCodeAt(0) + seed) % 100
     const hb = (b.length + b.charCodeAt(0) + seed) % 100
     return ha - hb
