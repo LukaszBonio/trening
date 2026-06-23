@@ -269,6 +269,7 @@ export const EXERCISE_TO_MUSCLE = {
   'przysiad z hantlem':                            'quads',
   // NOGI - HAMSTRING
   'martwy ciąg rumuński':                          'hamstrings',
+  'rumuński martwy ciąg':                          'hamstrings',
   'rdl':                                           'hamstrings',
   'romanian deadlift':                             'hamstrings',
   'martwy ciąg na prostych nogach':                'hamstrings',
