@@ -212,6 +212,8 @@ export const EXERCISE_TO_MUSCLE = {
   'uginanie hantli młotkowo':                      'biceps_brach',
   'uginanie zottmana':                              'forearms',
   'zottman curl':                                   'forearms',
+  'uginanie nadgarstków':                           'forearms',
+  'wrist curl':                                     'forearms',
   'uginanie młotkowe':                             'biceps_brach',
   'hammer curl':                                   'biceps_brach',
   // TRICEPS - DŁUGA GŁOWA
@@ -327,6 +329,7 @@ export const EXERCISE_TO_MUSCLE = {
   'uginanie na modlitewniku':                      'biceps_short',
   'uginanie ramion na modlitewniku':               'biceps_short',
   'wiosłowanie hantlem jednoręcz':                 'back_lats',
+  'wiosłowanie hantlem jednorącz':                 'back_lats',
   'wiosłowanie hantlem w opadzie':                 'back_lats',
   'wiosłowanie jednoręcz':                         'back_lats',
   'ab wheel':                                      'core',
