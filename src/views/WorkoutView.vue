@@ -450,23 +450,33 @@ function discardWorkout() {
   font-weight: 600;
   font-size: 15px;
   margin-top: 2px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
 }
 .repeat-tag {
   font-size: 10px;
   background: var(--accent);
   color: #000;
-  padding: 2px 6px;
+  padding: 2px 8px;
   border-radius: 100px;
   font-weight: 700;
-  margin-left: 6px;
-  vertical-align: 1px;
 }
 .repeat-btn {
   padding: 10px 18px;
   flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .repeat-banner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .repeat-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 .system-card { padding: 0; overflow: hidden; }
