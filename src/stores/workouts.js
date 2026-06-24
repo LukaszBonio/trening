@@ -16,7 +16,16 @@ export const useWorkoutsStore = defineStore('workouts', () => {
   const history = ref(loadHistory())
 
   const count = computed(() => history.value.length)
-  const lastWorkout = computed(() => history.value[history.value.length - 1] || null)
+  // Najświeższy trening chronologicznie. Nie używamy history[length-1] bo tablica
+  // po imporcie/sync może mieć dowolną kolejność (np. backup wczytuje w kolejności pliku).
+  const lastWorkout = computed(() => {
+    if (!history.value.length) return null
+    let latest = history.value[0]
+    for (const w of history.value) {
+      if (new Date(w.date) > new Date(latest.date)) latest = w
+    }
+    return latest
+  })
 
   function addWorkout(workout) {
     if (!workout.id) workout.id = `w_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
