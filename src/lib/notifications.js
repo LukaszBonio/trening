@@ -1,7 +1,45 @@
 // Helpers for local browser notifications (no server / push subscription).
-// Uses Notification API + vibration.
+// Uses Notification API + vibration + Web Audio beep.
 
 const PERMISSION_KEY = 'tp_notif_permission_asked_v1'
+
+let _audioCtx = null
+function getAudioCtx() {
+  if (_audioCtx) return _audioCtx
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext
+    if (AC) _audioCtx = new AC()
+  } catch {}
+  return _audioCtx
+}
+
+function singleBeep(ctx, startAt, freq, duration) {
+  const osc = ctx.createOscillator()
+  const gain = ctx.createGain()
+  osc.type = 'sine'
+  osc.frequency.value = freq
+  gain.gain.setValueAtTime(0.0001, startAt)
+  gain.gain.exponentialRampToValueAtTime(0.35, startAt + 0.015)
+  gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration)
+  osc.connect(gain)
+  gain.connect(ctx.destination)
+  osc.start(startAt)
+  osc.stop(startAt + duration + 0.02)
+}
+
+export function playTimerEndSound() {
+  const ctx = getAudioCtx()
+  if (!ctx) return
+  try {
+    if (ctx.state === 'suspended') ctx.resume()
+    const t0 = ctx.currentTime
+    singleBeep(ctx, t0,        880, 0.14)
+    singleBeep(ctx, t0 + 0.20, 880, 0.14)
+    singleBeep(ctx, t0 + 0.40, 1320, 0.25)
+  } catch (e) {
+    console.warn('[beep] failed:', e)
+  }
+}
 
 export function isSupported() {
   return typeof window !== 'undefined' && 'Notification' in window
@@ -33,6 +71,8 @@ export function notify(title, options = {}) {
   try {
     if (navigator.vibrate) navigator.vibrate([300, 100, 300])
   } catch {}
+  // Always beep — works offline without notification permission
+  playTimerEndSound()
 
   if (!isSupported() || Notification.permission !== 'granted') return null
   try {

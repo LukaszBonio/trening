@@ -1,6 +1,10 @@
 <script setup>
 import { ref, onBeforeUnmount } from 'vue'
 import { generateAIPlan } from '../lib/ai.js'
+import { useWorkoutsStore } from '../stores/workouts.js'
+import { recentSessionsOfType } from '../lib/analytics.js'
+
+const workouts = useWorkoutsStore()
 
 const LOADING_MESSAGES = [
   'Analizuję twój cel…',
@@ -59,6 +63,7 @@ async function generate() {
       goal: goal.value,
       equipment: equipment.value,
       avoid: avoid.value,
+      recentSessions: recentSessionsOfType(workouts.history, props.type, 2),
       signal: abortCtrl.signal
     })
   } catch (e) {

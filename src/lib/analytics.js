@@ -86,6 +86,34 @@ export function personalRecords(history) {
 }
 
 /**
+ * Ostatnia istotna seria danego ćwiczenia z historii (najnowszy trening, pierwsza nie-pusta seria).
+ * Zwraca { weight, reps, date } lub null jeśli brak.
+ */
+export function lastSetFor(history, exerciseName) {
+  const key = exerciseName.toLowerCase().trim()
+  const sorted = [...history].sort((a, b) => new Date(b.date) - new Date(a.date))
+  for (const w of sorted) {
+    for (const ex of w.exercises) {
+      if (ex.name.toLowerCase().trim() !== key) continue
+      const s = ex.sets.find(x => (x.weight || 0) > 0 || (x.reps || 0) > 0) || ex.sets[0]
+      if (!s) continue
+      return { weight: s.weight || 0, reps: s.reps || 0, date: w.date }
+    }
+  }
+  return null
+}
+
+/**
+ * N ostatnich sesji danego typu (push/pull/legs/...).
+ */
+export function recentSessionsOfType(history, type, count = 2) {
+  return [...history]
+    .filter(w => w.type === type)
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(0, count)
+}
+
+/**
  * Streak — liczba kolejnych tygodni z co najmniej 1 treningiem.
  */
 export function currentStreak(history) {

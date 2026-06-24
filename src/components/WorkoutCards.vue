@@ -2,8 +2,10 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useSessionStore } from '../stores/session.js'
 import { useSettingsStore } from '../stores/settings.js'
+import { useWorkoutsStore } from '../stores/workouts.js'
 import { findSubstitutes, youtubeSearchUrl, detectMuscle, getMuscleName, detectEquipment } from '../lib/db.js'
 import { notify } from '../lib/notifications.js'
+import { lastSetFor } from '../lib/analytics.js'
 
 const emit = defineEmits(['set-done'])
 
@@ -11,6 +13,7 @@ const weightInputRef = ref(null)
 
 const session = useSessionStore()
 const settings = useSettingsStore()
+const workouts = useWorkoutsStore()
 
 // Tryby karty: 'setup' (wpisywanie ciężaru/powt) | 'rest' (timer odpoczynku)
 const mode = ref('setup')
@@ -52,6 +55,22 @@ const muscleName = computed(() => {
   if (!currentEx.value) return ''
   const m = detectMuscle(currentEx.value.name)
   return m ? getMuscleName(m) : ''
+})
+
+// Ostatnia seria danego ćwiczenia z historii (dla podpowiedzi pod inputami).
+const lastSetHint = computed(() => {
+  if (!currentEx.value) return null
+  return lastSetFor(workouts.history, currentEx.value.name)
+})
+
+const lastSetDateLabel = computed(() => {
+  if (!lastSetHint.value) return ''
+  const d = new Date(lastSetHint.value.date)
+  const days = Math.floor((Date.now() - d.getTime()) / 86400000)
+  if (days <= 0) return 'dziś'
+  if (days === 1) return 'wczoraj'
+  if (days < 7) return `${days} dni temu`
+  return d.toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' })
 })
 
 const equipment = computed(() => currentEx.value ? detectEquipment(currentEx.value.name) : null)
@@ -207,6 +226,25 @@ watch(() => session.active?.id, () => {
   stopRest()
   jumpToFirstUnchecked()
 })
+
+// Auto-podpowiedź ciężaru: gdy user wchodzi na pustą serię, wstaw domyślną wartość.
+// Priorytet: 1) poprzednia seria w tej sesji  2) ostatnia seria z historii dla tego ćwiczenia.
+function suggestWeightIfEmpty() {
+  if (!currentSet.value || currentSet.value.weight !== '' && currentSet.value.weight !== null && currentSet.value.weight !== undefined) return
+  // Poprzednia seria w tej sesji
+  if (setIdx.value > 0) {
+    const prev = currentEx.value?.sets[setIdx.value - 1]
+    if (prev && prev.weight !== '' && prev.weight != null) {
+      session.updateSet(exIdx.value, setIdx.value, { weight: prev.weight })
+      return
+    }
+  }
+  // Historia
+  if (lastSetHint.value && lastSetHint.value.weight > 0) {
+    session.updateSet(exIdx.value, setIdx.value, { weight: lastSetHint.value.weight })
+  }
+}
+watch([exIdx, setIdx, () => session.active?.id], suggestWeightIfEmpty, { immediate: true, flush: 'post' })
 
 const restProgress = computed(() => {
   if (restTotal.value === 0) return 0
@@ -378,6 +416,13 @@ const restProgress = computed(() => {
               placeholder="—"
             />
           </div>
+        </div>
+
+        <!-- Ostatnia seria z historii — szybka podpowiedź -->
+        <div v-if="lastSetHint && lastSetHint.weight > 0" class="last-hint">
+          <i class="ti ti-history"></i>
+          Ostatnio: <strong>{{ lastSetHint.weight }}{{ settings.settings.units }} × {{ lastSetHint.reps }}</strong>
+          <span class="dim">· {{ lastSetDateLabel }}</span>
         </div>
 
         <!-- RPE explainer -->
@@ -807,6 +852,22 @@ const restProgress = computed(() => {
   justify-content: center;
 }
 .rpe-help-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.last-hint {
+  margin-top: var(--space-3);
+  padding: 8px 12px;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.last-hint i { color: var(--accent); font-size: 15px; }
+.last-hint strong { color: var(--text); font-weight: 600; }
+.last-hint .dim { color: var(--text-dim); font-size: 12px; }
 
 .rpe-help-panel {
   margin-top: var(--space-3);

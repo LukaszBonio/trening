@@ -38,12 +38,19 @@ export const useSessionStore = defineStore('session', () => {
       planName: plan.name,
       source,           // 'library' | 'ai' | 'custom' — decyduje o algorytmie grupowania
       startedAt: Date.now(),
-      exercises: plan.exercises.map(ex => ({
-        name: ex.name,
-        tip: ex.tip || '',
-        reps: ex.reps,
-        sets: Array.from({ length: ex.sets }, () => emptySet())
-      }))
+      exercises: plan.exercises.map(ex => {
+        const sets = Array.from({ length: ex.sets }, () => emptySet())
+        // AI może zwrócić suggestedWeight — wstaw do pierwszej serii (kolejne podchwyci auto-podpowiedź)
+        if (ex.suggestedWeight != null && ex.suggestedWeight > 0 && sets.length) {
+          sets[0].weight = ex.suggestedWeight
+        }
+        return {
+          name: ex.name,
+          tip: ex.tip || '',
+          reps: ex.reps,
+          sets
+        }
+      })
     }
   }
 
