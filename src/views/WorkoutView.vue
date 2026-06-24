@@ -3,7 +3,6 @@ import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useSessionStore } from '../stores/session.js'
 import { useWorkoutsStore } from '../stores/workouts.js'
 import { useSettingsStore } from '../stores/settings.js'
-import { PLANS } from '../lib/db.js'
 import PlanPicker from '../components/PlanPicker.vue'
 import PlanEditor from '../components/PlanEditor.vue'
 import ExerciseCard from '../components/ExerciseCard.vue'
@@ -78,6 +77,26 @@ function findDay(key) {
   return null
 }
 
+// Następny trening w cyklu po ostatnio wykonanym typie.
+// PPL: push→pull→legs→push
+// Upper/Lower: upper_a→lower_a→upper_b→lower_b→upper_a (na przemian)
+// FBW: fbw_a→fbw_b→fbw_c→fbw_a
+const NEXT_CYCLE = {
+  push: 'pull', pull: 'legs', legs: 'push',
+  upper_a: 'lower_a', lower_a: 'upper_b', upper_b: 'lower_b', lower_b: 'upper_a',
+  fbw_a: 'fbw_b', fbw_b: 'fbw_c', fbw_c: 'fbw_a'
+}
+
+const nextWorkout = computed(() => {
+  const last = workouts.lastWorkout
+  if (!last) return null
+  const nextKey = NEXT_CYCLE[last.type]
+  if (!nextKey) return null
+  const day = findDay(nextKey)
+  if (!day) return null
+  return { key: nextKey, label: day.label, desc: day.desc, color: day.color, icon: day.icon }
+})
+
 const progress = computed(() => {
   if (!session.totalSets) return 0
   return Math.round((session.totalSetsDone / session.totalSets) * 100)
@@ -141,25 +160,6 @@ function onSavePlan(plan) {
 function onSetDone() {
   if (!settings.settings.autoStartTimer) return
   if (restTimerRef.value) restTimerRef.value.start(settings.settings.restTimerDefault)
-}
-
-function repeatLastWorkout() {
-  const last = workouts.lastWorkout
-  if (!last) return
-  const list = PLANS[last.type] || []
-  const plan = list.find(p => p.name === last.planName) || list[0]
-  if (!plan) return
-  session.startSession(plan, last.type)
-  // Prefill weights from last workout (matching by exercise name)
-  const lastByName = new Map(last.exercises.map(ex => [ex.name.toLowerCase().trim(), ex]))
-  for (const ex of session.active.exercises) {
-    const prev = lastByName.get(ex.name.toLowerCase().trim())
-    if (!prev) continue
-    for (let i = 0; i < ex.sets.length && i < prev.sets.length; i++) {
-      ex.sets[i].weight = prev.sets[i].weight
-      // Don't prefill reps — user should still log actual
-    }
-  }
 }
 
 function finishWorkout() {
@@ -304,20 +304,20 @@ function discardWorkout() {
 
   <!-- Type selection — pogrupowane wg systemu treningowego -->
   <div v-else class="type-select">
-    <!-- Powtórz ostatni (jeśli jest) -->
-    <div v-if="workouts.lastWorkout" class="repeat-banner card">
+    <!-- Następny trening w cyklu (jeśli jest historia) -->
+    <div v-if="nextWorkout" class="repeat-banner card">
       <div class="repeat-info">
-        <i class="ti ti-clock-play"></i>
+        <i class="ti" :class="nextWorkout.icon" :style="{ color: nextWorkout.color }"></i>
         <div>
-          <div class="dim repeat-label">Ostatni trening</div>
+          <div class="dim repeat-label">Następny trening</div>
           <div class="repeat-name">
-            {{ workouts.lastWorkout.planName }}
-            <span class="repeat-tag">{{ workouts.lastWorkout.type.toUpperCase().replace('_', ' ') }}</span>
+            {{ nextWorkout.label }}
+            <span class="repeat-tag" :style="{ color: nextWorkout.color, borderColor: nextWorkout.color }">{{ nextWorkout.desc }}</span>
           </div>
         </div>
       </div>
-      <button class="btn btn-primary repeat-btn" @click="repeatLastWorkout">
-        <i class="ti ti-repeat"></i> Powtórz
+      <button class="btn btn-primary repeat-btn" @click="selectDay(nextWorkout.key)">
+        <i class="ti ti-player-play"></i> Trenuj
       </button>
     </div>
 

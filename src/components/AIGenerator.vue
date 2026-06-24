@@ -1,10 +1,13 @@
 <script setup>
-import { ref, onBeforeUnmount } from 'vue'
+import { ref, computed, onBeforeUnmount } from 'vue'
 import { generateAIPlan } from '../lib/ai.js'
 import { useWorkoutsStore } from '../stores/workouts.js'
+import { useSettingsStore, GOALS, goalLabel } from '../stores/settings.js'
 import { recentSessionsOfType } from '../lib/analytics.js'
 
 const workouts = useWorkoutsStore()
+const settings = useSettingsStore()
+const currentGoal = computed(() => GOALS.find(g => g.key === settings.settings.goal) || GOALS[0])
 
 const LOADING_MESSAGES = [
   'Analizuję twój cel…',
@@ -34,7 +37,6 @@ const props = defineProps({
 })
 const emit = defineEmits(['select'])
 
-const goal = ref('mass')
 const equipment = ref('siłownia')
 const avoid = ref('')
 const generating = ref(false)
@@ -42,13 +44,6 @@ const error = ref('')
 const plan = ref(null)
 let abortCtrl = null
 
-const GOALS = [
-  { key: 'mass',          label: 'Masa mięśniowa' },
-  { key: 'strength',      label: 'Siła' },
-  { key: 'endurance',     label: 'Wytrzymałość' },
-  { key: 'cut',           label: 'Redukcja/rzeźba' },
-  { key: 'recomposition', label: 'Rekompozycja' }
-]
 const EQUIPMENT = ['siłownia', 'dom z hantlami', 'dom bez sprzętu (calisthenics)']
 
 async function generate() {
@@ -60,7 +55,7 @@ async function generate() {
   try {
     plan.value = await generateAIPlan({
       type: props.type,
-      goal: goal.value,
+      goal: settings.settings.goal,
       equipment: equipment.value,
       avoid: avoid.value,
       recentSessions: recentSessionsOfType(workouts.history, props.type, 2),
@@ -115,11 +110,13 @@ function start() {
         AI wygeneruje spersonalizowany plan na bazie twojego celu i sprzętu.
       </p>
 
-      <div class="field">
-        <label>Cel treningowy</label>
-        <select v-model="goal">
-          <option v-for="g in GOALS" :key="g.key" :value="g.key">{{ g.label }}</option>
-        </select>
+      <div class="goal-info">
+        <i class="ti" :class="currentGoal.icon"></i>
+        <div class="goal-info-text">
+          <div class="goal-info-label">Cel</div>
+          <div class="goal-info-value">{{ currentGoal.label }}</div>
+        </div>
+        <span class="goal-info-hint">Zmień u góry strony</span>
       </div>
 
       <div class="field">
@@ -203,6 +200,37 @@ function start() {
   font-family: inherit;
 }
 .field input:focus, .field select:focus { outline: none; border-color: var(--accent); }
+
+.goal-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-soft-2);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-3);
+}
+.goal-info > i {
+  font-size: 22px;
+  color: var(--accent);
+}
+.goal-info-text { flex: 1; line-height: 1.2; }
+.goal-info-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.goal-info-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+}
+.goal-info-hint {
+  font-size: 11px;
+  color: var(--text-dim);
+}
 
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }

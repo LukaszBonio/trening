@@ -2,6 +2,12 @@
 import { RouterView, RouterLink, useRoute } from 'vue-router'
 import { computed, ref, onMounted } from 'vue'
 import OnboardingTour from './components/OnboardingTour.vue'
+import GoalModal from './components/GoalModal.vue'
+import { useSettingsStore, GOALS } from './stores/settings.js'
+
+const settings = useSettingsStore()
+const showGoalModal = ref(false)
+const currentGoal = computed(() => GOALS.find(g => g.key === settings.settings.goal) || GOALS[0])
 
 const showOnboarding = ref(false)
 onMounted(() => {
@@ -50,9 +56,14 @@ const tabs = [
         <div class="brand-text">Trening <span>Pro</span></div>
       </div>
       <div class="header-right">
-        <span class="badge-vue">Vue migration</span>
+        <button class="goal-badge" @click="showGoalModal = true" :title="'Cel: ' + currentGoal.label + ' (kliknij aby zmienić)'">
+          <i class="ti" :class="currentGoal.icon"></i>
+          <span>{{ currentGoal.label }}</span>
+        </button>
       </div>
     </header>
+
+    <GoalModal v-if="showGoalModal" @close="showGoalModal = false" />
 
     <nav class="tabs tabs-desktop">
       <RouterLink
@@ -112,15 +123,25 @@ const tabs = [
   font-size: 19px; font-weight: 700; letter-spacing: -0.5px;
 }
 .brand-text span { color: var(--accent); }
-.badge-vue {
-  font-size: 11px;
-  padding: 4px 10px;
+.goal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 6px 12px;
   background: var(--accent-soft);
   color: var(--accent);
   border-radius: 100px;
   font-weight: 600;
   border: 1px solid var(--accent-soft-2);
+  cursor: pointer;
+  transition: all var(--dur) var(--ease);
 }
+.goal-badge:hover {
+  background: var(--accent-soft-2);
+  border-color: var(--accent);
+}
+.goal-badge i { font-size: 14px; }
 .tabs {
   display: flex;
   gap: 6px;

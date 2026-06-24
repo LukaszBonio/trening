@@ -11,7 +11,20 @@ const DEFAULTS = {
   accentColor: '#d4ff3a',   // kolor akcentu
   weekStartsMonday: true,
   theme: 'dark',            // 'dark' | 'light'
-  workoutMode: 'cards'      // 'cards' | 'list' — tryb aktywnej sesji
+  workoutMode: 'cards',     // 'cards' | 'list' — tryb aktywnej sesji
+  goal: 'mass'              // 'mass' | 'strength' | 'endurance' | 'cut' | 'recomposition'
+}
+
+export const GOALS = [
+  { key: 'mass',          label: 'Masa',          icon: 'ti-flame' },
+  { key: 'strength',      label: 'Siła',          icon: 'ti-barbell' },
+  { key: 'endurance',     label: 'Wytrzymałość',  icon: 'ti-run' },
+  { key: 'cut',           label: 'Redukcja',      icon: 'ti-trending-down' },
+  { key: 'recomposition', label: 'Rekompozycja',  icon: 'ti-refresh' }
+]
+
+export function goalLabel(key) {
+  return GOALS.find(g => g.key === key)?.label || 'Masa'
 }
 
 function load() {
