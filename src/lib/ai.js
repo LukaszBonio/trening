@@ -1,6 +1,8 @@
 // AI helper — calls Claude API via Cloudflare Worker proxy.
 // Worker URL can be overridden by localStorage 'tp_proxy_url' for testing.
 
+import { PRIMARY_TO_GROUP } from './workoutSchema.js'
+
 const DEFAULT_PROXY = 'https://trening-pro-api.lukasz-mateusz-bonio.workers.dev'
 const MODEL = 'claude-sonnet-4-6'
 
@@ -12,7 +14,7 @@ export function getProxyUrl() {
   }
 }
 
-export async function callClaude({ prompt, maxTokens = 2000, signal }) {
+export async function callClaude({ prompt, maxTokens = 2500, signal }) {
   if (!navigator.onLine) {
     throw new Error('Brak połączenia z internetem')
   }
@@ -47,31 +49,148 @@ export function parseClaudeJSON(rawText) {
   return parsed
 }
 
-const TYPE_STRUCTURE = {
-  push: '3 ćwiczenia na klatkę + 2 na barki (przednie/boczne) + 2 na triceps',
-  pull: '4 ćwiczenia na plecy + 1 na tylne barki + 2 na biceps + 1 na przedramię',
-  legs: '2 quad-dominant + 2 hamstring/pośladki + 1 jednostronne + 1 łydki + 1 core',
-  upper_a: 'klatka + plecy + barki + biceps + triceps (7 ćwiczeń)',
-  upper_b: 'klatka + plecy + barki + biceps + triceps — inne ćwiczenia niż A (7 ćwiczeń)',
-  lower_a: 'czworogłowy + hamstring/pośladki + łydki + core (6 ćwiczeń)',
-  lower_b: 'hamstring/pośladki dominantne + czworogłowy + łydki + core (6 ćwiczeń)',
-  fbw_a: 'przysiad + bench + wiosłowanie + OHP + hamstring + biceps + core (7 ćwiczeń)',
-  fbw_b: 'martwy + skos + podciąganie + split squat + wznosy + triceps + core (7 ćwiczeń)',
-  fbw_c: 'front squat + bench hantle + wiosłowanie + hip thrust + face pull + biceps + łydki (7 ćwiczeń)'
+// Dozwolone wartości dla pól w odpowiedzi AI.
+// PRIMARY_MUSCLES wyprowadzone z PRIMARY_TO_GROUP — jedno źródło prawdy.
+export const PRIMARY_MUSCLES = Object.keys(PRIMARY_TO_GROUP)
+export const EXERCISE_TYPES = ['compound', 'isolation']
+export const MOVEMENT_PATTERNS = [
+  'horizontal_push', 'vertical_push',
+  'horizontal_pull', 'vertical_pull',
+  'squat', 'hinge', 'lunge', 'calf', 'core',
+  'elbow_flexion', 'elbow_extension', 'shoulder_isolation'
+]
+
+// Szczegóły dla każdego typu treningu — struktura, zasady doboru, oczekiwana liczba ćwiczeń.
+const TYPE_DETAILS = {
+  push: {
+    label: 'PUSH',
+    expectedCount: 7,
+    structure: '3 ćwiczenia na klatkę + 2 na barki (przednie/boczne) + 2 na triceps',
+    selection: [
+      'Pierwsze ćwiczenie musi być ćwiczeniem wielostawowym.',
+      'Co najmniej 2 ćwiczenia w planie muszą być ćwiczeniami bazowymi.',
+      'Nie twórz planów opartych wyłącznie na maszynach.',
+      'Łącz wyciskania poziome, skośne i ruchy nad głowę.',
+      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
+    ]
+  },
+  pull: {
+    label: 'PULL',
+    expectedCount: 8,
+    structure: '4 ćwiczenia na plecy + 1 na tylne barki + 2 na biceps + 1 na przedramię',
+    selection: [
+      'Pierwsze ćwiczenie musi być ćwiczeniem wielostawowym.',
+      'Co najmniej 2 ćwiczenia muszą być ćwiczeniami bazowymi.',
+      'Łącz ruchy pionowe (podciąganie, wyciąg górny) i poziome (wiosłowania).',
+      'Unikaj planów opartych wyłącznie na wyciągach.',
+      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
+    ]
+  },
+  legs: {
+    label: 'LEGS',
+    expectedCount: 7,
+    structure: '2 quad-dominant + 2 hamstring/pośladki + 1 jednostronne + 1 łydki + 1 core',
+    selection: [
+      'Pierwsze ćwiczenie musi być ćwiczeniem wielostawowym (przysiad lub martwy).',
+      'Co najmniej 2 ćwiczenia muszą być ćwiczeniami bazowymi.',
+      'Zachowaj balans pomiędzy przednią i tylną taśmą mięśniową.',
+      'Zachowuj balans pomiędzy maszynami i wolnymi ciężarami.',
+      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
+    ]
+  },
+  upper_a: {
+    label: 'UPPER A',
+    expectedCount: 7,
+    structure: '2 klatka + 2 plecy + 1 barki + 1 biceps + 1 triceps (7 ćwiczeń) — wariant bazowy',
+    selection: [
+      'Pierwsze ćwiczenie musi być ćwiczeniem wielostawowym (wyciskanie lub wiosłowanie).',
+      'Co najmniej 2 ćwiczenia muszą być ćwiczeniami bazowymi.',
+      'Zachowaj balans push/pull w obrębie planu.',
+      'Łącz ruchy poziome i pionowe.',
+      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
+    ]
+  },
+  upper_b: {
+    label: 'UPPER B',
+    expectedCount: 7,
+    structure: '2 klatka + 2 plecy + 1 barki + 1 biceps + 1 triceps (7 ćwiczeń) — wariant objętościowy, inne ćwiczenia niż Upper A',
+    selection: [
+      'Pierwsze ćwiczenie musi być ćwiczeniem wielostawowym (wyciskanie lub wiosłowanie).',
+      'Co najmniej 2 ćwiczenia muszą być ćwiczeniami bazowymi.',
+      'Wybieraj warianty z większą objętością (8-15 powt).',
+      'Łącz ruchy poziome i pionowe.',
+      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
+    ]
+  },
+  lower_a: {
+    label: 'LOWER A',
+    expectedCount: 6,
+    structure: '2 quad-dominant + 2 hamstring/pośladki + 1 łydki + 1 core (6 ćwiczeń) — priorytet czworogłowy',
+    selection: [
+      'Pierwsze ćwiczenie musi być przysiadem lub wariantem przysiadowym.',
+      'Co najmniej 2 ćwiczenia muszą być ćwiczeniami bazowymi.',
+      'Zachowaj balans przód/tył uda.',
+      'Łącz ruchy obustronne i jednostronne.',
+      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
+    ]
+  },
+  lower_b: {
+    label: 'LOWER B',
+    expectedCount: 6,
+    structure: '2 hamstring/pośladki dominantne + 2 czworogłowy + 1 łydki + 1 core (6 ćwiczeń) — priorytet hip hinge',
+    selection: [
+      'Pierwsze ćwiczenie musi być martwym ciągiem lub hip hinge.',
+      'Co najmniej 2 ćwiczenia muszą być ćwiczeniami bazowymi.',
+      'Zachowaj balans przód/tył uda.',
+      'Łącz ruchy obustronne i jednostronne.',
+      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
+    ]
+  },
+  fbw_a: {
+    label: 'FBW A',
+    expectedCount: 7,
+    structure: 'przysiad + bench + wiosłowanie + OHP + hamstring + biceps + core (7 ćwiczeń)',
+    selection: [
+      'Pierwsze ćwiczenie musi być wielostawowe (przysiad lub martwy).',
+      'Każda główna partia (nogi, klatka, plecy, barki) ma jedno reprezentatywne ćwiczenie.',
+      'Wybieraj ćwiczenia efektywne czasowo (duży stosunek zaangażowanych mięśni).',
+      'Unikaj nadmiaru ćwiczeń izolowanych.'
+    ]
+  },
+  fbw_b: {
+    label: 'FBW B',
+    expectedCount: 7,
+    structure: 'martwy ciąg + skos klatka + podciąganie + split squat + wznosy + triceps + core (7 ćwiczeń)',
+    selection: [
+      'Pierwsze ćwiczenie musi być martwym ciągiem (klasyczny lub wariant).',
+      'Każda główna partia (nogi, klatka, plecy, barki) ma jedno reprezentatywne ćwiczenie.',
+      'Wybieraj ćwiczenia efektywne czasowo.',
+      'Unikaj nadmiaru ćwiczeń izolowanych.'
+    ]
+  },
+  fbw_c: {
+    label: 'FBW C',
+    expectedCount: 7,
+    structure: 'front squat + bench hantle + wiosłowanie + hip thrust + face pull + biceps + łydki (7 ćwiczeń)',
+    selection: [
+      'Pierwsze ćwiczenie musi być front squatem lub wariantem przedniego przysiadu.',
+      'Plan eksponuje pośladki (hip thrust) i tylne barki (face pull).',
+      'Wybieraj ćwiczenia efektywne czasowo.',
+      'Unikaj nadmiaru ćwiczeń izolowanych.'
+    ]
+  }
 }
 
 const GOAL_HINTS = {
-  mass: 'masa mięśniowa: 8-12 powt, 3-4 serii, tempo umiarkowane',
-  strength: 'siła: 3-6 powt, 4-5 serii, ciężary submaksymalne',
-  endurance: 'wytrzymałość: 12-20 powt, 3 serii, krótsze przerwy',
-  cut: 'redukcja/rzeźba: 10-15 powt, 3 serii, podwyższona intensywność',
-  recomposition: 'rekompozycja: 6-12 powt, mix siłowo-objętościowy'
+  mass:          'masa mięśniowa: 8-12 powtórzeń, 3-4 serie, tempo umiarkowane',
+  strength:      'siła: 3-6 powtórzeń, 4-5 serii, ciężary submaksymalne',
+  endurance:     'wytrzymałość mięśniowa: 15-20 powtórzeń, 2-4 serie, krótkie przerwy',
+  cut:           'redukcja tkanki tłuszczowej: 10-15 powtórzeń, 3-4 serie, krótsze przerwy',
+  recomposition: 'rekompozycja: 6-12 powtórzeń, 3-4 serie, nacisk na progresję obciążenia'
 }
 
-/**
- * Kompaktowy zapis sesji do prompta — bez RPE, bez notatek.
- * Format: "- <nazwa>: 60x10, 60x10, 60x8"
- */
+// Kompaktowy zapis sesji do prompta — bez RPE, bez notatek.
+// Format: "- <nazwa>: 60x10, 60x10, 60x8"
 function formatSessionCompact(session) {
   const date = new Date(session.date).toISOString().slice(0, 10)
   const lines = session.exercises.map(ex => {
@@ -83,6 +202,88 @@ function formatSessionCompact(session) {
   return `Sesja ${date}:\n${lines.join('\n')}`
 }
 
+function buildPrompt({ type, goal, equipment, avoid, recentSessions }) {
+  const td = TYPE_DETAILS[type] || TYPE_DETAILS.push
+  const goalDesc = GOAL_HINTS[goal] || GOAL_HINTS.mass
+  const hasHistory = recentSessions.length > 0
+
+  const parts = []
+
+  parts.push(`Wygeneruj plan treningowy typu ${td.label} dla osoby trenującej w ${equipment}.`)
+  parts.push(`Cel: ${goalDesc}`)
+  parts.push(`Struktura:\n${td.structure}`)
+
+  if (hasHistory) {
+    parts.push(`RÓŻNORODNOŚĆ:
+- Nie wybieraj identycznego zestawu ćwiczeń przy każdym generowaniu.
+- Zachowaj strukturę planu, ale rotuj ćwiczenia pomiędzy równoważnymi wariantami.
+- Preferuj ćwiczenia, które nie występowały w ostatnich ${recentSessions.length} treningach tego typu.
+- Dopuszczalne jest powtórzenie głównego ćwiczenia bazowego, jeśli jest uzasadnione historią progresji.`)
+  }
+
+  parts.push(`DOBÓR ĆWICZEŃ:
+${td.selection.map(s => `- ${s}`).join('\n')}
+- Nie duplikuj tego samego ćwiczenia w planie.`)
+
+  if (avoid && avoid.trim()) {
+    parts.push(`UNIKAJ: ${avoid.trim()}`)
+  }
+
+  if (hasHistory) {
+    parts.push(`OSTATNIE SESJE (${recentSessions.length}) — kompaktowo, weight x reps:
+${recentSessions.map(formatSessionCompact).join('\n\n')}`)
+  }
+
+  parts.push(`Zwróć WYŁĄCZNIE poprawny JSON w formacie (bez markdown, bez komentarzy):
+{
+  "name": "krótka nazwa planu (max 40 znaków, po polsku)",
+  "exercises": [
+    {
+      "name": "nazwa ćwiczenia po polsku",
+      "primaryMuscle": "PARTIA_ENG",
+      "exerciseType": "compound|isolation",
+      "movementPattern": "WZORZEC",
+      "sets": LICZBA,
+      "reps": "ZAKRES jako string",
+      "tip": "krótka wskazówka (max 60 znaków)",
+      "suggestedWeight": LICZBA_LUB_NULL
+    }
+  ]
+}`)
+
+  parts.push(`KRYTYCZNE:
+- Odpowiedź musi zawierać WYŁĄCZNIE poprawny JSON.
+- Nie używaj markdown.
+- Nie używaj bloków \`\`\`json.
+- Nie dodawaj żadnych wyjaśnień przed ani po JSON.
+- Odpowiedź musi rozpoczynać się od znaku { i kończyć znakiem }.`)
+
+  parts.push(`WAŻNE:
+- Wszystkie pola są wymagane.
+- "sets" musi być liczbą (3, 4, 5).
+- "reps" musi być stringiem z zakresem ('6-8', '10-12', '12-15').
+- Nazwy ćwiczeń wyłącznie po polsku, standardowe (np. "Wyciskanie sztangi na ławce poziomej", "Przysiad ze sztangą", "Martwy ciąg rumuński").
+- "primaryMuscle" musi być jedną z: ${PRIMARY_MUSCLES.map(m => `"${m}"`).join(', ')}.
+- "exerciseType" musi być jedną z: ${EXERCISE_TYPES.map(t => `"${t}"`).join(', ')}.
+- "movementPattern" musi być jedną z: ${MOVEMENT_PATTERNS.map(p => `"${p}"`).join(', ')}.
+- "suggestedWeight" musi być liczbą (w kg) lub null.
+- Liczba ćwiczeń musi być DOKŁADNIE ${td.expectedCount} — nie pomijaj i nie dodawaj ćwiczeń.
+- Wybieraj wyłącznie ćwiczenia możliwe do wykonania przy dostępnym sprzęcie — nie proponuj maszyn ani wyciągów, jeśli sprzęt to "dom z hantlami" lub "dom bez sprzętu (calisthenics)".
+- Tip ma być krótki i praktyczny.`)
+
+  parts.push(`ZASADY PROGRESJI:
+${hasHistory
+  ? `- Dla ćwiczeń obecnych w historii analizuj ostatnie wykonania.
+- Jeśli wszystkie serie osiągnęły górną granicę zakresu powtórzeń, zwiększ ciężar o 2.5-5%.
+- Jeśli większość serii była w środku zakresu, pozostaw ciężar bez zmian.
+- Jeśli użytkownik nie osiągnął dolnej granicy zakresu, zmniejsz ciężar o 2.5-5%.
+- Zwracaj realistyczne wartości dla danego ćwiczenia.
+- Dla nowych ćwiczeń (brak w historii) ustaw "suggestedWeight": null.`
+  : `- Brak historii treningowej — dla każdego ćwiczenia ustaw "suggestedWeight": null.`}`)
+
+  return parts.join('\n\n')
+}
+
 export async function generateAIPlan({
   type,
   goal,
@@ -91,50 +292,30 @@ export async function generateAIPlan({
   recentSessions = [],
   signal
 }) {
-  const struct = TYPE_STRUCTURE[type] || 'standardowy układ'
-  const goalDesc = GOAL_HINTS[goal] || GOAL_HINTS.mass
-  const avoidLine = avoid.trim() ? `\nUNIKAJ: ${avoid.trim()}` : ''
+  const td = TYPE_DETAILS[type] || TYPE_DETAILS.push
+  const prompt = buildPrompt({ type, goal, equipment, avoid, recentSessions })
 
-  const historyBlock = recentSessions.length
-    ? `\n\nOSTATNIE SESJE (${recentSessions.length}) — kompaktowo, weight x reps:\n${recentSessions.map(formatSessionCompact).join('\n\n')}`
-    : ''
-
-  const progressionHint = recentSessions.length
-    ? `\n- Dla ćwiczeń obecnych w historii: zaproponuj "suggestedWeight" (number, w kg) — startowy ciężar na pierwszą serię, lekka progresja względem ostatnich treningów (np. +2.5kg jeśli ostatnio robił w pełnym zakresie powtórzeń, taki sam ciężar jeśli ledwo dobił do dolnej granicy).
-- Dla ćwiczeń nowych (brak w historii): "suggestedWeight": null.`
-    : `\n- "suggestedWeight": null (brak historii do oszacowania).`
-
-  const prompt = `Wygeneruj plan treningowy typu ${type.toUpperCase()} dla osoby trenującej w ${equipment}.
-
-Cel: ${goalDesc}
-Struktura: ${struct}${avoidLine}${historyBlock}
-
-Zwróć WYŁĄCZNIE poprawny JSON w formacie (bez markdown, bez komentarzy):
-{
-  "name": "krótka nazwa planu (max 40 znaków, po polsku)",
-  "exercises": [
-    { "name": "nazwa ćwiczenia po polsku", "sets": LICZBA, "reps": "ZAKRES jako string np. '8-10'", "tip": "krótka wskazówka techniczna (max 60 znaków)", "suggestedWeight": LICZBA_LUB_NULL }
-  ]
-}
-
-WAŻNE:
-- Wszystkie pola wymagane.
-- "sets" = liczba (3, 4, 5).
-- "reps" = string z zakresem ('6-8', '10-12', '12-15').
-- Nazwy ćwiczeń po polsku, standardowe (np. "Wyciskanie sztangi na ławce poziomej", "Przysiad ze sztangą", "Martwy ciąg rumuński").
-- Trzymaj się struktury i liczby ćwiczeń podanej wyżej.${progressionHint}`
-
-  const text = await callClaude({ prompt, maxTokens: 2000, signal })
+  const text = await callClaude({ prompt, maxTokens: 3000, signal })
   const plan = parseClaudeJSON(text)
 
   if (!plan.name || !Array.isArray(plan.exercises) || !plan.exercises.length) {
     throw new Error('AI zwróciło niepoprawny plan — spróbuj ponownie')
   }
+
+  // Twarda walidacja: liczba ćwiczeń musi się zgadzać ze strukturą
+  if (plan.exercises.length !== td.expectedCount) {
+    throw new Error(`AI zwróciło ${plan.exercises.length} ćwiczeń zamiast ${td.expectedCount} — spróbuj ponownie`)
+  }
+
   for (const ex of plan.exercises) {
     if (!ex.name || typeof ex.sets !== 'number' || !ex.reps) {
       throw new Error('AI zwróciło ćwiczenie z brakującymi polami — spróbuj ponownie')
     }
-    // Normalizacja suggestedWeight — może przyjść jako string, null, undefined
+    // Miękka walidacja: spoza dozwolonych wartości → null (nie odrzucamy planu)
+    if (!PRIMARY_MUSCLES.includes(ex.primaryMuscle)) ex.primaryMuscle = null
+    if (!EXERCISE_TYPES.includes(ex.exerciseType)) ex.exerciseType = null
+    if (!MOVEMENT_PATTERNS.includes(ex.movementPattern)) ex.movementPattern = null
+    // Normalizacja suggestedWeight — może przyjść jako string/null/undefined
     if (ex.suggestedWeight != null) {
       const w = Number(ex.suggestedWeight)
       ex.suggestedWeight = Number.isFinite(w) && w > 0 ? w : null

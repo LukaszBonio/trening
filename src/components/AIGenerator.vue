@@ -58,7 +58,7 @@ async function generate() {
       goal: settings.settings.goal,
       equipment: equipment.value,
       avoid: avoid.value,
-      recentSessions: recentSessionsOfType(workouts.history, props.type, 2),
+      recentSessions: recentSessionsOfType(workouts.history, props.type, 3),
       signal: abortCtrl.signal
     })
   } catch (e) {

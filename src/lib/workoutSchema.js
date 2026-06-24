@@ -72,6 +72,24 @@ Object.entries(WORKOUT_SCHEMA).forEach(([type, groups]) => {
   INDEX_GROUPS[type] = groups.map(g => ({ group: g.id, count: g.count }))
 })
 
+// Mapowanie primaryMuscle (klucze angielskie z planów AI) na klucze grup używane w GROUP_LABELS.
+// Używane w statystykach: jeśli ex.primaryMuscle jest ustawione (plan AI), używamy tego
+// zamiast detectMuscle(ex.name) — dzięki temu plany AI od razu trafiają we właściwą partię.
+export const PRIMARY_TO_GROUP = {
+  chest: 'klatka',
+  shoulders: 'barki',
+  rear_shoulders: 'barki',
+  triceps: 'triceps',
+  back: 'plecy',
+  biceps: 'biceps',
+  forearms: 'przedramię',
+  quads: 'czworogłowy',
+  hamstrings: 'hamstring',
+  glutes: 'pośladki',
+  calves: 'łydki',
+  core: 'core'
+}
+
 export const GROUP_LABELS = {
   'klatka':      { name: 'Klatka piersiowa', icon: 'ti-shirt' },
   'barki':       { name: 'Barki', icon: 'ti-user' },

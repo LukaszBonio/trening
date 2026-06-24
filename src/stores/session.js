@@ -48,6 +48,10 @@ export const useSessionStore = defineStore('session', () => {
           name: ex.name,
           tip: ex.tip || '',
           reps: ex.reps,
+          // Pola z planów AI (mogą być null dla planów library/custom)
+          primaryMuscle: ex.primaryMuscle || null,
+          exerciseType: ex.exerciseType || null,
+          movementPattern: ex.movementPattern || null,
           sets
         }
       })
@@ -103,17 +107,24 @@ export const useSessionStore = defineStore('session', () => {
       date: new Date(active.value.startedAt).toISOString(),
       finishedAt: now,
       duration: Math.floor((now - active.value.startedAt) / 1000),
-      exercises: active.value.exercises.map(ex => ({
-        name: ex.name,
-        sets: ex.sets
-          .filter(s => s.done && (s.weight !== '' || s.reps !== ''))
-          .map(s => {
-            const out = { weight: Number(s.weight) || 0, reps: Number(s.reps) || 0 }
-            if (s.rpe) out.rpe = Number(s.rpe)
-            if (s.note) out.note = s.note
-            return out
-          })
-      })).filter(ex => ex.sets.length > 0)
+      exercises: active.value.exercises.map(ex => {
+        const out = {
+          name: ex.name,
+          sets: ex.sets
+            .filter(s => s.done && (s.weight !== '' || s.reps !== ''))
+            .map(s => {
+              const o = { weight: Number(s.weight) || 0, reps: Number(s.reps) || 0 }
+              if (s.rpe) o.rpe = Number(s.rpe)
+              if (s.note) o.note = s.note
+              return o
+            })
+        }
+        // Zachowujemy metadane z planów AI tylko gdy są ustawione — nie zaśmiecamy historii nullami.
+        if (ex.primaryMuscle) out.primaryMuscle = ex.primaryMuscle
+        if (ex.exerciseType) out.exerciseType = ex.exerciseType
+        if (ex.movementPattern) out.movementPattern = ex.movementPattern
+        return out
+      }).filter(ex => ex.sets.length > 0)
     }
   }
 

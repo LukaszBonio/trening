@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { useWorkoutsStore } from '../stores/workouts.js'
 import { detectMuscle } from '../lib/db.js'
-import { MUSCLE_TO_GROUP, GROUP_LABELS } from '../lib/workoutSchema.js'
+import { MUSCLE_TO_GROUP, GROUP_LABELS, PRIMARY_TO_GROUP } from '../lib/workoutSchema.js'
 import {
   uniqueExercises,
   exerciseProgress,
@@ -43,12 +43,20 @@ const last7Days = computed(() => {
   return workouts.history.filter(w => new Date(w.date).getTime() >= cutoff).length
 })
 
+// Priorytet partii: AI plan (ex.primaryMuscle) → detectMuscle z nazwy → 'inne'
+function groupForExercise(ex) {
+  if (ex.primaryMuscle && PRIMARY_TO_GROUP[ex.primaryMuscle]) {
+    return PRIMARY_TO_GROUP[ex.primaryMuscle]
+  }
+  const m = detectMuscle(ex.name)
+  return m ? (MUSCLE_TO_GROUP[m] || 'inne') : 'inne'
+}
+
 const volumeByMuscle = computed(() => {
   const map = {}
   for (const w of workouts.history) {
     for (const ex of w.exercises) {
-      const muscle = detectMuscle(ex.name)
-      const group = muscle ? (MUSCLE_TO_GROUP[muscle] || 'inne') : 'inne'
+      const group = groupForExercise(ex)
       if (!map[group]) map[group] = { vol: 0, exercises: new Map() }
       let exVol = 0
       for (const s of ex.sets) exVol += (s.weight || 0) * (s.reps || 0)
