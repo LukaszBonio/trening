@@ -76,7 +76,7 @@ const lastSetDateLabel = computed(() => {
 const equipment = computed(() => currentEx.value ? detectEquipment(currentEx.value.name) : null)
 const ytUrl = computed(() => currentEx.value ? youtubeSearchUrl(currentEx.value.name) : '#')
 const substitutes = computed(() =>
-  currentEx.value ? findSubstitutes(currentEx.value.name, 5) : []
+  currentEx.value ? findSubstitutes(currentEx.value.name, 3) : []
 )
 
 // Globalny postęp (wszystkie serie wszystkich ćwiczeń)
