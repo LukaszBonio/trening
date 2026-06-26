@@ -6,6 +6,7 @@ import { useWorkoutsStore } from '../stores/workouts.js'
 import { findSubstitutes, youtubeSearchUrl, detectMuscle, getMuscleName, detectEquipment } from '../lib/db.js'
 import { notify } from '../lib/notifications.js'
 import { lastSetFor } from '../lib/analytics.js'
+import { formatClock } from '../lib/format.js'
 
 const emit = defineEmits(['set-done'])
 
@@ -94,13 +95,7 @@ const globalProgress = computed(() => {
   return { done, total, currentGlobalIdx }
 })
 
-const formatTime = (sec) => {
-  const m = Math.floor(sec / 60)
-  const s = sec % 60
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-}
-
-const restDisplay = computed(() => formatTime(Math.max(0, restRemaining.value)))
+const restDisplay = computed(() => formatClock(restRemaining.value))
 
 // Auto-advance do następnej serii/ćwiczenia
 function advance() {
@@ -256,7 +251,7 @@ const restProgress = computed(() => {
   <div v-if="currentEx" class="focus-wrap">
     <!-- Top bar: progress + nav -->
     <div class="top-bar">
-      <button class="back-btn" :disabled="exIdx === 0 && setIdx === 0 && mode === 'setup'" @click="goBack">
+      <button class="back-btn" :disabled="exIdx === 0 && setIdx === 0 && mode === 'setup'" @click="goBack" aria-label="Cofnij do poprzedniej serii">
         <i class="ti ti-arrow-left"></i>
       </button>
       <div class="progress-info">

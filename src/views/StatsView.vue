@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useWorkoutsStore } from '../stores/workouts.js'
 import { detectMuscle } from '../lib/db.js'
 import { MUSCLE_TO_GROUP, GROUP_LABELS, PRIMARY_TO_GROUP } from '../lib/workoutSchema.js'
+import { workoutVolume, totalSets as totalSetsOf } from '../lib/workoutMath.js'
 import {
   uniqueExercises,
   exerciseProgress,
@@ -20,23 +21,8 @@ const workouts = useWorkoutsStore()
 const totalWorkouts = computed(() => workouts.history.length)
 const streak = computed(() => currentStreak(workouts.history))
 
-const totalVolume = computed(() => {
-  let v = 0
-  for (const w of workouts.history) {
-    for (const ex of w.exercises) {
-      for (const s of ex.sets) v += (s.weight || 0) * (s.reps || 0)
-    }
-  }
-  return Math.round(v)
-})
-
-const totalSets = computed(() => {
-  let n = 0
-  for (const w of workouts.history) {
-    for (const ex of w.exercises) n += ex.sets.length
-  }
-  return n
-})
+const totalVolume = computed(() => workouts.history.reduce((sum, w) => sum + workoutVolume(w), 0))
+const totalSets = computed(() => workouts.history.reduce((sum, w) => sum + totalSetsOf(w), 0))
 
 const last7Days = computed(() => {
   const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000

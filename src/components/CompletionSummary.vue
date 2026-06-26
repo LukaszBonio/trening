@@ -3,6 +3,8 @@ import { computed, onMounted } from 'vue'
 import confetti from 'canvas-confetti'
 import { personalRecords } from '../lib/analytics.js'
 import { useWorkoutsStore } from '../stores/workouts.js'
+import { workoutVolume, totalSets } from '../lib/workoutMath.js'
+import { formatDuration } from '../lib/format.js'
 
 const props = defineProps({
   workout: { type: Object, required: true }
@@ -11,21 +13,11 @@ const emit = defineEmits(['close'])
 
 const workouts = useWorkoutsStore()
 
-const totalVolume = computed(() => {
-  let v = 0
-  for (const ex of props.workout.exercises) {
-    for (const s of ex.sets) v += (s.weight || 0) * (s.reps || 0)
-  }
-  return Math.round(v)
-})
-
-const totalSets = computed(() =>
-  props.workout.exercises.reduce((s, ex) => s + ex.sets.length, 0)
-)
-
+const totalVolume = computed(() => workoutVolume(props.workout))
+const totalSetsCount = computed(() => totalSets(props.workout))
 const duration = computed(() => {
   const s = props.workout.duration || 0
-  return `${Math.floor(s / 60)}m ${s % 60}s`
+  return s > 0 ? formatDuration(s) : '0m 0s'
 })
 
 // Did this workout produce any new PRs?
@@ -78,18 +70,18 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="modal-backdrop" @click.self="emit('close')">
-    <div class="modal">
-      <div class="success-icon">
+  <div class="modal-backdrop" @click.self="emit('close')" @keydown.esc="emit('close')">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="completion-title" tabindex="-1">
+      <div class="success-icon" aria-hidden="true">
         <i class="ti ti-trophy"></i>
       </div>
-      <h2 class="modal-title">Trening zapisany!</h2>
+      <h2 id="completion-title" class="modal-title">Trening zapisany!</h2>
       <p class="dim modal-sub">{{ workout.planName }}</p>
 
       <div class="summary-grid">
         <div class="sum-item">
           <div class="sum-label">Serie</div>
-          <div class="sum-val">{{ totalSets }}</div>
+          <div class="sum-val">{{ totalSetsCount }}</div>
         </div>
         <div class="sum-item">
           <div class="sum-label">Wolumen</div>

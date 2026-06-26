@@ -208,14 +208,15 @@ export const EXERCISE_TO_MUSCLE = {
   'cable curl':                                    'biceps_short',
   'uginanie ramion ze sztangą stojąc':             'biceps_short',
   'uginanie z liną':                               'biceps_short',
-  // RAMIENNY
+  // RAMIENNY + PRZEDRAMIĘ
   'uginanie hantli młotkowo':                      'biceps_brach',
+  'uginanie młotkowe':                             'biceps_brach',
+  'hammer curl':                                   'biceps_brach',
+  // PRZEDRAMIĘ
   'uginanie zottmana':                              'forearms',
   'zottman curl':                                   'forearms',
   'uginanie nadgarstków':                           'forearms',
   'wrist curl':                                     'forearms',
-  'uginanie młotkowe':                             'biceps_brach',
-  'hammer curl':                                   'biceps_brach',
   // TRICEPS - DŁUGA GŁOWA
   'francuskie wyciskanie sztangi':                 'triceps_long',
   'francuskie wyciskanie':                         'triceps_long',
@@ -342,14 +343,21 @@ export const EXERCISE_TO_MUSCLE = {
   'skłony boczne':                                 'obliques'
 };
 
+// Pre-sortujemy klucze raz przy module-load — wcześniej sort był robiony w każdym wywołaniu
+// detectMuscle (200+ elementów × dziesiątki/setki wywołań per render Stats).
+const SORTED_MUSCLE_KEYS = Object.keys(EXERCISE_TO_MUSCLE).sort((a, b) => b.length - a.length);
+const _muscleCache = new Map();
+
 export function detectMuscle(exerciseName) {
   if (!exerciseName) return null;
   const name = exerciseName.toLowerCase().trim();
-  const keys = Object.keys(EXERCISE_TO_MUSCLE).sort((a, b) => b.length - a.length);
-  for (const key of keys) {
-    if (name.includes(key)) return EXERCISE_TO_MUSCLE[key];
+  if (_muscleCache.has(name)) return _muscleCache.get(name);
+  let result = null;
+  for (const key of SORTED_MUSCLE_KEYS) {
+    if (name.includes(key)) { result = EXERCISE_TO_MUSCLE[key]; break; }
   }
-  return null;
+  _muscleCache.set(name, result);
+  return result;
 }
 
 const EQUIPMENT_KEYWORDS = [
@@ -1199,9 +1207,12 @@ return MUSCLE_NAMES[key] || key;
  * Znajduje alternatywne ćwiczenia angażujące tę samą partię mięśniową.
  * Zwraca tablicę nazw ćwiczeń (max N, bez bieżącego).
  */
+const _substitutesCache = new Map();
 export function findSubstitutes(exerciseName, max = 5) {
+  const cacheKey = `${(exerciseName || '').toLowerCase().trim()}|${max}`
+  if (_substitutesCache.has(cacheKey)) return _substitutesCache.get(cacheKey)
   const targetMuscle = detectMuscle(exerciseName)
-  if (!targetMuscle) return []
+  if (!targetMuscle) { _substitutesCache.set(cacheKey, []); return [] }
   const currentNorm = exerciseName.toLowerCase().trim()
 
   // 1) Zbierz wszystkie klucze z tej samej szczegółowej partii
@@ -1236,7 +1247,10 @@ export function findSubstitutes(exerciseName, max = 5) {
     .map(k => k.charAt(0).toUpperCase() + k.slice(1))
     .filter(d => d.toLowerCase() !== currentNorm)
 
-  if (display.length <= max) return display
+  if (display.length <= max) {
+    _substitutesCache.set(cacheKey, display)
+    return display
+  }
 
   // Deterministyczny shuffle bazujący na nazwie wejścia
   const seed = exerciseName.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
@@ -1245,7 +1259,9 @@ export function findSubstitutes(exerciseName, max = 5) {
     const hb = (b.length + b.charCodeAt(0) + seed) % 100
     return ha - hb
   })
-  return shuffled.slice(0, max)
+  const result = shuffled.slice(0, max)
+  _substitutesCache.set(cacheKey, result)
+  return result
 }
 
 /**

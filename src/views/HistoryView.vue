@@ -3,6 +3,8 @@ import { ref, computed } from 'vue'
 import { useWorkoutsStore } from '../stores/workouts.js'
 import { exportWorkoutToPDF } from '../lib/pdf.js'
 import { useCustomPlansStore } from '../stores/customPlans.js'
+import { formatDuration, formatDateTime } from '../lib/format.js'
+import { workoutVolume, totalSets } from '../lib/workoutMath.js'
 
 const customPlans = useCustomPlansStore()
 
@@ -33,33 +35,6 @@ const sortedHistory = computed(() =>
 
 function toggle(id) {
   expandedId.value = expandedId.value === id ? null : id
-}
-
-function formatDate(iso) {
-  try {
-    const d = new Date(iso)
-    return d.toLocaleDateString('pl-PL', { day: 'numeric', month: 'short', year: 'numeric' })
-      + ' · ' + d.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })
-  } catch { return iso }
-}
-
-function formatDuration(sec) {
-  if (!sec) return '—'
-  const m = Math.floor(sec / 60)
-  const s = sec % 60
-  return `${m}m ${s}s`
-}
-
-function totalVolume(workout) {
-  let v = 0
-  for (const ex of workout.exercises) {
-    for (const s of ex.sets) v += (s.weight || 0) * (s.reps || 0)
-  }
-  return Math.round(v)
-}
-
-function totalSets(workout) {
-  return workout.exercises.reduce((sum, ex) => sum + ex.sets.length, 0)
 }
 
 function remove(id) {
@@ -125,11 +100,11 @@ const typeColor = (type) => ({
           </span>
           <div class="row-main">
             <div class="row-title">{{ w.planName }}</div>
-            <div class="row-meta">{{ formatDate(w.date) }}</div>
+            <div class="row-meta">{{ formatDateTime(w.date) }}</div>
           </div>
           <div class="row-stats">
             <div><strong>{{ totalSets(w) }}</strong> serii</div>
-            <div class="dim">{{ totalVolume(w) }} kg · {{ formatDuration(w.duration) }}</div>
+            <div class="dim">{{ workoutVolume(w) }} kg · {{ formatDuration(w.duration) }}</div>
           </div>
           <i class="ti ti-chevron-down chevron"></i>
         </button>

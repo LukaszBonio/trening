@@ -128,11 +128,17 @@ export const useSessionStore = defineStore('session', () => {
     }
   }
 
+  // Debounce 300 ms — bez tego każde wpisanie cyfry w weight/reps wywoływało pełen
+  // JSON.stringify aktywnej sesji + localStorage.setItem (mierzalny lag).
+  let _persistTimer = null
   watch(active, (v) => {
-    try {
-      if (v) localStorage.setItem(DRAFT_KEY, JSON.stringify(v))
-      else localStorage.removeItem(DRAFT_KEY)
-    } catch {}
+    if (_persistTimer) clearTimeout(_persistTimer)
+    _persistTimer = setTimeout(() => {
+      try {
+        if (v) localStorage.setItem(DRAFT_KEY, JSON.stringify(v))
+        else localStorage.removeItem(DRAFT_KEY)
+      } catch {}
+    }, 300)
   }, { deep: true })
 
   return {

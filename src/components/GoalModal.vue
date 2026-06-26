@@ -11,7 +11,7 @@ function pick(key) {
 </script>
 
 <template>
-  <div class="goal-modal-bg" @click.self="emit('close')">
+  <div class="goal-modal-bg" @click.self="emit('close')" @keydown.esc="emit('close')">
     <div class="goal-modal" role="dialog" aria-modal="true" aria-labelledby="goal-modal-title">
       <div class="goal-modal-head">
         <h3 id="goal-modal-title">Cel treningowy</h3>

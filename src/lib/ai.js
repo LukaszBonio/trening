@@ -14,20 +14,32 @@ export function getProxyUrl() {
   }
 }
 
-export async function callClaude({ prompt, maxTokens = 2500, signal }) {
+export async function callClaude({ prompt, maxTokens = 2500, signal, timeoutMs = 60000 }) {
   if (!navigator.onLine) {
     throw new Error('Brak połączenia z internetem')
   }
-  const resp = await fetch(getProxyUrl(), {
-    method: 'POST',
-    signal,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: maxTokens,
-      messages: [{ role: 'user', content: prompt }]
+  // Default 60s timeout — wcześniej request mógł wisieć indefinitely jeśli user nie podał signal.
+  const timeoutCtrl = new AbortController()
+  const timer = setTimeout(() => timeoutCtrl.abort(), timeoutMs)
+  // Połącz user signal z timeout signal.
+  const onUserAbort = () => timeoutCtrl.abort()
+  if (signal) signal.addEventListener('abort', onUserAbort)
+  let resp
+  try {
+    resp = await fetch(getProxyUrl(), {
+      method: 'POST',
+      signal: timeoutCtrl.signal,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: maxTokens,
+        messages: [{ role: 'user', content: prompt }]
+      })
     })
-  })
+  } finally {
+    clearTimeout(timer)
+    if (signal) signal.removeEventListener('abort', onUserAbort)
+  }
 
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({}))
@@ -284,6 +296,10 @@ ${hasHistory
   return parts.join('\n\n')
 }
 
+// Cap długości user-input "avoid" — chroni przed nadużyciem promptu (kosztem tokenów)
+// i prostym prompt injection (długie wpisy mogą próbować nadpisywać instrukcje).
+const MAX_AVOID_LENGTH = 200
+
 export async function generateAIPlan({
   type,
   goal,
@@ -293,10 +309,25 @@ export async function generateAIPlan({
   signal
 }) {
   const td = TYPE_DETAILS[type] || TYPE_DETAILS.push
-  const prompt = buildPrompt({ type, goal, equipment, avoid, recentSessions })
+  // Sanityzacja: ucinamy do MAX_AVOID_LENGTH, usuwamy znaki nowej linii (które mogłyby
+  // wstrzyknąć nowe "instrukcje" do prompta).
+  const safeAvoid = String(avoid || '').replace(/[\r\n]+/g, ' ').slice(0, MAX_AVOID_LENGTH).trim()
+  const prompt = buildPrompt({ type, goal, equipment, avoid: safeAvoid, recentSessions })
 
-  const text = await callClaude({ prompt, maxTokens: 3000, signal })
-  const plan = parseClaudeJSON(text)
+  // 1 silent retry przy błędzie parse — czasem Claude zwraca tekst zaczynający się od ```json
+  // lub pełen JSON z jednym brakiem; ponowna próba w 90% przypadków wystarcza.
+  let text, plan, lastErr
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      text = await callClaude({ prompt, maxTokens: 3000, signal })
+      plan = parseClaudeJSON(text)
+      break
+    } catch (e) {
+      lastErr = e
+      if (e.name === 'AbortError') throw e
+      if (attempt === 1) throw e
+    }
+  }
 
   if (!plan.name || !Array.isArray(plan.exercises) || !plan.exercises.length) {
     throw new Error('AI zwróciło niepoprawny plan — spróbuj ponownie')

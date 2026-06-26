@@ -88,9 +88,18 @@ function importBackup() {
   fileInput.value?.click()
 }
 
+// Limit rozmiaru pliku backup'u — backup średniego usera to ~50KB, 10MB to z dużym zapasem.
+// Bez limitu, JSON.parse na 1GB pliku zawiesi przeglądarkę.
+const MAX_BACKUP_SIZE = 10 * 1024 * 1024 // 10 MB
+
 function onFileChange(e) {
   const file = e.target.files[0]
   if (!file) return
+  if (file.size > MAX_BACKUP_SIZE) {
+    alert(`Plik za duży (${(file.size / 1024 / 1024).toFixed(1)} MB). Maksymalnie 10 MB.`)
+    e.target.value = ''
+    return
+  }
   const reader = new FileReader()
   reader.onload = (ev) => {
     try {

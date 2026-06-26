@@ -22,7 +22,7 @@ const all = computed(() => {
   return combined.sort((a, b) => {
     const fa = favorites.isFavorite(props.type, a)
     const fb = favorites.isFavorite(props.type, b)
-    if (fa !== fb) return fb - fa
+    if (fa !== fb) return Number(fb) - Number(fa)
     return 0
   })
 })
@@ -47,7 +47,13 @@ function toggleFav(plan, e) {
           {{ plan.name }}
           <span v-if="plan._custom" class="custom-badge">własny</span>
         </div>
-        <button class="fav-btn" :class="{ active: favorites.isFavorite(type, plan) }" @click="toggleFav(plan, $event)">
+        <button
+          class="fav-btn"
+          :class="{ active: favorites.isFavorite(type, plan) }"
+          @click="toggleFav(plan, $event)"
+          :aria-label="favorites.isFavorite(type, plan) ? 'Usuń z ulubionych' : 'Dodaj do ulubionych'"
+          :aria-pressed="favorites.isFavorite(type, plan)"
+        >
           <i class="ti" :class="favorites.isFavorite(type, plan) ? 'ti-star-filled' : 'ti-star'"></i>
         </button>
       </div>

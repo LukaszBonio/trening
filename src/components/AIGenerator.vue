@@ -47,6 +47,10 @@ let abortCtrl = null
 const EQUIPMENT = ['siłownia', 'dom z hantlami', 'dom bez sprzętu (calisthenics)']
 
 async function generate() {
+  // Jeśli poprzednia generacja jeszcze trwa (np. double-click), anuluj ją.
+  if (abortCtrl) {
+    try { abortCtrl.abort() } catch {}
+  }
   generating.value = true
   error.value = ''
   plan.value = null
