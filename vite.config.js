@@ -62,5 +62,10 @@ export default defineConfig({
   server: {
     port: 5173,
     open: false
+  },
+  test: {
+    environment: 'node',
+    include: ['test/**/*.test.js'],
+    globals: true
   }
 })

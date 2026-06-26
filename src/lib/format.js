@@ -25,9 +25,9 @@ export function formatClock(sec) {
  * Format daty wraz z godziną w lokalnym formacie polskim.
  */
 export function formatDateTime(iso) {
-  try {
-    const d = new Date(iso)
-    return d.toLocaleDateString('pl-PL', { day: 'numeric', month: 'short', year: 'numeric' })
-      + ' · ' + d.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })
-  } catch { return iso }
+  if (!iso) return iso || ''
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return iso
+  return d.toLocaleDateString('pl-PL', { day: 'numeric', month: 'short', year: 'numeric' })
+    + ' · ' + d.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })
 }

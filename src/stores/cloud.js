@@ -6,8 +6,10 @@ import { useBodyStore } from './body.js'
 import { useSettingsStore } from './settings.js'
 import { offlineQueue } from '../lib/offlineQueue.js'
 
-const SUPABASE_URL = 'https://envscdgmonrlczfleoib.supabase.co'
-const SUPABASE_KEY = 'sb_publishable_Nob9dd2IzFjYQsqPGwb4qg_4Mf5giRz'
+// Default fallback — działa bez konfiguracji `.env` (backward compatibility z poprzednim setupem).
+// Aby użyć innego projektu Supabase: utwórz `.env` z VITE_SUPABASE_URL i VITE_SUPABASE_KEY.
+const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL || 'https://envscdgmonrlczfleoib.supabase.co'
+const SUPABASE_KEY = import.meta.env?.VITE_SUPABASE_KEY || 'sb_publishable_Nob9dd2IzFjYQsqPGwb4qg_4Mf5giRz'
 
 export const useCloudStore = defineStore('cloud', () => {
   const client = ref(null)

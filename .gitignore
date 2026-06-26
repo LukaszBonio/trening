@@ -13,6 +13,11 @@ dist-ssr/
 .DS_Store
 .vite/
 
+# Env — .env trzyma lokalne sekrety (Supabase URL/key, Worker URL). .env.example jest w repo.
+.env
+.env.local
+.env.*.local
+
 # Editor
 .vscode/*
 !.vscode/extensions.json

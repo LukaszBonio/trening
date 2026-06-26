@@ -3,7 +3,8 @@
 
 import { PRIMARY_TO_GROUP } from './workoutSchema.js'
 
-const DEFAULT_PROXY = 'https://trening-pro-api.lukasz-mateusz-bonio.workers.dev'
+// Worker proxy URL — można nadpisać przez `.env` (VITE_AI_PROXY_URL) lub localStorage 'tp_proxy_url'.
+const DEFAULT_PROXY = import.meta.env?.VITE_AI_PROXY_URL || 'https://trening-pro-api.lukasz-mateusz-bonio.workers.dev'
 const MODEL = 'claude-sonnet-4-6'
 
 export function getProxyUrl() {
@@ -300,6 +301,32 @@ ${hasHistory
 // i prostym prompt injection (długie wpisy mogą próbować nadpisywać instrukcje).
 const MAX_AVOID_LENGTH = 200
 
+// In-memory cache krótkotrwały (5 min) — chroni przed double-click / przypadkowym
+// powtórzonym requestem przy tej samej konfiguracji. NIE cachujemy długoterminowo
+// bo każdorazowe generowanie ma dawać różnorodność (zob. sekcja RÓŻNORODNOŚĆ w prompcie).
+const _planCache = new Map()
+const PLAN_CACHE_TTL_MS = 5 * 60 * 1000
+
+function planCacheKey({ type, goal, equipment, avoid, recentSessions }) {
+  // Klucz zawiera tylko stabilne wejście — historia identyfikowana po id ostatnich sesji.
+  const sessionsKey = recentSessions.map(s => s.id || s.date).join(',')
+  return `${type}|${goal}|${equipment}|${avoid}|${sessionsKey}`
+}
+
+function getCachedPlan(key) {
+  const entry = _planCache.get(key)
+  if (!entry) return null
+  if (entry.expiresAt < Date.now()) {
+    _planCache.delete(key)
+    return null
+  }
+  return entry.plan
+}
+
+function setCachedPlan(key, plan) {
+  _planCache.set(key, { plan, expiresAt: Date.now() + PLAN_CACHE_TTL_MS })
+}
+
 export async function generateAIPlan({
   type,
   goal,
@@ -312,6 +339,12 @@ export async function generateAIPlan({
   // Sanityzacja: ucinamy do MAX_AVOID_LENGTH, usuwamy znaki nowej linii (które mogłyby
   // wstrzyknąć nowe "instrukcje" do prompta).
   const safeAvoid = String(avoid || '').replace(/[\r\n]+/g, ' ').slice(0, MAX_AVOID_LENGTH).trim()
+
+  // Cache hit dla identycznego wejścia (chroni przed double-click). TTL 5 min.
+  const cacheKey = planCacheKey({ type, goal, equipment, avoid: safeAvoid, recentSessions })
+  const cached = getCachedPlan(cacheKey)
+  if (cached) return cached
+
   const prompt = buildPrompt({ type, goal, equipment, avoid: safeAvoid, recentSessions })
 
   // 1 silent retry przy błędzie parse — czasem Claude zwraca tekst zaczynający się od ```json
@@ -354,5 +387,6 @@ export async function generateAIPlan({
       ex.suggestedWeight = null
     }
   }
+  setCachedPlan(cacheKey, plan)
   return plan
 }
