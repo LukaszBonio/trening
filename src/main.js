@@ -3,6 +3,8 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import './styles/global.css'
+// Tabler Icons z npm zamiast CDN — działa offline, jeden mniej punkt awarii.
+import '@tabler/icons-webfont/dist/tabler-icons.min.css'
 import { migrateFromLegacy } from './lib/migration.js'
 
 // Migracja danych z legacy formatu (uruchamia się raz, przed bootstrapem store'ów)

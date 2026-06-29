@@ -35,6 +35,8 @@ onMounted(() => {
   window.addEventListener('sync-failed', (e) => {
     console.warn('Sync operation permanently failed:', e.detail)
   })
+  // Pozwala uruchomić samouczek od nowa z YouView (lub innego miejsca).
+  window.addEventListener('show-onboarding', () => { showOnboarding.value = true })
 })
 
 const route = useRoute()

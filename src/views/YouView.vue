@@ -62,6 +62,11 @@ async function submit() {
   }
 }
 
+function showOnboardingTour() {
+  try { localStorage.removeItem('tp_onboarding_done_v1') } catch {}
+  window.dispatchEvent(new CustomEvent('show-onboarding'))
+}
+
 async function addProfile() {
   const name = await dialog.prompt('Nazwa profilu:', '', {
     title: 'Nowy profil',
@@ -342,6 +347,13 @@ function onFileChange(e) {
               @click="settingsStore.settings.accentColor = c"
             ></button>
           </div>
+        </div>
+
+        <div class="setting">
+          <span>Samouczek</span>
+          <button class="btn-tiny" @click="showOnboardingTour">
+            <i class="ti ti-help"></i> Pokaż od nowa
+          </button>
         </div>
       </div>
     </details>

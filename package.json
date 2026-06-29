@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",
+    "@tabler/icons-webfont": "^3.44.0",
     "canvas-confetti": "^1.9.4",
     "chart.js": "^4.4.0",
     "jspdf": "^4.2.1",

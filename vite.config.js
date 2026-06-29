@@ -9,6 +9,10 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
+      // skipWaiting: nowy SW od razu staje się aktywny zamiast czekać na zamknięcie wszystkich kart.
+      // clientsClaim: nowy SW przejmuje kontrolę nad otwartymi klientami od razu po aktywacji.
+      // Bez tego user mógłby utknąć na starej wersji do pełnego restartu PWA.
+      injectRegister: 'auto',
       includeAssets: ['icon-192.png', 'icon-512.png', 'icon-maskable-512.png'],
       manifest: {
         name: 'Trening Pro',
@@ -27,7 +31,9 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,png,svg,ico,woff2}'],
+        skipWaiting: true,
+        clientsClaim: true,
+        globPatterns: ['**/*.{js,css,html,png,svg,ico,woff,woff2}'],
         runtimeCaching: [
           {
             urlPattern: ({ url }) =>
