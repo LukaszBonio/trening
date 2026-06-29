@@ -5,6 +5,9 @@ import { exportWorkoutToPDF } from '../lib/pdf.js'
 import { useCustomPlansStore } from '../stores/customPlans.js'
 import { formatDuration, formatDateTime } from '../lib/format.js'
 import { workoutVolume, totalSets } from '../lib/workoutMath.js'
+import { useToast } from '../composables/useToast.js'
+
+const toast = useToast()
 
 const customPlans = useCustomPlansStore()
 
@@ -38,10 +41,16 @@ function toggle(id) {
 }
 
 function remove(id) {
-  if (confirm('Usunąć ten trening z historii?')) {
-    workouts.removeWorkout(id)
-    if (expandedId.value === id) expandedId.value = null
-  }
+  if (!confirm('Usunąć ten trening z historii?')) return
+  const removed = workouts.history.find(w => w.id === id)
+  if (!removed) return
+  workouts.removeWorkout(id)
+  if (expandedId.value === id) expandedId.value = null
+  // 5-sekundowe okienko na cofnięcie — restore wkleja workout z powrotem do tablicy.
+  toast.show('Trening usunięty', {
+    actionLabel: 'Cofnij',
+    action: () => workouts.addWorkout(removed)
+  })
 }
 
 function startEdit(workout) {

@@ -291,7 +291,12 @@ function discardWorkout() {
           @edit-custom="onEditCustom"
           @delete-custom="onDeleteCustom"
         />
-        <AIGenerator v-else-if="planSource === 'ai'" :type="selectedType" @select="onPickPlan" />
+        <AIGenerator
+          v-else-if="planSource === 'ai'"
+          :type="selectedType"
+          @select="onPickPlan"
+          @use-library="planSource = 'library'"
+        />
         <PlanEditor
           v-else-if="planSource === 'custom'"
           :type="selectedType"

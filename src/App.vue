@@ -3,6 +3,7 @@ import { RouterView, RouterLink, useRoute } from 'vue-router'
 import { computed, ref, onMounted } from 'vue'
 import OnboardingTour from './components/OnboardingTour.vue'
 import GoalModal from './components/GoalModal.vue'
+import ToastContainer from './components/ToastContainer.vue'
 import { useSettingsStore, GOALS } from './stores/settings.js'
 
 const settings = useSettingsStore()
@@ -64,6 +65,8 @@ const tabs = [
     </header>
 
     <GoalModal v-if="showGoalModal" @close="showGoalModal = false" />
+
+    <ToastContainer />
 
     <nav class="tabs tabs-desktop">
       <RouterLink

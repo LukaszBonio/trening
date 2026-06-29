@@ -35,7 +35,7 @@ onBeforeUnmount(stopLoadingRotation)
 const props = defineProps({
   type: { type: String, required: true }
 })
-const emit = defineEmits(['select'])
+const emit = defineEmits(['select', 'use-library'])
 
 const equipment = ref('siłownia')
 const avoid = ref('')
@@ -148,9 +148,14 @@ function start() {
         Wygeneruj plan AI
       </button>
 
-      <p v-if="error" class="error-msg">
-        <i class="ti ti-alert-triangle"></i> {{ error }}
-      </p>
+      <div v-if="error" class="error-block">
+        <p class="error-msg">
+          <i class="ti ti-alert-triangle"></i> {{ error }}
+        </p>
+        <button class="btn btn-fallback" @click="emit('use-library')">
+          <i class="ti ti-book"></i> Użyj planu z biblioteki
+        </button>
+      </div>
     </div>
 
     <!-- Plan preview -->
@@ -239,8 +244,14 @@ function start() {
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.error-msg {
+.error-block {
   margin-top: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.error-msg {
+  margin: 0;
   padding: 10px 14px;
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.3);
@@ -250,6 +261,12 @@ function start() {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+.btn-fallback {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .ai-result-header {
