@@ -114,19 +114,20 @@ function save() {
           </span>
           <span class="ex-num">{{ i + 1 }}</span>
           <div class="ex-controls">
-            <button class="btn-tiny" @click="moveUp(i)" :disabled="i === 0" title="W górę">
-              <i class="ti ti-chevron-up"></i>
+            <button class="btn-tiny" @click="moveUp(i)" :disabled="i === 0" title="W górę" aria-label="Przesuń ćwiczenie w górę">
+              <i class="ti ti-chevron-up" aria-hidden="true"></i>
             </button>
-            <button class="btn-tiny" @click="moveDown(i)" :disabled="i === draft.exercises.length - 1" title="W dół">
-              <i class="ti ti-chevron-down"></i>
+            <button class="btn-tiny" @click="moveDown(i)" :disabled="i === draft.exercises.length - 1" title="W dół" aria-label="Przesuń ćwiczenie w dół">
+              <i class="ti ti-chevron-down" aria-hidden="true"></i>
             </button>
             <button
               v-if="draft.exercises.length > 1"
               class="btn-tiny btn-tiny-danger"
               @click="removeExercise(i)"
               title="Usuń"
+              aria-label="Usuń ćwiczenie"
             >
-              <i class="ti ti-x"></i>
+              <i class="ti ti-x" aria-hidden="true"></i>
             </button>
           </div>
         </div>

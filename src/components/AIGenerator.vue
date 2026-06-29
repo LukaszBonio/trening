@@ -20,6 +20,8 @@ const loadingMsg = ref(LOADING_MESSAGES[0])
 let _msgInterval = null
 
 function startLoadingRotation() {
+  // Guard przed podwójnym intervalem (double-click "Wygeneruj" przed cleanupem).
+  if (_msgInterval) { clearInterval(_msgInterval); _msgInterval = null }
   let i = 0
   loadingMsg.value = LOADING_MESSAGES[0]
   _msgInterval = setInterval(() => {

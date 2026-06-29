@@ -403,8 +403,9 @@ function onFileChange(e) {
               v-if="profile.profiles.length > 1"
               class="btn-tiny"
               @click="profile.removeProfile(p.id)"
+              :aria-label="'Usuń profil ' + p.name"
             >
-              <i class="ti ti-trash"></i>
+              <i class="ti ti-trash" aria-hidden="true"></i>
             </button>
           </li>
         </ul>

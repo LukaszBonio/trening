@@ -174,8 +174,8 @@ const typeColor = (type) => ({
                   <span class="set-num">{{ j + 1 }}</span>
                   <input type="number" step="0.5" v-model="s.weight" placeholder="kg" />
                   <input type="number" v-model="s.reps" placeholder="powt" />
-                  <button class="btn-tiny-icon" @click="removeSetFrom(i, j)" v-if="ex.sets.length > 1">
-                    <i class="ti ti-x"></i>
+                  <button class="btn-tiny-icon" @click="removeSetFrom(i, j)" v-if="ex.sets.length > 1" aria-label="Usuń serię">
+                    <i class="ti ti-x" aria-hidden="true"></i>
                   </button>
                 </div>
                 <button class="btn-tiny" @click="addSetTo(i)">
