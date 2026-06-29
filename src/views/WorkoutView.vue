@@ -12,6 +12,9 @@ import CompletionSummary from '../components/CompletionSummary.vue'
 import PlateCalculator from '../components/PlateCalculator.vue'
 import WorkoutCards from '../components/WorkoutCards.vue'
 import { useCustomPlansStore } from '../stores/customPlans.js'
+import { useDialog } from '../composables/useDialog.js'
+
+const dialog = useDialog()
 
 const session = useSessionStore()
 const workouts = useWorkoutsStore()
@@ -142,10 +145,13 @@ function onEditCustom(plan) {
   editingPlan.value = plan
 }
 
-function onDeleteCustom(plan) {
-  if (confirm(`Usunąć plan "${plan.name}"?`)) {
-    customPlans.remove(plan.id)
-  }
+async function onDeleteCustom(plan) {
+  const ok = await dialog.confirm(`Usunąć plan "${plan.name}"?`, {
+    title: 'Usuń plan',
+    okLabel: 'Usuń',
+    danger: true
+  })
+  if (ok) customPlans.remove(plan.id)
 }
 
 function onSavePlan(plan) {
@@ -162,10 +168,15 @@ function onSetDone() {
   if (restTimerRef.value) restTimerRef.value.start(settings.settings.restTimerDefault)
 }
 
-function finishWorkout() {
+async function finishWorkout() {
   const payload = session.finishToPayload()
   if (!payload || !payload.exercises.length) {
-    if (!confirm('Brak zapisanych serii. Zakończyć bez zapisu?')) return
+    const ok = await dialog.confirm('Brak zapisanych serii. Zakończyć bez zapisu?', {
+      title: 'Pusty trening',
+      okLabel: 'Zakończ',
+      danger: true
+    })
+    if (!ok) return
     session.discard()
     return
   }
@@ -184,10 +195,14 @@ function selectDay(dayKey) {
   localStorage.setItem('tp_last_type', dayKey)
 }
 
-function discardWorkout() {
-  if (confirm('Anulować ten trening? Postęp zostanie utracony.')) {
-    session.discard()
-  }
+async function discardWorkout() {
+  const ok = await dialog.confirm('Anulować ten trening? Postęp zostanie utracony.', {
+    title: 'Anuluj trening',
+    okLabel: 'Anuluj trening',
+    cancelLabel: 'Wróć',
+    danger: true
+  })
+  if (ok) session.discard()
 }
 </script>
 

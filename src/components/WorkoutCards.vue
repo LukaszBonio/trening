@@ -7,6 +7,9 @@ import { findSubstitutes, youtubeSearchUrl, detectMuscle, getMuscleName, detectE
 import { notify } from '../lib/notifications.js'
 import { lastSetFor } from '../lib/analytics.js'
 import { formatClock } from '../lib/format.js'
+import { useDialog } from '../composables/useDialog.js'
+
+const dialog = useDialog()
 
 const emit = defineEmits(['set-done'])
 
@@ -128,11 +131,16 @@ function goBack() {
 }
 
 // Mark current set done + start rest
-function completeSet() {
+async function completeSet() {
   if (!currentSet.value) return
   // Walidacja: musi być coś wpisane
   if (currentSet.value.weight === '' && currentSet.value.reps === '') {
-    if (!confirm('Nie wpisałeś ciężaru ani powtórzeń. Zaznaczyć serię mimo to?')) return
+    const ok = await dialog.confirm('Nie wpisałeś ciężaru ani powtórzeń. Zaznaczyć serię mimo to?', {
+      title: 'Pusta seria',
+      okLabel: 'Zaznacz',
+      cancelLabel: 'Wróć'
+    })
+    if (!ok) return
   }
   session.toggleSet(exIdx.value, setIdx.value)
   emit('set-done')
@@ -185,8 +193,12 @@ function skipRest() {
   })
 }
 
-function swap(name) {
-  if (confirm(`Zamienić "${currentEx.value.name}" na "${name}"?`)) {
+async function swap(name) {
+  const ok = await dialog.confirm(`Zamienić "${currentEx.value.name}" na "${name}"?`, {
+    title: 'Zamiana ćwiczenia',
+    okLabel: 'Zamień'
+  })
+  if (ok) {
     session.swapExercise(exIdx.value, name)
     showSubstitutes.value = false
   }

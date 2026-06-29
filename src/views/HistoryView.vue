@@ -6,13 +6,19 @@ import { useCustomPlansStore } from '../stores/customPlans.js'
 import { formatDuration, formatDateTime } from '../lib/format.js'
 import { workoutVolume, totalSets } from '../lib/workoutMath.js'
 import { useToast } from '../composables/useToast.js'
+import { useDialog } from '../composables/useDialog.js'
 
 const toast = useToast()
+const dialog = useDialog()
 
 const customPlans = useCustomPlansStore()
 
-function saveAsTemplate(workout) {
-  const name = prompt('Nazwa planu:', `${workout.planName} (z ${new Date(workout.date).toLocaleDateString('pl-PL')})`)
+async function saveAsTemplate(workout) {
+  const defaultName = `${workout.planName} (z ${new Date(workout.date).toLocaleDateString('pl-PL')})`
+  const name = await dialog.prompt('Nazwa planu:', defaultName, {
+    title: 'Zapisz jako plan',
+    okLabel: 'Zapisz'
+  })
   if (!name) return
   customPlans.add({
     name: name.trim(),
@@ -24,7 +30,7 @@ function saveAsTemplate(workout) {
       tip: ''
     }))
   })
-  alert(`Plan "${name}" zapisany ✓\nZnajdziesz go w "Trening → ${workout.type.toUpperCase()} → Plany".`)
+  toast.success(`Plan "${name}" zapisany — znajdziesz go w Trening → ${workout.type.toUpperCase()} → Plany.`)
 }
 
 const workouts = useWorkoutsStore()
@@ -40,8 +46,13 @@ function toggle(id) {
   expandedId.value = expandedId.value === id ? null : id
 }
 
-function remove(id) {
-  if (!confirm('Usunąć ten trening z historii?')) return
+async function remove(id) {
+  const ok = await dialog.confirm('Usunąć ten trening z historii?', {
+    title: 'Usuń trening',
+    okLabel: 'Usuń',
+    danger: true
+  })
+  if (!ok) return
   const removed = workouts.history.find(w => w.id === id)
   if (!removed) return
   workouts.removeWorkout(id)

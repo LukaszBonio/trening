@@ -4,7 +4,11 @@ import { computed, ref, onMounted } from 'vue'
 import OnboardingTour from './components/OnboardingTour.vue'
 import GoalModal from './components/GoalModal.vue'
 import ToastContainer from './components/ToastContainer.vue'
+import DialogContainer from './components/DialogContainer.vue'
 import { useSettingsStore, GOALS } from './stores/settings.js'
+import { useToast } from './composables/useToast.js'
+
+const toast = useToast()
 
 const settings = useSettingsStore()
 const showGoalModal = ref(false)
@@ -25,8 +29,8 @@ onMounted(() => {
     }
   } catch {}
 
-  window.addEventListener('storage-error', (e) => {
-    alert('Uwaga: nie udało się zapisać danych lokalnie. Sprawdź wolne miejsce w przeglądarce.')
+  window.addEventListener('storage-error', () => {
+    toast.error('Nie udało się zapisać danych lokalnie. Sprawdź wolne miejsce w przeglądarce.', { duration: 8000 })
   })
   window.addEventListener('sync-failed', (e) => {
     console.warn('Sync operation permanently failed:', e.detail)
@@ -67,6 +71,7 @@ const tabs = [
     <GoalModal v-if="showGoalModal" @close="showGoalModal = false" />
 
     <ToastContainer />
+    <DialogContainer />
 
     <nav class="tabs tabs-desktop">
       <RouterLink

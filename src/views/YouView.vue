@@ -8,6 +8,11 @@ import { useWorkoutsStore } from '../stores/workouts.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { permission as notifPermission, requestPermission as requestNotifPermission, isSupported as notifSupported } from '../lib/notifications.js'
 import { transformLegacyEntry } from '../lib/migration.js'
+import { useDialog } from '../composables/useDialog.js'
+import { useToast } from '../composables/useToast.js'
+
+const dialog = useDialog()
+const toast = useToast()
 
 const cloud = useCloudStore()
 const router = useRouter()
@@ -57,12 +62,23 @@ async function submit() {
   }
 }
 
+async function addProfile() {
+  const name = await dialog.prompt('Nazwa profilu:', '', {
+    title: 'Nowy profil',
+    okLabel: 'Dodaj'
+  })
+  if (name) profile.addProfile(name)
+}
+
 async function logout() {
-  if (confirm('Wylogować się? Dane lokalne zostaną zachowane.')) {
-    await cloud.signOut()
-    message.value = 'Wylogowano'
-    if (REQUIRE_AUTH) router.push({ name: 'login' })
-  }
+  const ok = await dialog.confirm('Wylogować się? Dane lokalne zostaną zachowane.', {
+    title: 'Wyloguj się',
+    okLabel: 'Wyloguj'
+  })
+  if (!ok) return
+  await cloud.signOut()
+  message.value = 'Wylogowano'
+  if (REQUIRE_AUTH) router.push({ name: 'login' })
 }
 
 function exportBackup() {
@@ -96,7 +112,7 @@ function onFileChange(e) {
   const file = e.target.files[0]
   if (!file) return
   if (file.size > MAX_BACKUP_SIZE) {
-    alert(`Plik za duży (${(file.size / 1024 / 1024).toFixed(1)} MB). Maksymalnie 10 MB.`)
+    toast.error(`Plik za duży (${(file.size / 1024 / 1024).toFixed(1)} MB). Maksymalnie 10 MB.`)
     e.target.value = ''
     return
   }
@@ -157,9 +173,13 @@ function onFileChange(e) {
       }
 
       const msg = `Wykryto format: ${detectedFormat}\n${importHistory.length} treningów, ${importBody.length} pomiarów wagi.\n\nZastąpić obecne dane?`
-      if (!confirm(msg)) return
-      if (importHistory.length) workouts.setHistory(importHistory)
-      message.value = `Import zakończony ✓ (${importHistory.length} treningów)`
+      dialog.confirm(msg, { title: 'Import danych', okLabel: 'Zastąp', danger: true }).then(ok => {
+        if (!ok) return
+        if (importHistory.length) workouts.setHistory(importHistory)
+        message.value = `Import zakończony ✓ (${importHistory.length} treningów)`
+        toast.success(`Zaimportowano ${importHistory.length} treningów`)
+      })
+      return
     } catch (err) {
       message.value = 'Błąd importu: ' + err.message
     }
@@ -378,7 +398,7 @@ function onFileChange(e) {
         </ul>
         <button
           class="btn-tiny"
-          @click="(() => { const n = prompt('Nazwa profilu:'); if (n) profile.addProfile(n) })()"
+          @click="addProfile"
         >
           <i class="ti ti-plus"></i> Dodaj profil
         </button>
