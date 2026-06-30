@@ -268,6 +268,23 @@ ${td.selection.map(s => `- ${s}`).join('\n')}
   if (hasHistory) {
     parts.push(`OSTATNIE SESJE (${recentSessions.length}) — kompaktowo, weight x reps:
 ${recentSessions.map(formatSessionCompact).join('\n\n')}`)
+
+    // ANALIZA per partia — AI ocenia status każdej partii z historii i dobiera
+    // ćwiczenia strategicznie. To kluczowa funkcja "plan adapter".
+    parts.push(`ANALIZA HISTORII — przeprowadź ją MENTALNIE przed wyborem ćwiczeń, bez zwracania wyniku w JSON:
+1. Dla każdej partii w historii oceń status:
+   - PROGRES — waga lub powtórzenia rosną sesja po sesji
+   - STAGNACJA — waga stoi przez 2+ ostatnie sesje przy podobnej liczbie powt. (potrzebny nowy bodziec)
+   - OVERREACHING — wysokie zmęczenie sesja po sesji + spadek powt. (potrzebne odciążenie)
+   - SŁABO POKRYTA — partia ma mało serii w historii lub nie była trenowana niedawno
+
+2. DOBÓR ĆWICZEŃ WG ANALIZY:
+   - Dla partii w STAGNACJI: WYBIERZ INNY WARIANT niż w ostatnich sesjach (np. zmień sztangę na hantle, poziomą ławkę na skos, prosty drążek na neutralny chwyt, free weight na maszynę). Nowy bodziec = nowa progresja.
+   - Dla partii w PROGRESJE: ZACHOWAJ główne ćwiczenia bazowe z ostatnich sesji aby kontynuować adaptację. Możesz zmienić tylko ćwiczenia accessory/isolation.
+   - Dla partii w OVERREACHING: wybierz LŻEJSZE warianty (więcej maszyn, więcej izolacji, mniej wielostawowych). Zmniejsz nacisk na partię.
+   - Dla SŁABO POKRYTEJ partii: upewnij się że jest reprezentowana w planie zgodnie ze strukturą.
+
+3. Nie pomijaj wymaganej struktury — analiza wpływa na DOBÓR konkretnych ćwiczeń, nie na ich liczbę ani głowy mięśniowe.`)
   }
 
   const allowedHeads = MUSCLE_HEADS_BY_TYPE[type] || []
