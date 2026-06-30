@@ -83,6 +83,15 @@ function cancel() {
 function start() {
   if (plan.value) emit('select', plan.value)
 }
+
+const STATUS_META = {
+  progress:        { label: 'progres',         icon: 'ti-trending-up' },
+  stagnation:      { label: 'stagnacja',       icon: 'ti-arrow-bar-to-right' },
+  overreaching:    { label: 'przeciążenie',    icon: 'ti-alert-triangle' },
+  weakly_covered:  { label: 'słabo pokryta',   icon: 'ti-circle-minus' }
+}
+function statusLabel(s) { return STATUS_META[s]?.label || s }
+function statusIcon(s)  { return STATUS_META[s]?.icon || 'ti-info-circle' }
 </script>
 
 <template>
@@ -168,6 +177,28 @@ function start() {
           <div class="ai-plan-name">{{ plan.name }}</div>
           <div class="dim" style="font-size: 12px;">{{ plan.exercises.length }} ćwiczeń · plan wygenerowany przez AI</div>
         </div>
+      </div>
+
+      <!-- Analiza per partia (gdy była historia) — AI wyjaśnia czemu dobrał takie ćwiczenia -->
+      <div v-if="plan.analysis && plan.analysis.length" class="ai-analysis">
+        <div class="ai-analysis-title">
+          <i class="ti ti-brain"></i> Analiza ostatnich sesji
+        </div>
+        <ul class="ai-analysis-list">
+          <li
+            v-for="(a, i) in plan.analysis"
+            :key="i"
+            class="ai-analysis-item"
+            :class="`status-${a.status}`"
+          >
+            <i class="ti" :class="statusIcon(a.status)"></i>
+            <div class="ai-analysis-text">
+              <span class="ai-analysis-muscle">{{ a.muscle }}</span>
+              <span class="ai-analysis-status">{{ statusLabel(a.status) }}</span>
+              <span v-if="a.note" class="ai-analysis-note">{{ a.note }}</span>
+            </div>
+          </li>
+        </ul>
       </div>
 
       <ol class="ai-ex-list">
@@ -282,6 +313,70 @@ function start() {
 }
 .ai-result-header i { font-size: 28px; }
 .ai-plan-name { font-weight: 700; font-size: 16px; }
+
+.ai-analysis {
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: var(--space-3);
+}
+.ai-analysis-title {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 700;
+  margin-bottom: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ai-analysis-title i { color: var(--accent); font-size: 14px; }
+.ai-analysis-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ai-analysis-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--border);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.ai-analysis-item.status-progress       { border-left-color: var(--success); }
+.ai-analysis-item.status-stagnation     { border-left-color: var(--warning); }
+.ai-analysis-item.status-overreaching   { border-left-color: var(--danger); }
+.ai-analysis-item.status-weakly_covered { border-left-color: var(--accent); }
+.ai-analysis-item > i {
+  font-size: 16px;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+.status-progress > i       { color: var(--success); }
+.status-stagnation > i     { color: var(--warning); }
+.status-overreaching > i   { color: var(--danger); }
+.status-weakly_covered > i { color: var(--accent); }
+.ai-analysis-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.ai-analysis-muscle { font-weight: 600; text-transform: capitalize; }
+.ai-analysis-status {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.ai-analysis-note {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
 
 .ai-ex-list {
   list-style: none;

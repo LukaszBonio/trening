@@ -270,27 +270,33 @@ ${td.selection.map(s => `- ${s}`).join('\n')}
 ${recentSessions.map(formatSessionCompact).join('\n\n')}`)
 
     // ANALIZA per partia — AI ocenia status każdej partii z historii i dobiera
-    // ćwiczenia strategicznie. To kluczowa funkcja "plan adapter".
-    parts.push(`ANALIZA HISTORII — przeprowadź ją MENTALNIE przed wyborem ćwiczeń, bez zwracania wyniku w JSON:
-1. Dla każdej partii w historii oceń status:
-   - PROGRES — waga lub powtórzenia rosną sesja po sesji
-   - STAGNACJA — waga stoi przez 2+ ostatnie sesje przy podobnej liczbie powt. (potrzebny nowy bodziec)
-   - OVERREACHING — wysokie zmęczenie sesja po sesji + spadek powt. (potrzebne odciążenie)
-   - SŁABO POKRYTA — partia ma mało serii w historii lub nie była trenowana niedawno
+    // ćwiczenia strategicznie. Zwraca wynik w polu "analysis" — UI pokazuje to userowi.
+    parts.push(`ANALIZA HISTORII — przeprowadź ją i ZWRÓĆ wynik w polu "analysis" w JSON:
+1. Dla każdej partii (klatka, barki, triceps, plecy, biceps, czworogłowy, hamstring, pośladki, łydki, core itd.) widocznej w historii oceń status:
+   - "progress" — waga lub powtórzenia rosną sesja po sesji
+   - "stagnation" — waga stoi przez 2+ ostatnie sesje przy podobnej liczbie powt. (potrzebny nowy bodziec)
+   - "overreaching" — wysokie zmęczenie sesja po sesji + spadek powt. (potrzebne odciążenie)
+   - "weakly_covered" — partia ma mało serii w historii lub nie była trenowana niedawno
 
 2. DOBÓR ĆWICZEŃ WG ANALIZY:
    - Dla partii w STAGNACJI: WYBIERZ INNY WARIANT niż w ostatnich sesjach (np. zmień sztangę na hantle, poziomą ławkę na skos, prosty drążek na neutralny chwyt, free weight na maszynę). Nowy bodziec = nowa progresja.
-   - Dla partii w PROGRESJE: ZACHOWAJ główne ćwiczenia bazowe z ostatnich sesji aby kontynuować adaptację. Możesz zmienić tylko ćwiczenia accessory/isolation.
+   - Dla partii w PROGRESS: ZACHOWAJ główne ćwiczenia bazowe z ostatnich sesji aby kontynuować adaptację. Możesz zmienić tylko ćwiczenia accessory/isolation.
    - Dla partii w OVERREACHING: wybierz LŻEJSZE warianty (więcej maszyn, więcej izolacji, mniej wielostawowych). Zmniejsz nacisk na partię.
-   - Dla SŁABO POKRYTEJ partii: upewnij się że jest reprezentowana w planie zgodnie ze strukturą.
+   - Dla WEAKLY_COVERED partii: upewnij się że jest reprezentowana w planie zgodnie ze strukturą.
 
 3. Nie pomijaj wymaganej struktury — analiza wpływa na DOBÓR konkretnych ćwiczeń, nie na ich liczbę ani głowy mięśniowe.`)
   }
 
   const allowedHeads = MUSCLE_HEADS_BY_TYPE[type] || []
+  const analysisField = hasHistory
+    ? `,
+  "analysis": [
+    { "muscle": "nazwa partii po polsku (np. klatka, barki, triceps)", "status": "progress|stagnation|overreaching|weakly_covered", "note": "krótkie uzasadnienie (max 80 znaków, np. 'Wyciskanie sztangi stoi 2 sesje — zmieniam na hantle')" }
+  ]`
+    : ''
   parts.push(`Zwróć WYŁĄCZNIE poprawny JSON w formacie (bez markdown, bez komentarzy):
 {
-  "name": "krótka nazwa planu (max 40 znaków, po polsku)",
+  "name": "krótka nazwa planu (max 40 znaków, po polsku)"${analysisField},
   "exercises": [
     {
       "name": "nazwa ćwiczenia po polsku",
@@ -416,6 +422,20 @@ export async function generateAIPlan({
   // Twarda walidacja: liczba ćwiczeń musi się zgadzać ze strukturą
   if (plan.exercises.length !== td.expectedCount) {
     throw new Error(`AI zwróciło ${plan.exercises.length} ćwiczeń zamiast ${td.expectedCount} — spróbuj ponownie`)
+  }
+
+  // Normalizacja pola analysis (z planów AI gdy była historia) — UI to pokaże.
+  const ALLOWED_ANALYSIS_STATUS = ['progress', 'stagnation', 'overreaching', 'weakly_covered']
+  if (Array.isArray(plan.analysis)) {
+    plan.analysis = plan.analysis
+      .filter(a => a && typeof a.muscle === 'string' && ALLOWED_ANALYSIS_STATUS.includes(a.status))
+      .map(a => ({
+        muscle: String(a.muscle).trim().slice(0, 40),
+        status: a.status,
+        note: typeof a.note === 'string' ? a.note.trim().slice(0, 120) : ''
+      }))
+  } else {
+    plan.analysis = []
   }
 
   const allowedHeadsForType = MUSCLE_HEADS_BY_TYPE[type] || []
