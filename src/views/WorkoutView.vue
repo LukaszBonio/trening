@@ -13,8 +13,10 @@ import PlateCalculator from '../components/PlateCalculator.vue'
 import WorkoutCards from '../components/WorkoutCards.vue'
 import { useCustomPlansStore } from '../stores/customPlans.js'
 import { useDialog } from '../composables/useDialog.js'
+import { useToast } from '../composables/useToast.js'
 
 const dialog = useDialog()
+const toast = useToast()
 
 const session = useSessionStore()
 const workouts = useWorkoutsStore()
@@ -27,6 +29,9 @@ const completionWorkout = ref(null)  // last finished workout for summary modal
 const selectedType = ref(null)
 const planSource = ref('library')  // 'library' | 'ai' | 'custom'
 const restTimerRef = ref(null)
+const workoutCardsRef = ref(null)
+// Flaga że już zapytaliśmy o dobitkę w tej sesji — nie pytamy drugi raz po powrocie.
+const dobitkaAsked = ref(false)
 
 const expandedSystem = ref(localStorage.getItem('tp_last_system') || null)
 
@@ -168,7 +173,48 @@ function onSetDone() {
   if (restTimerRef.value) restTimerRef.value.start(settings.settings.restTimerDefault)
 }
 
+// Główna partia mięśniowa dnia (do dobitki). NULL = bez dobitki.
+const PRIMARY_MUSCLE_BY_TYPE = {
+  push: { key: 'chest', label: 'klatkę' },
+  pull: { key: 'back',  label: 'plecy' },
+  upper_a: { key: 'chest', label: 'klatkę' },
+  upper_b: { key: 'chest', label: 'klatkę' }
+  // legs, lower_a/b, fbw_* — brak dobitki (user explicite: "legs to nie ma mieć tego")
+}
+
+function findLastExerciseOfMuscle(exercises, muscleKey) {
+  for (let i = exercises.length - 1; i >= 0; i--) {
+    const ex = exercises[i]
+    const matchPrimary = ex.primaryMuscle === muscleKey
+    const matchHead = ex.muscleHead && ex.muscleHead.startsWith(muscleKey + '_')
+    if (matchPrimary || matchHead) return i
+  }
+  return -1
+}
+
 async function finishWorkout() {
+  // Dobitka — tylko gdy redukcja + typ ma głównego mięśnia + nie pytaliśmy jeszcze.
+  const type = session.active?.type
+  const main = PRIMARY_MUSCLE_BY_TYPE[type]
+  if (settings.settings.goal === 'cut' && main && !dobitkaAsked.value && session.active) {
+    dobitkaAsked.value = true
+    const yes = await dialog.confirm(`Zrobić dobitkę? Dodaj 1 serię na ${main.label}.`, {
+      title: 'Dobitka',
+      okLabel: 'Tak, dobitka',
+      cancelLabel: 'Pomiń'
+    })
+    if (yes) {
+      const idx = findLastExerciseOfMuscle(session.active.exercises, main.key)
+      if (idx >= 0) {
+        session.addSet(idx)
+        toast.show(`Dobitka — dodaj serię do "${session.active.exercises[idx].name}".`)
+        // Przejdź do nowo dodanej serii i zresetuj tryb sesji z 'done' na 'setup'.
+        workoutCardsRef.value?.resumeFromDone()
+        return
+      }
+    }
+  }
+
   const payload = session.finishToPayload()
   if (!payload || !payload.exercises.length) {
     const ok = await dialog.confirm('Brak zapisanych serii. Zakończyć bez zapisu?', {
@@ -178,10 +224,12 @@ async function finishWorkout() {
     })
     if (!ok) return
     session.discard()
+    dobitkaAsked.value = false
     return
   }
   workouts.addWorkout(payload)
   session.discard()
+  dobitkaAsked.value = false
   completionWorkout.value = payload
 }
 
@@ -202,7 +250,10 @@ async function discardWorkout() {
     cancelLabel: 'Wróć',
     danger: true
   })
-  if (ok) session.discard()
+  if (ok) {
+    session.discard()
+    dobitkaAsked.value = false
+  }
 }
 </script>
 
@@ -234,6 +285,7 @@ async function discardWorkout() {
     <!-- Cards mode (default) lub flat list -->
     <WorkoutCards
       v-if="settings.settings.workoutMode === 'cards'"
+      ref="workoutCardsRef"
       @set-done="onSetDone"
     />
     <template v-else>

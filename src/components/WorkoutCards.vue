@@ -148,24 +148,6 @@ async function completeSet() {
   session.toggleSet(exIdx.value, setIdx.value)
   emit('set-done')
 
-  // Dla celu = redukcja, gdy user właśnie skończył ostatnią serię ćwiczenia,
-  // proponujemy "dobitkę" (opcjonalna 4. seria). Goal pochodzi z settings.
-  const isLastSetOfExercise = setIdx.value === currentEx.value.sets.length - 1
-  if (settings.settings.goal === 'cut' && isLastSetOfExercise) {
-    const yes = await dialog.confirm('Zrobić dobitkę? (4. seria do upadku — opcjonalna)', {
-      title: 'Dobitka',
-      okLabel: 'Tak, dobitka',
-      cancelLabel: 'Pomiń'
-    })
-    if (yes) {
-      session.addSet(exIdx.value)
-      setIdx.value = currentEx.value.sets.length - 1
-      // Nowa seria nie zaznaczona — user może wpisać i kliknąć Zaznacz.
-      startRest()
-      return
-    }
-  }
-
   // Sprawdź czy jest jeszcze coś do zrobienia
   const hasMore = (setIdx.value < currentEx.value.sets.length - 1) || (exIdx.value < exercises.value.length - 1)
   if (!hasMore) {
@@ -256,6 +238,16 @@ watch(() => session.active?.id, () => {
   mode.value = 'setup'
   stopRest()
   jumpToFirstUnchecked()
+})
+
+// Eksponuj dla WorkoutView — używane przy "dobitce" by przeskoczyć na nowo dodaną serię.
+defineExpose({
+  jumpToFirstUnchecked,
+  resumeFromDone() {
+    mode.value = 'setup'
+    jumpToFirstUnchecked()
+    nextTick(() => weightInputRef.value?.focus())
+  }
 })
 
 // Auto-podpowiedź ciężaru: gdy user wchodzi na pustą serię, wstaw domyślną wartość.
