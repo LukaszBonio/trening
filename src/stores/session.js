@@ -50,6 +50,7 @@ export const useSessionStore = defineStore('session', () => {
           reps: ex.reps,
           // Pola z planów AI (mogą być null dla planów library/custom)
           primaryMuscle: ex.primaryMuscle || null,
+          muscleHead: ex.muscleHead || null,
           exerciseType: ex.exerciseType || null,
           movementPattern: ex.movementPattern || null,
           sets
@@ -121,6 +122,7 @@ export const useSessionStore = defineStore('session', () => {
         }
         // Zachowujemy metadane z planów AI tylko gdy są ustawione — nie zaśmiecamy historii nullami.
         if (ex.primaryMuscle) out.primaryMuscle = ex.primaryMuscle
+        if (ex.muscleHead) out.muscleHead = ex.muscleHead
         if (ex.exerciseType) out.exerciseType = ex.exerciseType
         if (ex.movementPattern) out.movementPattern = ex.movementPattern
         return out

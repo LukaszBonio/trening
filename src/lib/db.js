@@ -1208,10 +1208,16 @@ return MUSCLE_NAMES[key] || key;
  * Zwraca tablicę nazw ćwiczeń (max N, bez bieżącego).
  */
 const _substitutesCache = new Map();
-export function findSubstitutes(exerciseName, max = 5) {
-  const cacheKey = `${(exerciseName || '').toLowerCase().trim()}|${max}`
+/**
+ * @param {string} exerciseName
+ * @param {number} max
+ * @param {string|null} muscleHeadOverride - jeśli ćwiczenie pochodzi z planu AI z polem muscleHead,
+ *   używamy go zamiast zgadywać po nazwie (precyzyjniejsze).
+ */
+export function findSubstitutes(exerciseName, max = 5, muscleHeadOverride = null) {
+  const cacheKey = `${(exerciseName || '').toLowerCase().trim()}|${max}|${muscleHeadOverride || ''}`
   if (_substitutesCache.has(cacheKey)) return _substitutesCache.get(cacheKey)
-  const targetMuscle = detectMuscle(exerciseName)
+  const targetMuscle = muscleHeadOverride || detectMuscle(exerciseName)
   if (!targetMuscle) { _substitutesCache.set(cacheKey, []); return [] }
   const currentNorm = exerciseName.toLowerCase().trim()
 

@@ -19,7 +19,7 @@ function singleBeep(ctx, startAt, freq, duration) {
   osc.type = 'sine'
   osc.frequency.value = freq
   gain.gain.setValueAtTime(0.0001, startAt)
-  gain.gain.exponentialRampToValueAtTime(0.35, startAt + 0.015)
+  gain.gain.exponentialRampToValueAtTime(0.55, startAt + 0.015)
   gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration)
   osc.connect(gain)
   gain.connect(ctx.destination)
@@ -33,11 +33,32 @@ export function playTimerEndSound() {
   try {
     if (ctx.state === 'suspended') ctx.resume()
     const t0 = ctx.currentTime
-    singleBeep(ctx, t0,        880, 0.14)
-    singleBeep(ctx, t0 + 0.20, 880, 0.14)
-    singleBeep(ctx, t0 + 0.40, 1320, 0.25)
+    // Dłuższa, głośniejsza sekwencja końca timera — bardziej zauważalna w hałaśliwej siłowni.
+    // 4 dźwięki rosnące + finalny akcent. Gain 0.5 (było 0.35).
+    singleBeep(ctx, t0,        660, 0.18)
+    singleBeep(ctx, t0 + 0.22, 880, 0.18)
+    singleBeep(ctx, t0 + 0.44, 1100, 0.18)
+    singleBeep(ctx, t0 + 0.66, 1320, 0.35)
   } catch (e) {
     console.warn('[beep] failed:', e)
+  }
+}
+
+// Web Speech API — odtwarza komunikat głosowy po polsku.
+// Działa offline (na większości urządzeń wykorzystuje wbudowany silnik).
+export function speak(text, opts = {}) {
+  try {
+    if (!('speechSynthesis' in window)) return
+    const utter = new SpeechSynthesisUtterance(text)
+    utter.lang = opts.lang || 'pl-PL'
+    utter.rate = opts.rate ?? 1.05
+    utter.pitch = opts.pitch ?? 1.0
+    utter.volume = opts.volume ?? 1.0
+    // Anuluj poprzednie wypowiedzi żeby nie kumulowały się.
+    window.speechSynthesis.cancel()
+    window.speechSynthesis.speak(utter)
+  } catch (e) {
+    console.warn('[speak] failed:', e)
   }
 }
 
@@ -64,6 +85,21 @@ export async function requestPermission() {
 
 export function wasAsked() {
   try { return !!localStorage.getItem(PERMISSION_KEY) } catch { return false }
+}
+
+// Pełny sygnał końca timera: wibracja + dźwięk + głos + system notification.
+// Używaj zamiast `notify()` po końcu odpoczynku.
+export function notifyTimerEnd(title = 'Koniec przerwy', message = 'Wracaj do ćwiczeń') {
+  // Wibracja
+  try {
+    if (navigator.vibrate) navigator.vibrate([400, 100, 400, 100, 400])
+  } catch {}
+  // Dźwięk
+  playTimerEndSound()
+  // Głos po polsku
+  speak(message)
+  // System notification
+  return notify(title, { body: message, tag: 'rest-timer' })
 }
 
 export function notify(title, options = {}) {

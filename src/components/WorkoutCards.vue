@@ -4,7 +4,7 @@ import { useSessionStore } from '../stores/session.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { useWorkoutsStore } from '../stores/workouts.js'
 import { findSubstitutes, youtubeSearchUrl, detectMuscle, getMuscleName, detectEquipment } from '../lib/db.js'
-import { notify } from '../lib/notifications.js'
+import { notifyTimerEnd } from '../lib/notifications.js'
 import { lastSetFor } from '../lib/analytics.js'
 import { formatClock } from '../lib/format.js'
 import { useDialog } from '../composables/useDialog.js'
@@ -28,6 +28,7 @@ const setIdx = ref(0)
 
 // Rest timer state
 const restRemaining = ref(0)
+const timerEndFlash = ref(false)
 const restTotal = ref(90)
 let restInterval = null
 
@@ -80,7 +81,9 @@ const lastSetDateLabel = computed(() => {
 const equipment = computed(() => currentEx.value ? detectEquipment(currentEx.value.name) : null)
 const ytUrl = computed(() => currentEx.value ? youtubeSearchUrl(currentEx.value.name) : '#')
 const substitutes = computed(() =>
-  currentEx.value ? findSubstitutes(currentEx.value.name, 3) : []
+  currentEx.value
+    ? findSubstitutes(currentEx.value.name, 3, currentEx.value.muscleHead || null)
+    : []
 )
 
 // Globalny postęp (wszystkie serie wszystkich ćwiczeń)
@@ -145,6 +148,24 @@ async function completeSet() {
   session.toggleSet(exIdx.value, setIdx.value)
   emit('set-done')
 
+  // Dla celu = redukcja, gdy user właśnie skończył ostatnią serię ćwiczenia,
+  // proponujemy "dobitkę" (opcjonalna 4. seria). Goal pochodzi z settings.
+  const isLastSetOfExercise = setIdx.value === currentEx.value.sets.length - 1
+  if (settings.settings.goal === 'cut' && isLastSetOfExercise) {
+    const yes = await dialog.confirm('Zrobić dobitkę? (4. seria do upadku — opcjonalna)', {
+      title: 'Dobitka',
+      okLabel: 'Tak, dobitka',
+      cancelLabel: 'Pomiń'
+    })
+    if (yes) {
+      session.addSet(exIdx.value)
+      setIdx.value = currentEx.value.sets.length - 1
+      // Nowa seria nie zaznaczona — user może wpisać i kliknąć Zaznacz.
+      startRest()
+      return
+    }
+  }
+
   // Sprawdź czy jest jeszcze coś do zrobienia
   const hasMore = (setIdx.value < currentEx.value.sets.length - 1) || (exIdx.value < exercises.value.length - 1)
   if (!hasMore) {
@@ -164,7 +185,10 @@ function startRest() {
     restRemaining.value--
     if (restRemaining.value <= 0) {
       stopRest()
-      notify('Koniec przerwy', { body: 'Czas na kolejną serię!', tag: 'rest-timer' })
+      notifyTimerEnd('Koniec przerwy', 'Wracaj do ćwiczeń')
+      // Pulsujący flash overlay przez 2 sekundy (wizualne wzmocnienie sygnału).
+      timerEndFlash.value = true
+      setTimeout(() => { timerEndFlash.value = false }, 2000)
       // Auto-advance do następnej serii i przejście w tryb setup
       advance()
       mode.value = 'setup'
@@ -260,6 +284,14 @@ const restProgress = computed(() => {
 </script>
 
 <template>
+  <!-- Pulsujący flash po końcu odpoczynku — wizualne wzmocnienie dźwięku i głosu. -->
+  <div v-if="timerEndFlash" class="timer-flash" aria-hidden="true">
+    <div class="timer-flash-msg">
+      <i class="ti ti-arrow-right"></i>
+      Wracaj do ćwiczeń
+    </div>
+  </div>
+
   <div v-if="currentEx" class="focus-wrap">
     <!-- Top bar: progress + nav -->
     <div class="top-bar">
@@ -859,6 +891,47 @@ const restProgress = computed(() => {
   justify-content: center;
 }
 .rpe-help-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.timer-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: var(--accent-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  animation: timer-flash-anim 2s ease-out forwards;
+}
+.timer-flash-msg {
+  background: var(--accent);
+  color: #000;
+  padding: 22px 36px;
+  border-radius: 100px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: var(--shadow-lg);
+  animation: timer-flash-pulse 0.6s ease-out infinite alternate;
+}
+.timer-flash-msg i { font-size: 28px; }
+@keyframes timer-flash-anim {
+  0%   { opacity: 0; }
+  10%  { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes timer-flash-pulse {
+  from { transform: scale(1); }
+  to   { transform: scale(1.05); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .timer-flash-msg { animation: none; }
+}
 
 .last-hint {
   margin-top: var(--space-3);

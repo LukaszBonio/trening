@@ -73,17 +73,40 @@ export const MOVEMENT_PATTERNS = [
   'elbow_flexion', 'elbow_extension', 'shoulder_isolation'
 ]
 
+// Dozwolone głowy mięśniowe (muscleHead) per typ treningu — używane do walidacji
+// w `generateAIPlan` i jako lista hintów dla AI w prompcie.
+export const MUSCLE_HEADS_BY_TYPE = {
+  push:    ['chest_upper', 'chest_middle', 'chest_lower', 'shoulder_front', 'shoulder_side', 'triceps_long', 'triceps_lat', 'triceps_med'],
+  pull:    ['back_lats', 'back_middle', 'back_upper', 'back_lower', 'shoulder_rear', 'biceps_long', 'biceps_short', 'biceps_brach', 'forearms'],
+  legs:    ['quads', 'hamstrings', 'glutes', 'adductors', 'calves', 'abs', 'obliques', 'core'],
+  upper_a: ['chest_upper', 'chest_middle', 'chest_lower', 'shoulder_front', 'shoulder_side', 'shoulder_rear', 'back_lats', 'back_middle', 'back_upper', 'biceps_long', 'biceps_short', 'biceps_brach', 'triceps_long', 'triceps_lat', 'triceps_med'],
+  upper_b: ['chest_upper', 'chest_middle', 'chest_lower', 'shoulder_front', 'shoulder_side', 'shoulder_rear', 'back_lats', 'back_middle', 'back_upper', 'biceps_long', 'biceps_short', 'biceps_brach', 'triceps_long', 'triceps_lat', 'triceps_med'],
+  lower_a: ['quads', 'hamstrings', 'glutes', 'adductors', 'calves', 'abs', 'obliques', 'core'],
+  lower_b: ['quads', 'hamstrings', 'glutes', 'adductors', 'calves', 'abs', 'obliques', 'core'],
+  fbw_a:   ['chest_middle', 'chest_upper', 'back_lats', 'back_middle', 'shoulder_front', 'shoulder_side', 'shoulder_rear', 'quads', 'hamstrings', 'glutes', 'biceps_short', 'triceps_lat', 'abs', 'core'],
+  fbw_b:   ['chest_middle', 'chest_upper', 'back_lats', 'back_middle', 'back_lower', 'shoulder_front', 'shoulder_side', 'quads', 'hamstrings', 'glutes', 'triceps_long', 'triceps_lat', 'abs', 'core'],
+  fbw_c:   ['chest_middle', 'chest_upper', 'back_lats', 'back_middle', 'shoulder_front', 'shoulder_side', 'shoulder_rear', 'quads', 'hamstrings', 'glutes', 'biceps_short', 'calves', 'core']
+}
+
 // Szczegóły dla każdego typu treningu — struktura, zasady doboru, oczekiwana liczba ćwiczeń.
 const TYPE_DETAILS = {
   push: {
     label: 'PUSH',
     expectedCount: 7,
-    structure: '3 ćwiczenia na klatkę + 2 na barki (przednie/boczne) + 2 na triceps',
+    structure: `Format 3/2/2 z dokładnym rozkładem (kolejność musi być zachowana):
+1. KLATKA ŚRODKOWA (muscleHead: "chest_middle") — wyciskanie poziome (sztanga lub hantle, ławka pozioma).
+2. KLATKA GÓRNA (muscleHead: "chest_upper") — skos dodatni (wyciskanie skośne dodatnie sztangą lub hantlami).
+3. KLATKA ISOLATION (muscleHead: dowolny z "chest_*") — rozpiętki, cable crossover, butterfly. Akcent na pełen zakres rozciągnięcia.
+4. BARK PRZEDNI (muscleHead: "shoulder_front") — wyciskanie nad głowę: OHP, Arnold press, wyciskanie hantli nad głowę.
+5. BARK BOCZNY (muscleHead: "shoulder_side") — wznosy bokiem (hantle, wyciąg lub maszyna). Priorytet dla rozwoju szerokości barków.
+6. TRICEPS GŁOWA DŁUGA (muscleHead: "triceps_long") — overhead extension, francuskie wyciskanie, skull crusher. Wymaga podniesionej ręki.
+7. TRICEPS GŁOWA BOCZNA/PRZYŚRODKOWA (muscleHead: "triceps_lat" lub "triceps_med") — pushdown, wyciskanie wąskim chwytem, kickback.`,
     selection: [
-      'Pierwsze ćwiczenie musi być ćwiczeniem wielostawowym.',
-      'Co najmniej 2 ćwiczenia w planie muszą być ćwiczeniami bazowymi.',
-      'Nie twórz planów opartych wyłącznie na maszynach.',
-      'Łącz wyciskania poziome, skośne i ruchy nad głowę.',
+      'Pierwsze ćwiczenie musi być ćwiczeniem wielostawowym (compound).',
+      'Pozycje 1, 2, 4 muszą być compound. Pozycje 3, 5, 6, 7 mogą być isolation.',
+      'Nie twórz planów opartych wyłącznie na maszynach — pierwsze wyciskanie powinno być ze sztangą lub hantlami.',
+      'Łącz wyciskania poziome, skośne i ruchy nad głowę dla balansu klatki i barków.',
+      'NIE umieszczaj ćwiczeń na tylny bark (shoulder_rear) — to jest na PULL day.',
       'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
     ]
   },
@@ -198,7 +221,7 @@ const GOAL_HINTS = {
   mass:          'masa mięśniowa: 8-12 powtórzeń, 3-4 serie, tempo umiarkowane',
   strength:      'siła: 3-6 powtórzeń, 4-5 serii, ciężary submaksymalne',
   endurance:     'wytrzymałość mięśniowa: 15-20 powtórzeń, 2-4 serie, krótkie przerwy',
-  cut:           'redukcja tkanki tłuszczowej: 10-15 powtórzeń, 3-4 serie, krótsze przerwy',
+  cut:           'redukcja tkanki tłuszczowej: 10-15 powtórzeń, DOKŁADNIE 3 serie dla KAŻDEGO ćwiczenia (dobitka opcjonalna na żywo), krótsze przerwy 60-90s',
   recomposition: 'rekompozycja: 6-12 powtórzeń, 3-4 serie, nacisk na progresję obciążenia'
 }
 
@@ -247,6 +270,7 @@ ${td.selection.map(s => `- ${s}`).join('\n')}
 ${recentSessions.map(formatSessionCompact).join('\n\n')}`)
   }
 
+  const allowedHeads = MUSCLE_HEADS_BY_TYPE[type] || []
   parts.push(`Zwróć WYŁĄCZNIE poprawny JSON w formacie (bez markdown, bez komentarzy):
 {
   "name": "krótka nazwa planu (max 40 znaków, po polsku)",
@@ -254,6 +278,7 @@ ${recentSessions.map(formatSessionCompact).join('\n\n')}`)
     {
       "name": "nazwa ćwiczenia po polsku",
       "primaryMuscle": "PARTIA_ENG",
+      "muscleHead": "GŁOWA_MIĘŚNIA",
       "exerciseType": "compound|isolation",
       "movementPattern": "WZORZEC",
       "sets": LICZBA,
@@ -271,12 +296,17 @@ ${recentSessions.map(formatSessionCompact).join('\n\n')}`)
 - Nie dodawaj żadnych wyjaśnień przed ani po JSON.
 - Odpowiedź musi rozpoczynać się od znaku { i kończyć znakiem }.`)
 
+  const setsRule = goal === 'cut'
+    ? '- "sets" musi być DOKŁADNIE 3 dla KAŻDEGO ćwiczenia (cel = redukcja, dobitka jest opcjonalna i decydowana w trakcie sesji).'
+    : '- "sets" musi być liczbą (3, 4, 5).'
+
   parts.push(`WAŻNE:
 - Wszystkie pola są wymagane.
-- "sets" musi być liczbą (3, 4, 5).
+${setsRule}
 - "reps" musi być stringiem z zakresem ('6-8', '10-12', '12-15').
 - Nazwy ćwiczeń wyłącznie po polsku, standardowe (np. "Wyciskanie sztangi na ławce poziomej", "Przysiad ze sztangą", "Martwy ciąg rumuński").
 - "primaryMuscle" musi być jedną z: ${PRIMARY_MUSCLES.map(m => `"${m}"`).join(', ')}.
+- "muscleHead" musi być jedną z (dozwolone dla typu ${td.label}): ${allowedHeads.map(h => `"${h}"`).join(', ')}.
 - "exerciseType" musi być jedną z: ${EXERCISE_TYPES.map(t => `"${t}"`).join(', ')}.
 - "movementPattern" musi być jedną z: ${MOVEMENT_PATTERNS.map(p => `"${p}"`).join(', ')}.
 - "suggestedWeight" musi być liczbą (w kg) lub null.
@@ -371,12 +401,16 @@ export async function generateAIPlan({
     throw new Error(`AI zwróciło ${plan.exercises.length} ćwiczeń zamiast ${td.expectedCount} — spróbuj ponownie`)
   }
 
+  const allowedHeadsForType = MUSCLE_HEADS_BY_TYPE[type] || []
   for (const ex of plan.exercises) {
     if (!ex.name || typeof ex.sets !== 'number' || !ex.reps) {
       throw new Error('AI zwróciło ćwiczenie z brakującymi polami — spróbuj ponownie')
     }
+    // Wymuszenie 3 serii dla redukcji — niezależnie od tego co AI zwróciło.
+    if (goal === 'cut') ex.sets = 3
     // Miękka walidacja: spoza dozwolonych wartości → null (nie odrzucamy planu)
     if (!PRIMARY_MUSCLES.includes(ex.primaryMuscle)) ex.primaryMuscle = null
+    if (!allowedHeadsForType.includes(ex.muscleHead)) ex.muscleHead = null
     if (!EXERCISE_TYPES.includes(ex.exerciseType)) ex.exerciseType = null
     if (!MOVEMENT_PATTERNS.includes(ex.movementPattern)) ex.movementPattern = null
     // Normalizacja suggestedWeight — może przyjść jako string/null/undefined

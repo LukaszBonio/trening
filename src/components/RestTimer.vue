@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onUnmounted } from 'vue'
-import { notify } from '../lib/notifications.js'
+import { notifyTimerEnd } from '../lib/notifications.js'
 
 const remaining = ref(0)
 const running = ref(false)
@@ -23,7 +23,7 @@ function start(sec = target.value) {
     remaining.value--
     if (remaining.value <= 0) {
       stop()
-      notify('Koniec przerwy', { body: 'Czas na kolejną serię!', tag: 'rest-timer' })
+      notifyTimerEnd('Koniec przerwy', 'Wracaj do ćwiczeń')
     }
   }, 1000)
 }
