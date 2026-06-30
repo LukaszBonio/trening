@@ -6,6 +6,7 @@ import { useWorkoutsStore } from '../stores/workouts.js'
 import { findSubstitutes, youtubeSearchUrl, detectMuscle, getMuscleName, detectEquipment } from '../lib/db.js'
 import { notifyTimerEnd } from '../lib/notifications.js'
 import { lastSetFor } from '../lib/analytics.js'
+import { suggestNextWeight } from '../lib/progression.js'
 import { formatClock } from '../lib/format.js'
 import { useDialog } from '../composables/useDialog.js'
 
@@ -66,6 +67,12 @@ const muscleName = computed(() => {
 const lastSetHint = computed(() => {
   if (!currentEx.value) return null
   return lastSetFor(workouts.history, currentEx.value.name)
+})
+
+// Deterministyczna sugestia kolejnego ciężaru (waga + powód).
+const progressionHint = computed(() => {
+  if (!currentEx.value) return null
+  return suggestNextWeight(workouts.history, currentEx.value.name, currentEx.value.reps)
 })
 
 const lastSetDateLabel = computed(() => {
@@ -251,7 +258,7 @@ defineExpose({
 })
 
 // Auto-podpowiedź ciężaru: gdy user wchodzi na pustą serię, wstaw domyślną wartość.
-// Priorytet: 1) poprzednia seria w tej sesji  2) ostatnia seria z historii dla tego ćwiczenia.
+// Priorytet: 1) poprzednia seria w tej sesji  2) sugestia progresji (waga + reps + RPE z historii).
 function suggestWeightIfEmpty() {
   if (!currentSet.value || currentSet.value.weight !== '' && currentSet.value.weight !== null && currentSet.value.weight !== undefined) return
   // Poprzednia seria w tej sesji
@@ -262,9 +269,9 @@ function suggestWeightIfEmpty() {
       return
     }
   }
-  // Historia
-  if (lastSetHint.value && lastSetHint.value.weight > 0) {
-    session.updateSet(exIdx.value, setIdx.value, { weight: lastSetHint.value.weight })
+  // Progresja z historii (RPE + reps z ostatniej sesji)
+  if (progressionHint.value && progressionHint.value.weight > 0) {
+    session.updateSet(exIdx.value, setIdx.value, { weight: progressionHint.value.weight })
   }
 }
 watch([exIdx, setIdx, () => session.active?.id], suggestWeightIfEmpty, { immediate: true, flush: 'post' })
@@ -453,7 +460,18 @@ const restProgress = computed(() => {
         <div v-if="lastSetHint && lastSetHint.weight > 0" class="last-hint">
           <i class="ti ti-history"></i>
           Ostatnio: <strong>{{ lastSetHint.weight }}{{ settings.settings.units }} × {{ lastSetHint.reps }}</strong>
+          <span v-if="lastSetHint.rpe" class="dim">@ RPE {{ lastSetHint.rpe }}</span>
           <span class="dim">· {{ lastSetDateLabel }}</span>
+        </div>
+
+        <!-- Sugestia progresji (gdy różni się od ostatniej wagi) -->
+        <div
+          v-if="progressionHint && progressionHint.weight > 0 && progressionHint.weight !== lastSetHint?.weight"
+          class="progression-hint"
+        >
+          <i class="ti ti-trending-up"></i>
+          Sugerowane: <strong>{{ progressionHint.weight }}{{ settings.settings.units }}</strong>
+          <span class="dim">— {{ progressionHint.reason }}</span>
         </div>
 
         <!-- RPE explainer -->
@@ -940,6 +958,22 @@ const restProgress = computed(() => {
 .last-hint i { color: var(--accent); font-size: 15px; }
 .last-hint strong { color: var(--text); font-weight: 600; }
 .last-hint .dim { color: var(--text-dim); font-size: 12px; }
+
+.progression-hint {
+  margin-top: 6px;
+  padding: 8px 12px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-soft-2);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.progression-hint i { font-size: 15px; }
+.progression-hint strong { font-weight: 700; }
+.progression-hint .dim { color: var(--text-muted); font-size: 12px; font-weight: 400; }
 
 .rpe-help-panel {
   margin-top: var(--space-3);

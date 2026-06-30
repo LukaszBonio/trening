@@ -87,7 +87,7 @@ export function personalRecords(history) {
 
 /**
  * Ostatnia istotna seria danego ćwiczenia z historii (najnowszy trening, pierwsza nie-pusta seria).
- * Zwraca { weight, reps, date } lub null jeśli brak.
+ * Zwraca { weight, reps, rpe, date } lub null jeśli brak. rpe może być undefined.
  */
 export function lastSetFor(history, exerciseName) {
   const key = exerciseName.toLowerCase().trim()
@@ -97,7 +97,7 @@ export function lastSetFor(history, exerciseName) {
       if (ex.name.toLowerCase().trim() !== key) continue
       const s = ex.sets.find(x => (x.weight || 0) > 0 || (x.reps || 0) > 0) || ex.sets[0]
       if (!s) continue
-      return { weight: s.weight || 0, reps: s.reps || 0, date: w.date }
+      return { weight: s.weight || 0, reps: s.reps || 0, rpe: s.rpe || null, date: w.date }
     }
   }
   return null

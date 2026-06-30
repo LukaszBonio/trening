@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
+import { useWorkoutsStore } from './workouts.js'
+import { suggestNextWeight } from '../lib/progression.js'
 
 const DRAFT_KEY = 'tp_session_draft_v1'
 
@@ -32,6 +34,10 @@ export const useSessionStore = defineStore('session', () => {
   })
 
   function startSession(plan, type, source = 'library') {
+    // Pobierz historię raz dla całego planu — używamy do deterministycznej
+    // sugestii ciężaru z progresji (RPE + reps z ostatniej sesji ćwiczenia).
+    const history = useWorkoutsStore().history
+
     active.value = {
       id: `w_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       type,
@@ -40,10 +46,24 @@ export const useSessionStore = defineStore('session', () => {
       startedAt: Date.now(),
       exercises: plan.exercises.map(ex => {
         const sets = Array.from({ length: ex.sets }, () => emptySet())
-        // AI może zwrócić suggestedWeight — wstaw do pierwszej serii (kolejne podchwyci auto-podpowiedź)
-        if (ex.suggestedWeight != null && ex.suggestedWeight > 0 && sets.length) {
-          sets[0].weight = ex.suggestedWeight
+
+        // Wybór sugerowanego ciężaru na pierwszą serię:
+        // 1. Progresja z historii (RPE + reps) — deterministyczna, preferowana
+        // 2. Fallback: ex.suggestedWeight z AI (gdy brak historii dla tego ćwiczenia)
+        const progression = suggestNextWeight(history, ex.name, ex.reps)
+        let initialWeight = null
+        let progressionReason = null
+        if (progression) {
+          initialWeight = progression.weight
+          progressionReason = progression.reason
+        } else if (ex.suggestedWeight != null && ex.suggestedWeight > 0) {
+          initialWeight = ex.suggestedWeight
+          progressionReason = 'sugestia AI (brak historii)'
         }
+        if (initialWeight != null && sets.length) {
+          sets[0].weight = initialWeight
+        }
+
         return {
           name: ex.name,
           tip: ex.tip || '',
@@ -53,6 +73,8 @@ export const useSessionStore = defineStore('session', () => {
           muscleHead: ex.muscleHead || null,
           exerciseType: ex.exerciseType || null,
           movementPattern: ex.movementPattern || null,
+          // Powód sugestii — używamy w UI hint pod inputem.
+          progressionReason,
           sets
         }
       })
