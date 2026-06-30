@@ -12,6 +12,10 @@ describe('formatDuration', () => {
     expect(formatDuration(3600)).toBe('60m 0s')
     expect(formatDuration(125)).toBe('2m 5s')
   })
+  it('wartości <60s → "0m Ys"', () => {
+    expect(formatDuration(45)).toBe('0m 45s')
+    expect(formatDuration(1)).toBe('0m 1s')
+  })
 })
 
 describe('formatClock', () => {
@@ -23,6 +27,12 @@ describe('formatClock', () => {
   it('obcina ujemne wartości do 00:00', () => {
     expect(formatClock(-10)).toBe('00:00')
   })
+  it('obcina ułamki sekund (bitowy OR)', () => {
+    expect(formatClock(75.9)).toBe('01:15')
+  })
+  it('formatuje wartości > godziny bez zawijania minut', () => {
+    expect(formatClock(3661)).toBe('61:01')
+  })
 })
 
 describe('formatDateTime', () => {
@@ -32,5 +42,12 @@ describe('formatDateTime', () => {
   })
   it('zwraca oryginalny string przy błędzie', () => {
     expect(formatDateTime('')).toBe('')
+  })
+  it('zwraca oryginalny string dla niepoprawnej daty (nie "Invalid Date")', () => {
+    expect(formatDateTime('not-a-date')).toBe('not-a-date')
+  })
+  it('zwraca pusty string dla null/undefined', () => {
+    expect(formatDateTime(null)).toBe('')
+    expect(formatDateTime(undefined)).toBe('')
   })
 })

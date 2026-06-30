@@ -1,0 +1,164 @@
+import { describe, it, expect } from 'vitest'
+import {
+  parseClaudeJSON,
+  formatSessionCompact,
+  normalizePlan,
+  PRIMARY_MUSCLES,
+  MUSCLE_HEADS_BY_TYPE
+} from '../src/lib/ai.js'
+
+describe('parseClaudeJSON', () => {
+  it('parsuje poprawny obiekt JSON', () => {
+    expect(parseClaudeJSON('{"name":"X","exercises":[]}')).toEqual({ name: 'X', exercises: [] })
+  })
+  it('rzuca błąd dla niepoprawnego JSON', () => {
+    expect(() => parseClaudeJSON('to nie json')).toThrow(/poprawnego JSON/)
+    expect(() => parseClaudeJSON('{niepełny')).toThrow(/poprawnego JSON/)
+  })
+  it('rzuca błąd gdy JSON to tablica (nie obiekt)', () => {
+    expect(() => parseClaudeJSON('[1,2,3]')).toThrow(/Nieprawidłowy format/)
+  })
+  it('rzuca błąd gdy JSON to prymityw lub null', () => {
+    expect(() => parseClaudeJSON('42')).toThrow(/Nieprawidłowy format/)
+    expect(() => parseClaudeJSON('"tekst"')).toThrow(/Nieprawidłowy format/)
+    expect(() => parseClaudeJSON('null')).toThrow(/Nieprawidłowy format/)
+  })
+})
+
+describe('formatSessionCompact', () => {
+  it('formatuje sesję jako linie "- nazwa: WxR, WxR"', () => {
+    const session = {
+      date: '2026-06-23T10:00:00.000Z',
+      exercises: [
+        { name: 'Bench', sets: [{ weight: 60, reps: 10 }, { weight: 60, reps: 8 }] },
+        { name: 'OHP', sets: [{ weight: 40, reps: 12 }] }
+      ]
+    }
+    const out = formatSessionCompact(session)
+    expect(out).toContain('Sesja 2026-06-23:')
+    expect(out).toContain('- Bench: 60x10, 60x8')
+    expect(out).toContain('- OHP: 40x12')
+  })
+  it('podstawia 0 dla brakującej wagi/powtórzeń', () => {
+    const session = {
+      date: '2026-06-23T10:00:00.000Z',
+      exercises: [{ name: 'X', sets: [{}] }]
+    }
+    expect(formatSessionCompact(session)).toContain('- X: 0x0')
+  })
+})
+
+// Minimalny poprawny plan push (expectedCount = 7).
+function pushPlan(overrides = {}) {
+  const exercises = Array.from({ length: 7 }, (_, i) => ({
+    name: `Ćwiczenie ${i + 1}`,
+    primaryMuscle: 'chest',
+    muscleHead: 'chest_middle',
+    exerciseType: 'compound',
+    movementPattern: 'horizontal_push',
+    sets: 4,
+    reps: '8-12',
+    suggestedWeight: 60
+  }))
+  return { name: 'Plan push', exercises, ...overrides }
+}
+
+describe('normalizePlan — walidacja twarda', () => {
+  it('rzuca gdy brak nazwy', () => {
+    expect(() => normalizePlan({ exercises: [] }, { type: 'push', goal: 'mass' })).toThrow(/niepoprawny plan/)
+  })
+  it('rzuca gdy brak ćwiczeń', () => {
+    expect(() => normalizePlan({ name: 'X', exercises: [] }, { type: 'push', goal: 'mass' })).toThrow(/niepoprawny plan/)
+  })
+  it('rzuca gdy plan jest null/undefined', () => {
+    expect(() => normalizePlan(null, { type: 'push', goal: 'mass' })).toThrow(/niepoprawny plan/)
+  })
+  it('rzuca gdy liczba ćwiczeń != expectedCount', () => {
+    const plan = pushPlan()
+    plan.exercises = plan.exercises.slice(0, 5) // 5 zamiast 7
+    expect(() => normalizePlan(plan, { type: 'push', goal: 'mass' })).toThrow(/5 ćwiczeń zamiast 7/)
+  })
+  it('rzuca gdy ćwiczenie ma brakujące pola', () => {
+    const plan = pushPlan()
+    plan.exercises[0].sets = 'cztery' // nie number
+    expect(() => normalizePlan(plan, { type: 'push', goal: 'mass' })).toThrow(/brakującymi polami/)
+  })
+})
+
+describe('normalizePlan — walidacja miękka', () => {
+  it('nieznana partia/głowa/typ/wzorzec → null', () => {
+    const plan = pushPlan()
+    plan.exercises[0].primaryMuscle = 'wymyslone'
+    plan.exercises[0].muscleHead = 'wymyslone'
+    plan.exercises[0].exerciseType = 'wymyslone'
+    plan.exercises[0].movementPattern = 'wymyslone'
+    const out = normalizePlan(plan, { type: 'push', goal: 'mass' })
+    expect(out.exercises[0].primaryMuscle).toBeNull()
+    expect(out.exercises[0].muscleHead).toBeNull()
+    expect(out.exercises[0].exerciseType).toBeNull()
+    expect(out.exercises[0].movementPattern).toBeNull()
+  })
+  it('zachowuje poprawne wartości', () => {
+    const validHead = MUSCLE_HEADS_BY_TYPE.push[0]
+    const plan = pushPlan()
+    plan.exercises[0].muscleHead = validHead
+    const out = normalizePlan(plan, { type: 'push', goal: 'mass' })
+    expect(out.exercises[0].muscleHead).toBe(validHead)
+    expect(PRIMARY_MUSCLES).toContain('chest')
+  })
+})
+
+describe('normalizePlan — redukcja wymusza 3 serie', () => {
+  it('cut → wszystkie ćwiczenia mają 3 serie', () => {
+    const plan = pushPlan() // sets: 4
+    const out = normalizePlan(plan, { type: 'push', goal: 'cut' })
+    expect(out.exercises.every(ex => ex.sets === 3)).toBe(true)
+  })
+  it('mass → nie zmienia liczby serii', () => {
+    const plan = pushPlan() // sets: 4
+    const out = normalizePlan(plan, { type: 'push', goal: 'mass' })
+    expect(out.exercises[0].sets).toBe(4)
+  })
+})
+
+describe('normalizePlan — suggestedWeight', () => {
+  it('string liczbowy → number', () => {
+    const plan = pushPlan()
+    plan.exercises[0].suggestedWeight = '62.5'
+    expect(normalizePlan(plan, { type: 'push', goal: 'mass' }).exercises[0].suggestedWeight).toBe(62.5)
+  })
+  it('niepoprawne / <=0 / null → null', () => {
+    const plan = pushPlan()
+    plan.exercises[0].suggestedWeight = 'abc'
+    plan.exercises[1].suggestedWeight = 0
+    plan.exercises[2].suggestedWeight = -5
+    plan.exercises[3].suggestedWeight = null
+    const out = normalizePlan(plan, { type: 'push', goal: 'mass' })
+    expect(out.exercises[0].suggestedWeight).toBeNull()
+    expect(out.exercises[1].suggestedWeight).toBeNull()
+    expect(out.exercises[2].suggestedWeight).toBeNull()
+    expect(out.exercises[3].suggestedWeight).toBeNull()
+  })
+})
+
+describe('normalizePlan — analysis', () => {
+  it('filtruje wpisy z nieprawidłowym statusem, przycina pola', () => {
+    const plan = pushPlan({
+      analysis: [
+        { muscle: 'klatka', status: 'stagnation', note: 'stoi 2 sesje' },
+        { muscle: 'barki', status: 'zly_status', note: 'x' }, // odrzucony
+        { muscle: 123, status: 'progress', note: 'x' },        // odrzucony (muscle nie string)
+        { muscle: 'a'.repeat(60), status: 'progress', note: 'b'.repeat(200) } // przycięty
+      ]
+    })
+    const out = normalizePlan(plan, { type: 'push', goal: 'mass' })
+    expect(out.analysis).toHaveLength(2)
+    expect(out.analysis[0]).toEqual({ muscle: 'klatka', status: 'stagnation', note: 'stoi 2 sesje' })
+    expect(out.analysis[1].muscle.length).toBe(40)
+    expect(out.analysis[1].note.length).toBe(120)
+  })
+  it('brak analysis → pusta tablica', () => {
+    const out = normalizePlan(pushPlan(), { type: 'push', goal: 'mass' })
+    expect(out.analysis).toEqual([])
+  })
+})

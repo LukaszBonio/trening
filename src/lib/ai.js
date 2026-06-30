@@ -227,7 +227,7 @@ const GOAL_HINTS = {
 
 // Kompaktowy zapis sesji do prompta — bez RPE, bez notatek.
 // Format: "- <nazwa>: 60x10, 60x10, 60x8"
-function formatSessionCompact(session) {
+export function formatSessionCompact(session) {
   const date = new Date(session.date).toISOString().slice(0, 10)
   const lines = session.exercises.map(ex => {
     const sets = ex.sets
@@ -380,42 +380,16 @@ function setCachedPlan(key, plan) {
   _planCache.set(key, { plan, expiresAt: Date.now() + PLAN_CACHE_TTL_MS })
 }
 
-export async function generateAIPlan({
-  type,
-  goal,
-  equipment = 'siłownia',
-  avoid = '',
-  recentSessions = [],
-  signal
-}) {
+// Dozwolone statusy analizy per partia (zwracane przez AI gdy była historia).
+const ALLOWED_ANALYSIS_STATUS = ['progress', 'stagnation', 'overreaching', 'weakly_covered']
+
+// Walidacja + normalizacja surowego planu z AI. Czysta funkcja (bez sieci) — testowalna.
+// Rzuca błąd przy twardych naruszeniach (brak nazwy/ćwiczeń, zła liczba ćwiczeń,
+// brakujące pola ćwiczenia). Miękkie naruszenia (zła partia/głowa/typ) → null.
+export function normalizePlan(plan, { type, goal }) {
   const td = TYPE_DETAILS[type] || TYPE_DETAILS.push
-  // Sanityzacja: ucinamy do MAX_AVOID_LENGTH, usuwamy znaki nowej linii (które mogłyby
-  // wstrzyknąć nowe "instrukcje" do prompta).
-  const safeAvoid = String(avoid || '').replace(/[\r\n]+/g, ' ').slice(0, MAX_AVOID_LENGTH).trim()
 
-  // Cache hit dla identycznego wejścia (chroni przed double-click). TTL 5 min.
-  const cacheKey = planCacheKey({ type, goal, equipment, avoid: safeAvoid, recentSessions })
-  const cached = getCachedPlan(cacheKey)
-  if (cached) return cached
-
-  const prompt = buildPrompt({ type, goal, equipment, avoid: safeAvoid, recentSessions })
-
-  // 1 silent retry przy błędzie parse — czasem Claude zwraca tekst zaczynający się od ```json
-  // lub pełen JSON z jednym brakiem; ponowna próba w 90% przypadków wystarcza.
-  let text, plan, lastErr
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      text = await callClaude({ prompt, maxTokens: 3000, signal })
-      plan = parseClaudeJSON(text)
-      break
-    } catch (e) {
-      lastErr = e
-      if (e.name === 'AbortError') throw e
-      if (attempt === 1) throw e
-    }
-  }
-
-  if (!plan.name || !Array.isArray(plan.exercises) || !plan.exercises.length) {
+  if (!plan || !plan.name || !Array.isArray(plan.exercises) || !plan.exercises.length) {
     throw new Error('AI zwróciło niepoprawny plan — spróbuj ponownie')
   }
 
@@ -425,7 +399,6 @@ export async function generateAIPlan({
   }
 
   // Normalizacja pola analysis (z planów AI gdy była historia) — UI to pokaże.
-  const ALLOWED_ANALYSIS_STATUS = ['progress', 'stagnation', 'overreaching', 'weakly_covered']
   if (Array.isArray(plan.analysis)) {
     plan.analysis = plan.analysis
       .filter(a => a && typeof a.muscle === 'string' && ALLOWED_ANALYSIS_STATUS.includes(a.status))
@@ -458,6 +431,43 @@ export async function generateAIPlan({
       ex.suggestedWeight = null
     }
   }
-  setCachedPlan(cacheKey, plan)
   return plan
+}
+
+export async function generateAIPlan({
+  type,
+  goal,
+  equipment = 'siłownia',
+  avoid = '',
+  recentSessions = [],
+  signal
+}) {
+  // Sanityzacja: ucinamy do MAX_AVOID_LENGTH, usuwamy znaki nowej linii (które mogłyby
+  // wstrzyknąć nowe "instrukcje" do prompta).
+  const safeAvoid = String(avoid || '').replace(/[\r\n]+/g, ' ').slice(0, MAX_AVOID_LENGTH).trim()
+
+  // Cache hit dla identycznego wejścia (chroni przed double-click). TTL 5 min.
+  const cacheKey = planCacheKey({ type, goal, equipment, avoid: safeAvoid, recentSessions })
+  const cached = getCachedPlan(cacheKey)
+  if (cached) return cached
+
+  const prompt = buildPrompt({ type, goal, equipment, avoid: safeAvoid, recentSessions })
+
+  // 1 silent retry przy błędzie parse — czasem Claude zwraca tekst zaczynający się od ```json
+  // lub pełen JSON z jednym brakiem; ponowna próba w 90% przypadków wystarcza.
+  let text, plan
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      text = await callClaude({ prompt, maxTokens: 3000, signal })
+      plan = parseClaudeJSON(text)
+      break
+    } catch (e) {
+      if (e.name === 'AbortError') throw e
+      if (attempt === 1) throw e
+    }
+  }
+
+  const normalized = normalizePlan(plan, { type, goal })
+  setCachedPlan(cacheKey, normalized)
+  return normalized
 }
