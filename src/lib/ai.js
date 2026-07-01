@@ -2,6 +2,7 @@
 // Worker URL can be overridden by localStorage 'tp_proxy_url' for testing.
 
 import { PRIMARY_TO_GROUP } from './workoutSchema.js'
+import { getAuthToken } from './auth.js'
 
 // Worker proxy URL — można nadpisać przez `.env` (VITE_AI_PROXY_URL) lub localStorage 'tp_proxy_url'.
 const DEFAULT_PROXY = import.meta.env?.VITE_AI_PROXY_URL || 'https://trening-pro-api.lukasz-mateusz-bonio.workers.dev'
@@ -25,12 +26,16 @@ export async function callClaude({ prompt, maxTokens = 2500, signal, timeoutMs =
   // Połącz user signal z timeout signal.
   const onUserAbort = () => timeoutCtrl.abort()
   if (signal) signal.addEventListener('abort', onUserAbort)
+  const headers = { 'Content-Type': 'application/json' }
+  const token = getAuthToken()
+  if (token) headers['Authorization'] = `Bearer ${token}`
+
   let resp
   try {
     resp = await fetch(getProxyUrl(), {
       method: 'POST',
       signal: timeoutCtrl.signal,
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         model: MODEL,
         max_tokens: maxTokens,

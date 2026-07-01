@@ -5,6 +5,7 @@ import { useWorkoutsStore } from './workouts.js'
 import { useBodyStore } from './body.js'
 import { useSettingsStore } from './settings.js'
 import { offlineQueue } from '../lib/offlineQueue.js'
+import { setAuthToken } from '../lib/auth.js'
 
 // Default fallback — działa bez konfiguracji `.env` (backward compatibility z poprzednim setupem).
 // Aby użyć innego projektu Supabase: utwórz `.env` z VITE_SUPABASE_URL i VITE_SUPABASE_KEY.
@@ -80,6 +81,7 @@ export const useCloudStore = defineStore('cloud', () => {
 
     client.value.auth.getSession().then(({ data }) => {
       const u = data.session?.user || null
+      setAuthToken(data.session?.access_token || null)
       user.value = u
       if (u) onLogin(u)
     }).catch((e) => {
@@ -93,6 +95,7 @@ export const useCloudStore = defineStore('cloud', () => {
 
     client.value.auth.onAuthStateChange((event, session) => {
       const u = session?.user || null
+      setAuthToken(session?.access_token || null)
       const prevId = _lastUserId
       user.value = u
       _lastUserId = u?.id || null
