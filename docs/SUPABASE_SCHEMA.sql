@@ -62,3 +62,5 @@ create policy "Users insert own settings" on user_settings
   for insert with check (auth.uid() = user_id);
 create policy "Users update own settings" on user_settings
   for update using (auth.uid() = user_id);
+create policy "Users delete own settings" on user_settings
+  for delete using (auth.uid() = user_id);
