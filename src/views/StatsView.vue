@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useWorkoutsStore } from '../stores/workouts.js'
-import { detectMuscle } from '../lib/db.js'
+import { detectMuscle } from '../lib/muscles.js'
 import { MUSCLE_TO_GROUP, GROUP_LABELS, PRIMARY_TO_GROUP } from '../lib/workoutSchema.js'
 import { workoutVolume, totalSets as totalSetsOf } from '../lib/workoutMath.js'
 import {

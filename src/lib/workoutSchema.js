@@ -1,7 +1,7 @@
 // Schemat grupowania ćwiczeń wg partii mięśniowej per typ treningu.
 // Skopiowany z legacy/index.html (line 2278+) — zachowuje znajomy układ kart.
 
-import { detectMuscle } from './db.js'
+import { detectMuscle } from './muscles.js'
 
 export const WORKOUT_SCHEMA = {
   push: [
