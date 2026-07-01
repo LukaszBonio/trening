@@ -1,18 +1,17 @@
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
-
-const STORAGE_KEY = 'tp_settings_v1'
+import { watch } from 'vue'
+import { usePersistentRef } from '../composables/usePersistentRef.js'
 
 const DEFAULTS = {
-  restTimerDefault: 90,     // sec
-  units: 'kg',              // 'kg' | 'lb'
-  showRpe: true,            // wyświetlać input RPE podczas sesji
-  autoStartTimer: true,     // auto-start rest po zaznaczeniu serii
-  accentColor: '#d4ff3a',   // kolor akcentu
+  restTimerDefault: 90,
+  units: 'kg',
+  showRpe: true,
+  autoStartTimer: true,
+  accentColor: '#d4ff3a',
   weekStartsMonday: true,
-  theme: 'dark',            // 'dark' | 'light'
-  workoutMode: 'cards',     // 'cards' | 'list' — tryb aktywnej sesji
-  goal: 'mass'              // 'mass' | 'strength' | 'endurance' | 'cut' | 'recomposition'
+  theme: 'dark',
+  workoutMode: 'cards',
+  goal: 'mass'
 }
 
 export const GOALS = [
@@ -27,17 +26,15 @@ export function goalLabel(key) {
   return GOALS.find(g => g.key === key)?.label || 'Masa'
 }
 
-function load() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return { ...DEFAULTS, ...(raw ? JSON.parse(raw) : {}) }
-  } catch {
-    return { ...DEFAULTS }
-  }
-}
-
 export const useSettingsStore = defineStore('settings', () => {
-  const settings = ref(load())
+  const raw = usePersistentRef('tp_settings_v1', () => ({ ...DEFAULTS }))
+  // Merge: nowe pola z DEFAULTS trafiają do zapisanych ustawień (forward-compat)
+  if (typeof raw.value === 'object' && raw.value !== null) {
+    for (const k of Object.keys(DEFAULTS)) {
+      if (!(k in raw.value)) raw.value[k] = DEFAULTS[k]
+    }
+  }
+  const settings = raw
 
   function set(key, value) {
     settings.value[key] = value
@@ -55,17 +52,11 @@ export const useSettingsStore = defineStore('settings', () => {
     document.documentElement.dataset.theme = settings.value.theme || 'dark'
   }
 
-  function save() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings.value)) } catch {}
-  }
-
-  watch(settings, (v) => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(v)) } catch {}
+  watch(settings, () => {
     applyAccentColor()
     applyTheme()
   }, { deep: true })
 
-  // initial apply
   applyAccentColor()
   applyTheme()
 
@@ -73,7 +64,6 @@ export const useSettingsStore = defineStore('settings', () => {
     Object.assign(settings.value, remote)
     applyTheme()
     applyAccentColor()
-    save()
   }
 
   return { settings, set, reset, applyRemote }

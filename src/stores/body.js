@@ -1,19 +1,9 @@
 import { defineStore } from 'pinia'
-import { ref, computed, watch } from 'vue'
-
-const STORAGE_KEY = 'tp_body_v1'
-
-function load() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
-}
+import { computed } from 'vue'
+import { usePersistentRef } from '../composables/usePersistentRef.js'
 
 export const useBodyStore = defineStore('body', () => {
-  const entries = ref(load())
+  const entries = usePersistentRef('tp_body_v1', [])
 
   const sortedAsc = computed(() =>
     [...entries.value].sort((a, b) => a.date.localeCompare(b.date))
@@ -47,10 +37,6 @@ export const useBodyStore = defineStore('body', () => {
   function removeEntry(id) {
     entries.value = entries.value.filter(e => e.id !== id)
   }
-
-  watch(entries, (v) => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(v)) } catch {}
-  }, { deep: true })
 
   function replaceEntries(newEntries) {
     entries.value = newEntries

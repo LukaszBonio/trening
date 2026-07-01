@@ -1,29 +1,10 @@
 import { defineStore } from 'pinia'
-import { ref, computed, watch } from 'vue'
-
-const STORAGE_KEY = 'tp_profiles_v1'
-const ACTIVE_KEY = 'tp_active_profile_v1'
-
-function loadProfiles() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    const parsed = raw ? JSON.parse(raw) : null
-    if (Array.isArray(parsed) && parsed.length) return parsed
-  } catch {}
-  return [{ id: 'default', name: 'Ja', createdAt: Date.now() }]
-}
-
-function loadActiveId() {
-  try {
-    return localStorage.getItem(ACTIVE_KEY) || 'default'
-  } catch {
-    return 'default'
-  }
-}
+import { computed } from 'vue'
+import { usePersistentRef } from '../composables/usePersistentRef.js'
 
 export const useProfileStore = defineStore('profile', () => {
-  const profiles = ref(loadProfiles())
-  const activeId = ref(loadActiveId())
+  const profiles = usePersistentRef('tp_profiles_v1', [{ id: 'default', name: 'Ja', createdAt: Date.now() }])
+  const activeId = usePersistentRef('tp_active_profile_v1', 'default')
 
   const activeProfile = computed(() =>
     profiles.value.find(p => p.id === activeId.value) || profiles.value[0] || null
@@ -45,14 +26,6 @@ export const useProfileStore = defineStore('profile', () => {
   function setActive(id) {
     activeId.value = id
   }
-
-  watch(profiles, (v) => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(v)) } catch {}
-  }, { deep: true })
-
-  watch(activeId, (v) => {
-    try { localStorage.setItem(ACTIVE_KEY, v) } catch {}
-  })
 
   return { profiles, activeId, activeProfile, addProfile, removeProfile, setActive }
 })

@@ -1,19 +1,9 @@
 import { defineStore } from 'pinia'
-import { ref, computed, watch } from 'vue'
-
-const STORAGE_KEY = 'tp_custom_plans_v1'
-
-function load() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
-}
+import { computed } from 'vue'
+import { usePersistentRef } from '../composables/usePersistentRef.js'
 
 export const useCustomPlansStore = defineStore('customPlans', () => {
-  const plans = ref(load())
+  const plans = usePersistentRef('tp_custom_plans_v1', [])
 
   const byType = computed(() => {
     const map = {}
@@ -47,10 +37,6 @@ export const useCustomPlansStore = defineStore('customPlans', () => {
     copy.name = `${plan.name} (kopia)`
     return add(copy)
   }
-
-  watch(plans, (v) => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(v)) } catch {}
-  }, { deep: true })
 
   return { plans, byType, add, update, remove, duplicate }
 })
