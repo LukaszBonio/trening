@@ -17,6 +17,7 @@ import AchievementsGrid from '../components/AchievementsGrid.vue'
 import CalendarHeatmap from '../components/CalendarHeatmap.vue'
 import { generateWeeklyReport, loadCachedReport, saveCachedReport, clearCachedReport } from '../lib/weeklyReport.js'
 import { useToast } from '../composables/useToast.js'
+import BaseCard from '../components/BaseCard.vue'
 
 const workouts = useWorkoutsStore()
 const toast = useToast()
@@ -125,26 +126,28 @@ const progressPoints = computed(() =>
 <template>
   <div class="stats-view">
     <!-- Tygodniowy raport AI -->
-    <div class="card weekly-report" v-if="recentSessionsCount >= 2">
-      <div class="weekly-header">
-        <div class="weekly-title-block">
-          <h3 class="card-title weekly-title">
-            <i class="ti ti-sparkles"></i> Twój tydzień
-          </h3>
-          <div v-if="weeklyReport" class="dim weekly-age">
-            wygenerowano {{ reportAgeLabel() }}
+    <BaseCard v-if="recentSessionsCount >= 2" class="weekly-report">
+      <template #header>
+        <div class="weekly-header">
+          <div class="weekly-title-block">
+            <h3 class="card-title weekly-title">
+              <i class="ti ti-sparkles"></i> Twój tydzień
+            </h3>
+            <div v-if="weeklyReport" class="dim weekly-age">
+              wygenerowano {{ reportAgeLabel() }}
+            </div>
           </div>
+          <button
+            v-if="weeklyReport"
+            class="btn-tiny"
+            @click="refreshReport"
+            :disabled="reportLoading"
+            aria-label="Wygeneruj raport ponownie"
+          >
+            <i class="ti ti-refresh" aria-hidden="true"></i>
+          </button>
         </div>
-        <button
-          v-if="weeklyReport"
-          class="btn-tiny"
-          @click="refreshReport"
-          :disabled="reportLoading"
-          aria-label="Wygeneruj raport ponownie"
-        >
-          <i class="ti ti-refresh" aria-hidden="true"></i>
-        </button>
-      </div>
+      </template>
 
       <!-- Brak raportu — przycisk generowania -->
       <div v-if="!weeklyReport && !reportLoading && !reportError">
@@ -189,7 +192,7 @@ const progressPoints = computed(() =>
           </ul>
         </div>
       </template>
-    </div>
+    </BaseCard>
 
     <div class="stats-grid">
       <div class="stat-card">
@@ -214,24 +217,20 @@ const progressPoints = computed(() =>
       </div>
     </div>
 
-    <div class="card" v-if="totalWorkouts">
-      <h3 class="card-title">Kalendarz treningowy</h3>
+    <BaseCard v-if="totalWorkouts" title="Kalendarz treningowy">
       <CalendarHeatmap :workouts="workouts.history" />
-    </div>
+    </BaseCard>
 
-    <div class="card" v-if="totalWorkouts">
-      <h3 class="card-title">Wolumen w czasie</h3>
+    <BaseCard v-if="totalWorkouts" title="Wolumen w czasie">
       <VolumeChart :workouts="workouts.history" />
-    </div>
+    </BaseCard>
 
-    <div class="card" v-if="totalWorkouts">
-      <h3 class="card-title">Treningi w tygodniach</h3>
+    <BaseCard v-if="totalWorkouts" title="Treningi w tygodniach">
       <WeeklyChart :workouts="workouts.history" />
-    </div>
+    </BaseCard>
 
     <!-- Per-exercise progress -->
-    <div class="card" v-if="exercises.length">
-      <h3 class="card-title">Progres ćwiczenia</h3>
+    <BaseCard v-if="exercises.length" title="Progres ćwiczenia">
       <div class="ex-picker">
         <select v-model="selectedExercise" class="select">
           <option :value="null">— wybierz ćwiczenie —</option>
@@ -251,16 +250,15 @@ const progressPoints = computed(() =>
       <p v-else-if="selectedExercise" class="muted" style="margin-top: var(--space-3)">
         Potrzeba co najmniej 2 treningów z tym ćwiczeniem.
       </p>
-    </div>
+    </BaseCard>
 
     <!-- Achievements -->
-    <div class="card">
+    <BaseCard>
       <AchievementsGrid />
-    </div>
+    </BaseCard>
 
     <!-- Personal records -->
-    <div class="card" v-if="records.length">
-      <h3 class="card-title">Rekordy osobiste (top 10)</h3>
+    <BaseCard v-if="records.length" title="Rekordy osobiste (top 10)">
       <ul class="pr-list">
         <li v-for="(pr, i) in records.slice(0, 10)" :key="i" class="pr-row">
           <span class="pr-rank">#{{ i + 1 }}</span>
@@ -273,10 +271,9 @@ const progressPoints = computed(() =>
           <span class="pr-1rm">{{ pr.best1RM }}<small>kg</small></span>
         </li>
       </ul>
-    </div>
+    </BaseCard>
 
-    <div class="card" v-if="volumeByMuscle.length">
-      <h3 class="card-title">Wolumen wg partii mięśniowej</h3>
+    <BaseCard v-if="volumeByMuscle.length" title="Wolumen wg partii mięśniowej">
       <p class="muted" style="font-size: 12px; margin-bottom: var(--space-2)">
         Kliknij w partię, aby zobaczyć listę ćwiczeń.
       </p>
@@ -300,11 +297,11 @@ const progressPoints = computed(() =>
           </ul>
         </div>
       </div>
-    </div>
+    </BaseCard>
 
-    <div class="card" v-if="!totalWorkouts">
+    <BaseCard v-if="!totalWorkouts">
       <p class="muted">Brak danych. Wykonaj pierwszy trening żeby zobaczyć statystyki.</p>
-    </div>
+    </BaseCard>
   </div>
 </template>
 

@@ -10,6 +10,7 @@ import { permission as notifPermission, requestPermission as requestNotifPermiss
 import { transformLegacyEntry } from '../lib/migration.js'
 import { useDialog } from '../composables/useDialog.js'
 import { useToast } from '../composables/useToast.js'
+import BaseCard from '../components/BaseCard.vue'
 
 const dialog = useDialog()
 const toast = useToast()
@@ -197,8 +198,7 @@ function onFileChange(e) {
 <template>
   <div class="you-view">
     <!-- Cloud account -->
-    <div class="card">
-      <h2 class="card-title">Konto chmurowe</h2>
+    <BaseCard title="Konto chmurowe" tag="h2">
 
       <div v-if="cloud.user" class="logged-in">
         <div class="user-info">
@@ -261,15 +261,11 @@ function onFileChange(e) {
         </form>
         <p v-if="message" class="auth-msg">{{ message }}</p>
       </div>
-    </div>
+    </BaseCard>
 
     <!-- Settings -->
-    <details class="card collapsible">
-      <summary>
-        <span class="card-title" style="margin: 0">Ustawienia</span>
-        <i class="ti ti-chevron-down collapsible-chevron"></i>
-      </summary>
-      <div class="collapsible-body settings-grid">
+    <BaseCard collapsible title="Ustawienia">
+      <div class="settings-grid">
         <label class="setting">
           <span>Domyślny czas odpoczynku</span>
           <select v-model.number="settingsStore.settings.restTimerDefault">
@@ -356,15 +352,10 @@ function onFileChange(e) {
           </button>
         </div>
       </div>
-    </details>
+    </BaseCard>
 
     <!-- Backup -->
-    <details class="card collapsible">
-      <summary>
-        <span class="card-title" style="margin: 0">Kopia zapasowa (JSON)</span>
-        <i class="ti ti-chevron-down collapsible-chevron"></i>
-      </summary>
-      <div class="collapsible-body">
+    <BaseCard collapsible title="Kopia zapasowa (JSON)">
         <p class="muted" style="margin-bottom: var(--space-3)">
           Lokalna kopia zapasowa danych. Możesz później zaimportować z innego urządzenia.
         </p>
@@ -377,16 +368,10 @@ function onFileChange(e) {
           </button>
           <input ref="fileInput" type="file" accept="application/json" style="display:none" @change="onFileChange" />
         </div>
-      </div>
-    </details>
+    </BaseCard>
 
     <!-- Profiles -->
-    <details class="card collapsible">
-      <summary>
-        <span class="card-title" style="margin: 0">Profile lokalne</span>
-        <i class="ti ti-chevron-down collapsible-chevron"></i>
-      </summary>
-      <div class="collapsible-body">
+    <BaseCard collapsible title="Profile lokalne">
         <p class="muted" style="margin-bottom: var(--space-3)">
           Aktywny: <strong>{{ profile.activeProfile?.name }}</strong>
         </p>
@@ -415,8 +400,7 @@ function onFileChange(e) {
         >
           <i class="ti ti-plus"></i> Dodaj profil
         </button>
-      </div>
-    </details>
+    </BaseCard>
   </div>
 </template>
 
@@ -474,18 +458,6 @@ function onFileChange(e) {
   color: var(--text-muted);
 }
 
-.collapsible > summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  user-select: none;
-  list-style: none;
-}
-.collapsible > summary::-webkit-details-marker { display: none; }
-.collapsible[open] .collapsible-chevron { transform: rotate(180deg); }
-.collapsible-chevron { transition: transform var(--dur); color: var(--text-dim); }
-.collapsible-body { margin-top: var(--space-4); }
 
 .backup-actions { display: flex; gap: 8px; }
 

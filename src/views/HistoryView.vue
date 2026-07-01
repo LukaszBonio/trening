@@ -7,6 +7,7 @@ import { formatDuration, formatDateTime } from '../lib/format.js'
 import { workoutVolume, totalSets } from '../lib/workoutMath.js'
 import { useToast } from '../composables/useToast.js'
 import { useDialog } from '../composables/useDialog.js'
+import BaseCard from '../components/BaseCard.vue'
 
 const toast = useToast()
 const dialog = useDialog()
@@ -107,8 +108,7 @@ const typeColor = (type) => ({
 </script>
 
 <template>
-  <div class="card">
-    <h2 class="card-title">Historia treningów</h2>
+  <BaseCard title="Historia treningów" tag="h2">
     <p class="muted" v-if="!sortedHistory.length">
       Brak treningów. Rozpocznij sesję w zakładce „Trening".
     </p>
@@ -191,7 +191,7 @@ const typeColor = (type) => ({
         </div>
       </li>
     </ul>
-  </div>
+  </BaseCard>
 </template>
 
 <style scoped>

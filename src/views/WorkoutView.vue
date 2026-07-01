@@ -14,6 +14,7 @@ import WorkoutCards from '../components/WorkoutCards.vue'
 import { useCustomPlansStore } from '../stores/customPlans.js'
 import { useDialog } from '../composables/useDialog.js'
 import { useToast } from '../composables/useToast.js'
+import BaseCard from '../components/BaseCard.vue'
 
 const dialog = useDialog()
 const toast = useToast()
@@ -267,7 +268,7 @@ async function discardWorkout() {
 
   <!-- Active session -->
   <div v-if="session.isActive" class="active-session">
-    <div class="session-header card">
+    <BaseCard class="session-header">
       <div>
         <div class="session-type">{{ session.active.type.toUpperCase() }} · <span class="duration">{{ duration }}</span></div>
         <h2 class="card-title" style="margin: 0">{{ session.active.planName }}</h2>
@@ -278,7 +279,7 @@ async function discardWorkout() {
           <div class="progress-fill" :style="{ width: progress + '%' }"></div>
         </div>
       </div>
-    </div>
+    </BaseCard>
 
     <RestTimer v-if="settings.settings.workoutMode !== 'cards'" ref="restTimerRef" />
 
@@ -310,7 +311,7 @@ async function discardWorkout() {
     <button class="back-btn" @click="selectedType = null">
       <i class="ti ti-arrow-left"></i> Wybierz inny typ
     </button>
-    <div class="card">
+    <BaseCard>
       <template v-if="editingPlan">
         <h2 class="card-title">{{ editingPlan === 'new' ? 'Nowy plan' : 'Edytuj plan' }}</h2>
         <PlanEditor
@@ -371,13 +372,13 @@ async function discardWorkout() {
           @cancel="planSource = 'library'"
         />
       </template>
-    </div>
+    </BaseCard>
   </div>
 
   <!-- Type selection — pogrupowane wg systemu treningowego -->
   <div v-else class="type-select">
     <!-- Następny trening w cyklu (jeśli jest historia) -->
-    <div v-if="nextWorkout" class="repeat-banner card">
+    <BaseCard v-if="nextWorkout" class="repeat-banner">
       <div class="repeat-info">
         <i class="ti" :class="nextWorkout.icon" :style="{ color: nextWorkout.color }"></i>
         <div>
@@ -391,10 +392,10 @@ async function discardWorkout() {
       <button class="btn btn-primary repeat-btn" @click="selectDay(nextWorkout.key)">
         <i class="ti ti-player-play"></i> Trenuj
       </button>
-    </div>
+    </BaseCard>
 
     <!-- 3 systemy treningowe — accordion -->
-    <div v-for="sys in trainingSystems" :key="sys.id" class="card system-card">
+    <BaseCard v-for="sys in trainingSystems" :key="sys.id" class="system-card">
       <button class="system-header" @click="toggleSystem(sys.id)">
         <div class="system-icon">
           <i class="ti" :class="sys.icon"></i>
@@ -427,7 +428,7 @@ async function discardWorkout() {
           <i class="ti ti-chevron-right day-arrow"></i>
         </button>
       </div>
-    </div>
+    </BaseCard>
   </div>
   </div>
 </template>
