@@ -5,11 +5,11 @@ import { useSettingsStore } from '../stores/settings.js'
 import { useWorkoutsStore } from '../stores/workouts.js'
 import { detectMuscle, getMuscleName, detectEquipment } from '../lib/muscles.js'
 import { findSubstitutes, youtubeSearchUrl } from '../lib/substitutions.js'
-import { notifyTimerEnd } from '../lib/notifications.js'
 import { lastSetFor } from '../lib/analytics.js'
 import { suggestNextWeight } from '../lib/progression.js'
-import { formatClock } from '../lib/format.js'
 import { useDialog } from '../composables/useDialog.js'
+import { useRestTimer } from '../composables/useRestTimer.js'
+import { useSetNavigation } from '../composables/useSetNavigation.js'
 
 const dialog = useDialog()
 
@@ -21,42 +21,29 @@ const session = useSessionStore()
 const settings = useSettingsStore()
 const workouts = useWorkoutsStore()
 
-// Tryby karty: 'setup' (wpisywanie ciężaru/powt) | 'rest' (timer odpoczynku)
 const mode = ref('setup')
 
-// Pozycja w treningu
-const exIdx = ref(0)
-const setIdx = ref(0)
+const exercises = computed(() => session.active?.exercises || [])
 
-// Rest timer state
-const restRemaining = ref(0)
-const timerEndFlash = ref(false)
-const restTotal = ref(90)
-let restInterval = null
+const {
+  exIdx, setIdx, currentEx, currentSet,
+  nextExIdx, nextSetIdx, nextEx, globalProgress,
+  advance, goBackPosition, jumpToFirstUnchecked, reset: resetNav
+} = useSetNavigation(exercises)
+
+const {
+  restRemaining, restTotal, restDisplay, restProgress, timerEndFlash,
+  startRest, stopRest, adjustRest, onTimerEnd
+} = useRestTimer(90)
+
+onTimerEnd(() => {
+  advance()
+  mode.value = 'setup'
+  nextTick(() => { weightInputRef.value?.focus() })
+})
 
 const showSubstitutes = ref(false)
 const showRpeHelp = ref(false)
-
-const exercises = computed(() => session.active?.exercises || [])
-const currentEx = computed(() => exercises.value[exIdx.value])
-const currentSet = computed(() => currentEx.value?.sets[setIdx.value])
-
-// Następne ćwiczenie/seria (do nagłówków w rest mode)
-const nextExIdx = computed(() => {
-  if (!currentEx.value) return -1
-  if (setIdx.value < currentEx.value.sets.length - 1) return exIdx.value
-  return exIdx.value + 1
-})
-const nextSetIdx = computed(() => {
-  if (!currentEx.value) return -1
-  if (setIdx.value < currentEx.value.sets.length - 1) return setIdx.value + 1
-  return 0  // pierwsza seria następnego ćwiczenia
-})
-const nextEx = computed(() =>
-  nextExIdx.value >= 0 && nextExIdx.value < exercises.value.length
-    ? exercises.value[nextExIdx.value]
-    : null
-)
 
 const muscleName = computed(() => {
   if (!currentEx.value) return ''
@@ -64,13 +51,11 @@ const muscleName = computed(() => {
   return m ? getMuscleName(m) : ''
 })
 
-// Ostatnia seria danego ćwiczenia z historii (dla podpowiedzi pod inputami).
 const lastSetHint = computed(() => {
   if (!currentEx.value) return null
   return lastSetFor(workouts.history, currentEx.value.name)
 })
 
-// Deterministyczna sugestia kolejnego ciężaru (waga + powód).
 const progressionHint = computed(() => {
   if (!currentEx.value) return null
   return suggestNextWeight(workouts.history, currentEx.value.name, currentEx.value.reps)
@@ -94,57 +79,17 @@ const substitutes = computed(() =>
     : []
 )
 
-// Globalny postęp (wszystkie serie wszystkich ćwiczeń)
-const globalProgress = computed(() => {
-  let done = 0, total = 0, currentGlobalIdx = 0
-  exercises.value.forEach((ex, ei) => {
-    ex.sets.forEach((s, si) => {
-      total++
-      if (s.done) done++
-      if (ei < exIdx.value || (ei === exIdx.value && si < setIdx.value)) {
-        currentGlobalIdx++
-      }
-    })
-  })
-  return { done, total, currentGlobalIdx }
-})
-
-const restDisplay = computed(() => formatClock(restRemaining.value))
-
-// Auto-advance do następnej serii/ćwiczenia
-function advance() {
-  if (!currentEx.value) return false
-  if (setIdx.value < currentEx.value.sets.length - 1) {
-    setIdx.value++
-    return true
-  }
-  if (exIdx.value < exercises.value.length - 1) {
-    exIdx.value++
-    setIdx.value = 0
-    return true
-  }
-  return false  // koniec treningu
-}
-
 function goBack() {
   if (mode.value === 'rest') {
-    // Anuluj rest, wróć do setup obecnej serii
     stopRest()
     mode.value = 'setup'
     return
   }
-  if (setIdx.value > 0) {
-    setIdx.value--
-  } else if (exIdx.value > 0) {
-    exIdx.value--
-    setIdx.value = exercises.value[exIdx.value].sets.length - 1
-  }
+  goBackPosition()
 }
 
-// Mark current set done + start rest
 async function completeSet() {
   if (!currentSet.value) return
-  // Walidacja: musi być coś wpisane
   if (currentSet.value.weight === '' && currentSet.value.reps === '') {
     const ok = await dialog.confirm('Nie wpisałeś ciężaru ani powtórzeń. Zaznaczyć serię mimo to?', {
       title: 'Pusta seria',
@@ -156,55 +101,20 @@ async function completeSet() {
   session.toggleSet(exIdx.value, setIdx.value)
   emit('set-done')
 
-  // Sprawdź czy jest jeszcze coś do zrobienia
   const hasMore = (setIdx.value < currentEx.value.sets.length - 1) || (exIdx.value < exercises.value.length - 1)
   if (!hasMore) {
-    // Koniec treningu — nie startuj timera
     mode.value = 'done'
     return
   }
-  startRest()
-}
-
-function startRest() {
-  restTotal.value = settings.settings.restTimerDefault || 90
-  restRemaining.value = restTotal.value
   mode.value = 'rest'
-  if (restInterval) clearInterval(restInterval)
-  restInterval = setInterval(() => {
-    restRemaining.value--
-    if (restRemaining.value <= 0) {
-      stopRest()
-      notifyTimerEnd('Koniec przerwy', 'Wracaj do ćwiczeń')
-      // Pulsujący flash overlay przez 2 sekundy (wizualne wzmocnienie sygnału).
-      timerEndFlash.value = true
-      setTimeout(() => { timerEndFlash.value = false }, 2000)
-      // Auto-advance do następnej serii i przejście w tryb setup
-      advance()
-      mode.value = 'setup'
-      nextTick(() => {
-        weightInputRef.value?.focus()
-      })
-    }
-  }, 1000)
-}
-
-function stopRest() {
-  if (restInterval) { clearInterval(restInterval); restInterval = null }
-}
-
-function adjustRest(delta) {
-  restRemaining.value = Math.max(0, restRemaining.value + delta)
-  if (restRemaining.value > restTotal.value) restTotal.value = restRemaining.value
+  startRest(settings.settings.restTimerDefault || 90)
 }
 
 function skipRest() {
   stopRest()
   advance()
   mode.value = 'setup'
-  nextTick(() => {
-    weightInputRef.value?.focus()
-  })
+  nextTick(() => { weightInputRef.value?.focus() })
 }
 
 async function swap(name) {
@@ -218,37 +128,19 @@ async function swap(name) {
   }
 }
 
-// Po reload — przeskocz do pierwszej niezaznaczonej serii
-function jumpToFirstUnchecked() {
-  for (let ei = 0; ei < exercises.value.length; ei++) {
-    for (let si = 0; si < exercises.value[ei].sets.length; si++) {
-      if (!exercises.value[ei].sets[si].done) {
-        exIdx.value = ei
-        setIdx.value = si
-        return
-      }
-    }
-  }
-}
-
 onMounted(() => {
   jumpToFirstUnchecked()
-  nextTick(() => {
-    weightInputRef.value?.focus()
-  })
+  nextTick(() => { weightInputRef.value?.focus() })
 })
 onBeforeUnmount(() => stopRest())
 
-// Reset gdy zmieni się sesja
 watch(() => session.active?.id, () => {
-  exIdx.value = 0
-  setIdx.value = 0
+  resetNav()
   mode.value = 'setup'
   stopRest()
   jumpToFirstUnchecked()
 })
 
-// Eksponuj dla WorkoutView — używane przy "dobitce" by przeskoczyć na nowo dodaną serię.
 defineExpose({
   jumpToFirstUnchecked,
   resumeFromDone() {
@@ -258,11 +150,8 @@ defineExpose({
   }
 })
 
-// Auto-podpowiedź ciężaru: gdy user wchodzi na pustą serię, wstaw domyślną wartość.
-// Priorytet: 1) poprzednia seria w tej sesji  2) sugestia progresji (waga + reps + RPE z historii).
 function suggestWeightIfEmpty() {
   if (!currentSet.value || currentSet.value.weight !== '' && currentSet.value.weight !== null && currentSet.value.weight !== undefined) return
-  // Poprzednia seria w tej sesji
   if (setIdx.value > 0) {
     const prev = currentEx.value?.sets[setIdx.value - 1]
     if (prev && prev.weight !== '' && prev.weight != null) {
@@ -270,17 +159,11 @@ function suggestWeightIfEmpty() {
       return
     }
   }
-  // Progresja z historii (RPE + reps z ostatniej sesji)
   if (progressionHint.value && progressionHint.value.weight > 0) {
     session.updateSet(exIdx.value, setIdx.value, { weight: progressionHint.value.weight })
   }
 }
 watch([exIdx, setIdx, () => session.active?.id], suggestWeightIfEmpty, { immediate: true, flush: 'post' })
-
-const restProgress = computed(() => {
-  if (restTotal.value === 0) return 0
-  return (1 - restRemaining.value / restTotal.value) * 100
-})
 </script>
 
 <template>
