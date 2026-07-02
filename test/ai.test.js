@@ -141,6 +141,31 @@ describe('normalizePlan — suggestedWeight', () => {
   })
 })
 
+describe('normalizePlan — tłumaczenie EN→PL', () => {
+  it('tłumaczy angielskie nazwy ćwiczeń na polskie', () => {
+    const plan = pushPlan()
+    plan.exercises[0].name = 'Bench Press'
+    plan.exercises[1].name = 'Incline Dumbbell Press'
+    plan.exercises[2].name = 'Cable Crossover'
+    const out = normalizePlan(plan, { type: 'push', goal: 'mass' })
+    expect(out.exercises[0].name).toBe('Wyciskanie sztangi na ławce poziomej')
+    expect(out.exercises[1].name).toBe('Wyciskanie hantli na ławce skośnej')
+    expect(out.exercises[2].name).toBe('Krzyżowanie linek')
+  })
+  it('nie zmienia polskich nazw', () => {
+    const plan = pushPlan()
+    plan.exercises[0].name = 'Wyciskanie sztangi na ławce poziomej'
+    const out = normalizePlan(plan, { type: 'push', goal: 'mass' })
+    expect(out.exercises[0].name).toBe('Wyciskanie sztangi na ławce poziomej')
+  })
+  it('nie zmienia nieznanych nazw', () => {
+    const plan = pushPlan()
+    plan.exercises[0].name = 'Jakieś nieznane ćwiczenie'
+    const out = normalizePlan(plan, { type: 'push', goal: 'mass' })
+    expect(out.exercises[0].name).toBe('Jakieś nieznane ćwiczenie')
+  })
+})
+
 describe('normalizePlan — analysis', () => {
   it('filtruje wpisy z nieprawidłowym statusem, przycina pola', () => {
     const plan = pushPlan({

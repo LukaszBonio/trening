@@ -3,6 +3,7 @@
 
 import { PRIMARY_TO_GROUP } from './workoutSchema.js'
 import { getAuthToken } from './auth.js'
+import { translateExerciseName } from './substitutions.js'
 
 // Worker proxy URL — można nadpisać przez `.env` (VITE_AI_PROXY_URL) lub localStorage 'tp_proxy_url'.
 const DEFAULT_PROXY = import.meta.env?.VITE_AI_PROXY_URL || 'https://trening-pro-api.lukasz-mateusz-bonio.workers.dev'
@@ -421,6 +422,7 @@ export function normalizePlan(plan, { type, goal }) {
     if (!ex.name || typeof ex.sets !== 'number' || !ex.reps) {
       throw new Error('AI zwróciło ćwiczenie z brakującymi polami — spróbuj ponownie')
     }
+    ex.name = translateExerciseName(ex.name)
     // Wymuszenie 3 serii dla redukcji — niezależnie od tego co AI zwróciło.
     if (goal === 'cut') ex.sets = 3
     // Miękka walidacja: spoza dozwolonych wartości → null (nie odrzucamy planu)

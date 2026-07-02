@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { detectMuscle, detectEquipment } from '../src/lib/muscles.js'
-import { findSubstitutes } from '../src/lib/substitutions.js'
+import { findSubstitutes, translateExerciseName } from '../src/lib/substitutions.js'
 
 describe('detectMuscle', () => {
   it('rozpoznaje klatkę po keyword', () => {
@@ -54,5 +54,28 @@ describe('findSubstitutes', () => {
   })
   it('zwraca [] gdy nie wykryto partii', () => {
     expect(findSubstitutes('Pies-jaszczurka turbo XYZ', 3)).toEqual([])
+  })
+})
+
+describe('translateExerciseName', () => {
+  it('tłumaczy angielskie nazwy na polskie', () => {
+    expect(translateExerciseName('Bench Press')).toBe('Wyciskanie sztangi na ławce poziomej')
+    expect(translateExerciseName('Lateral Raise')).toBe('Wznosy hantli bokiem')
+    expect(translateExerciseName('Romanian Deadlift')).toBe('Martwy ciąg rumuński')
+    expect(translateExerciseName('Skull Crusher')).toBe('Francuskie wyciskanie sztangi')
+  })
+  it('jest case-insensitive', () => {
+    expect(translateExerciseName('bench press')).toBe('Wyciskanie sztangi na ławce poziomej')
+    expect(translateExerciseName('BENCH PRESS')).toBe('Wyciskanie sztangi na ławce poziomej')
+  })
+  it('nie zmienia polskich nazw', () => {
+    expect(translateExerciseName('Wyciskanie sztangi na ławce poziomej')).toBe('Wyciskanie sztangi na ławce poziomej')
+  })
+  it('nie zmienia nieznanych nazw', () => {
+    expect(translateExerciseName('Jakieś nieznane')).toBe('Jakieś nieznane')
+  })
+  it('zwraca input dla null/undefined', () => {
+    expect(translateExerciseName(null)).toBeNull()
+    expect(translateExerciseName(undefined)).toBeUndefined()
   })
 })
