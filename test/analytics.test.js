@@ -6,7 +6,7 @@ import {
   currentStreak,
   lastSetFor,
   recentSessionsOfType
-} from '../src/lib/analytics.js'
+} from '../src/lib/analytics'
 
 describe('estimated1RM (Epley)', () => {
   it('zwraca 0 dla brakujących danych', () => {

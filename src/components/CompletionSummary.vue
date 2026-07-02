@@ -1,10 +1,10 @@
 <script setup>
 import { computed, onMounted } from 'vue'
 import confetti from 'canvas-confetti'
-import { personalRecords } from '../lib/analytics.js'
+import { personalRecords } from '../lib/analytics'
 import { useWorkoutsStore } from '../stores/workouts.js'
-import { workoutVolume, totalSets } from '../lib/workoutMath.js'
-import { formatDuration } from '../lib/format.js'
+import { workoutVolume, totalSets } from '../lib/workoutMath'
+import { formatDuration } from '../lib/format'
 
 const props = defineProps({
   workout: { type: Object, required: true }

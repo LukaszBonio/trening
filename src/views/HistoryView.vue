@@ -1,10 +1,10 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useWorkoutsStore } from '../stores/workouts.js'
-import { exportWorkoutToPDF } from '../lib/pdf.js'
+import { exportWorkoutToPDF } from '../lib/pdf'
 import { useCustomPlansStore } from '../stores/customPlans.js'
-import { formatDuration, formatDateTime } from '../lib/format.js'
-import { workoutVolume, totalSets } from '../lib/workoutMath.js'
+import { formatDuration, formatDateTime } from '../lib/format'
+import { workoutVolume, totalSets } from '../lib/workoutMath'
 import { useToast } from '../composables/useToast.js'
 import { useDialog } from '../composables/useDialog.js'
 import BaseCard from '../components/BaseCard.vue'

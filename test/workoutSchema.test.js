@@ -5,7 +5,7 @@ import {
   GROUP_LABELS,
   GROUP_ORDER,
   groupExercisesByMuscle
-} from '../src/lib/workoutSchema.js'
+} from '../src/lib/workoutSchema'
 
 describe('MUSCLE_TO_GROUP', () => {
   it('mapuje głowy mięśniowe na grupy używane w GROUP_LABELS', () => {

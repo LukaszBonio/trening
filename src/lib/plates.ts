@@ -1,9 +1,12 @@
-// Standardowe talerze siłowe (kg), od największego do najmniejszego
-const DEFAULT_PLATES = [25, 20, 15, 10, 5, 2.5, 1.25]
-const DEFAULT_BAR = 20
+const DEFAULT_PLATES: number[] = [25, 20, 15, 10, 5, 2.5, 1.25]
+const DEFAULT_BAR: number = 20
 
-// Kolory typowe dla talerzy siłowych
-const PLATE_COLORS = {
+export interface PlateColor {
+  bg: string
+  text: string
+}
+
+const PLATE_COLORS: Record<number, PlateColor> = {
   25:   { bg: '#dc2626', text: '#fff' },
   20:   { bg: '#2563eb', text: '#fff' },
   15:   { bg: '#facc15', text: '#000' },
@@ -13,17 +16,31 @@ const PLATE_COLORS = {
   1.25: { bg: '#52525b', text: '#fff' }
 }
 
-/**
- * Rozkłada ciężar na talerze (per stronę sztangi).
- * Zwraca { plates: [{ weight, count }], remainder } gdzie remainder>0 = nie da się dokładnie.
- */
-export function calculatePlates(targetWeight, barWeight = DEFAULT_BAR, available = DEFAULT_PLATES) {
+export interface PlateEntry {
+  weight: number
+  count: number
+  color: PlateColor | undefined
+}
+
+export interface PlateResult {
+  plates: PlateEntry[]
+  perSide: number
+  remainder: number
+  impossible: boolean
+  barWeight: number
+}
+
+export function calculatePlates(
+  targetWeight: number,
+  barWeight: number = DEFAULT_BAR,
+  available: number[] = DEFAULT_PLATES
+): PlateResult {
   if (targetWeight < barWeight) {
     return { plates: [], perSide: 0, remainder: 0, impossible: true, barWeight }
   }
   const perSide = (targetWeight - barWeight) / 2
   let remaining = perSide
-  const plates = []
+  const plates: PlateEntry[] = []
   for (const w of available) {
     if (remaining >= w) {
       const count = Math.floor(remaining / w)

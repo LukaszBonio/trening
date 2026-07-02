@@ -5,7 +5,7 @@ import {
   normalizePlan,
   PRIMARY_MUSCLES,
   MUSCLE_HEADS_BY_TYPE
-} from '../src/lib/ai.js'
+} from '../src/lib/ai'
 
 describe('parseClaudeJSON', () => {
   it('parsuje poprawny obiekt JSON', () => {

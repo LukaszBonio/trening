@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { detectMuscle, detectEquipment } from '../src/lib/muscles.js'
-import { findSubstitutes, translateExerciseName } from '../src/lib/substitutions.js'
+import { detectMuscle, detectEquipment } from '../src/lib/muscles'
+import { findSubstitutes, translateExerciseName } from '../src/lib/substitutions'
 
 describe('detectMuscle', () => {
   it('rozpoznaje klatkę po keyword', () => {

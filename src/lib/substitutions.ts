@@ -1,15 +1,10 @@
-import { detectMuscle, EXERCISE_TO_MUSCLE } from './muscles.js'
+import { detectMuscle, EXERCISE_TO_MUSCLE } from './muscles'
 
-const _substitutesCache = new Map();
+const _substitutesCache = new Map<string, string[]>();
 
-/**
- * @param {string} exerciseName
- * @param {number} max
- * @param {string|null} muscleHeadOverride
- */
-export function findSubstitutes(exerciseName, max = 5, muscleHeadOverride = null) {
+export function findSubstitutes(exerciseName: string, max: number = 5, muscleHeadOverride: string | null = null): string[] {
   const cacheKey = `${(exerciseName || '').toLowerCase().trim()}|${max}|${muscleHeadOverride || ''}`
-  if (_substitutesCache.has(cacheKey)) return _substitutesCache.get(cacheKey)
+  if (_substitutesCache.has(cacheKey)) return _substitutesCache.get(cacheKey)!
   const targetMuscle = muscleHeadOverride || detectMuscle(exerciseName)
   if (!targetMuscle) { _substitutesCache.set(cacheKey, []); return [] }
   const currentNorm = exerciseName.toLowerCase().trim()
@@ -20,14 +15,14 @@ export function findSubstitutes(exerciseName, max = 5, muscleHeadOverride = null
 
   all.sort((a, b) => b.length - a.length)
 
-  const filtered = []
+  const filtered: string[] = []
   for (const key of all) {
     const isShortVariant = filtered.some(longer => longer.includes(key))
     if (!isShortVariant) filtered.push(key)
   }
 
-  const seen = new Set()
-  const deduped = []
+  const seen = new Set<string>()
+  const deduped: string[] = []
   for (const key of filtered) {
     const norm = key.toLowerCase().replace(/[-\s]/g, '')
     if (seen.has(norm)) continue
@@ -55,12 +50,12 @@ export function findSubstitutes(exerciseName, max = 5, muscleHeadOverride = null
   return result
 }
 
-export function youtubeSearchUrl(exerciseName) {
+export function youtubeSearchUrl(exerciseName: string): string {
   const query = encodeURIComponent(exerciseName + ' technika ćwiczenia')
   return `https://www.youtube.com/results?search_query=${query}`
 }
 
-const EN_TO_PL = {
+const EN_TO_PL: Record<string, string> = {
   'bench press': 'Wyciskanie sztangi na ławce poziomej',
   'flat bench press': 'Wyciskanie sztangi na ławce poziomej',
   'barbell bench press': 'Wyciskanie sztangi na ławce poziomej',
@@ -227,11 +222,11 @@ const EN_TO_PL = {
   'cable crunch': 'Brzuszki na wyciągu',
 }
 
-const _enToPl = new Map(
+const _enToPl = new Map<string, string>(
   Object.entries(EN_TO_PL).map(([k, v]) => [k.toLowerCase(), v])
 )
 
-export function translateExerciseName(name) {
+export function translateExerciseName(name: string): string {
   if (!name) return name
   const lower = name.toLowerCase().trim()
   return _enToPl.get(lower) || name

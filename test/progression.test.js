@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { suggestNextWeight, parseRepsRange, roundToPlateStep } from '../src/lib/progression.js'
+import { suggestNextWeight, parseRepsRange, roundToPlateStep } from '../src/lib/progression'
 
 function hist(weight, reps, rpe = null) {
   return [{

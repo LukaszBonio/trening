@@ -1,4 +1,24 @@
-export async function exportWorkoutToPDF(workout) {
+interface WorkoutSet {
+  weight: number
+  reps: number
+  rpe?: number
+  note?: string
+}
+
+interface WorkoutExercise {
+  name: string
+  sets: WorkoutSet[]
+}
+
+interface Workout {
+  planName?: string
+  date: string | number | Date
+  duration?: number
+  type: string
+  exercises: WorkoutExercise[]
+}
+
+export async function exportWorkoutToPDF(workout: Workout): Promise<void> {
   const { jsPDF } = await import('jspdf')
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const W = 210
@@ -68,7 +88,7 @@ export async function exportWorkoutToPDF(workout) {
       doc.text(`${s.reps}`, margin + 40, y)
       doc.text(s.rpe ? `${s.rpe}` : '—', margin + 65, y)
       if (s.note) {
-        const lines = doc.splitTextToSize(s.note, W - margin - 85 - margin)
+        const lines: string[] = doc.splitTextToSize(s.note, W - margin - 85 - margin)
         doc.text(lines, margin + 85, y)
         y += (lines.length - 1) * 4
       }
@@ -79,7 +99,7 @@ export async function exportWorkoutToPDF(workout) {
   }
 
   // Footer
-  const totalPages = doc.internal.pages.length - 1
+  const totalPages = (doc.internal as any).pages.length - 1
   for (let p = 1; p <= totalPages; p++) {
     doc.setPage(p)
     doc.setFontSize(8)

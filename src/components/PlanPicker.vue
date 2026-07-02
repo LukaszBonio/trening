@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { PLANS } from '../lib/plans.js'
+import { PLANS } from '../lib/plans'
 import { useCustomPlansStore } from '../stores/customPlans.js'
 import { useFavoritesStore } from '../stores/favorites.js'
 

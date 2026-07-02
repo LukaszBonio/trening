@@ -4,8 +4,8 @@ import { createClient } from '@supabase/supabase-js'
 import { useWorkoutsStore } from './workouts.js'
 import { useBodyStore } from './body.js'
 import { useSettingsStore } from './settings.js'
-import { offlineQueue } from '../lib/offlineQueue.js'
-import { setAuthToken } from '../lib/auth.js'
+import { offlineQueue } from '../lib/offlineQueue'
+import { setAuthToken } from '../lib/auth'
 
 // Default fallback — działa bez konfiguracji `.env` (backward compatibility z poprzednim setupem).
 // Aby użyć innego projektu Supabase: utwórz `.env` z VITE_SUPABASE_URL i VITE_SUPABASE_KEY.

@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onUnmounted } from 'vue'
-import { notifyTimerEnd } from '../lib/notifications.js'
+import { notifyTimerEnd } from '../lib/notifications'
 
 const remaining = ref(0)
 const running = ref(false)

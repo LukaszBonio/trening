@@ -1,10 +1,56 @@
 // Funkcje analityczne — agregaty na podstawie history workouts.
 // Czyste funkcje, łatwe do testowania, nie zależą od Vue ani store.
 
+export interface WorkoutSet {
+  weight: number
+  reps: number
+  rpe?: number | null
+}
+
+export interface Exercise {
+  name: string
+  sets: WorkoutSet[]
+}
+
+export interface Workout {
+  date: string
+  type?: string
+  exercises: Exercise[]
+}
+
+export interface UniqueExerciseEntry {
+  name: string
+  count: number
+  lastDate: string
+}
+
+export interface ProgressPoint {
+  date: string
+  bestWeight: number
+  bestReps: number
+  best1RM: number
+  totalVolume: number
+}
+
+export interface PersonalRecord {
+  name: string
+  best1RM: number
+  weight: number
+  reps: number
+  date: string
+}
+
+export interface LastSetResult {
+  weight: number
+  reps: number
+  rpe: number | null
+  date: string
+}
+
 /**
  * Estimated 1RM (Epley formula): 1RM ≈ weight × (1 + reps / 30)
  */
-export function estimated1RM(weight, reps) {
+export function estimated1RM(weight: number, reps: number): number {
   if (!weight || !reps) return 0
   if (reps === 1) return weight
   return Math.round(weight * (1 + reps / 30) * 10) / 10
@@ -13,8 +59,8 @@ export function estimated1RM(weight, reps) {
 /**
  * Zwraca posortowaną listę unikalnych ćwiczeń z historii, z liczbą wystąpień.
  */
-export function uniqueExercises(history) {
-  const map = new Map()
+export function uniqueExercises(history: Workout[]): UniqueExerciseEntry[] {
+  const map = new Map<string, UniqueExerciseEntry>()
   for (const w of history) {
     for (const ex of w.exercises) {
       const key = ex.name.toLowerCase().trim()
@@ -34,10 +80,10 @@ export function uniqueExercises(history) {
  * Dla danego ćwiczenia zwraca chronologiczną listę najlepszych serii per dzień.
  * Format: [{ date, bestWeight, bestReps, best1RM, totalVolume }]
  */
-export function exerciseProgress(history, exerciseName) {
+export function exerciseProgress(history: Workout[], exerciseName: string): ProgressPoint[] {
   const key = exerciseName.toLowerCase().trim()
-  const sorted = [...history].sort((a, b) => new Date(a.date) - new Date(b.date))
-  const points = []
+  const sorted = [...history].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  const points: ProgressPoint[] = []
   for (const w of sorted) {
     for (const ex of w.exercises) {
       if (ex.name.toLowerCase().trim() !== key) continue
@@ -62,8 +108,8 @@ export function exerciseProgress(history, exerciseName) {
 /**
  * Personal record per exercise — najwyższy 1RM kiedykolwiek.
  */
-export function personalRecords(history) {
-  const map = new Map()
+export function personalRecords(history: Workout[]): PersonalRecord[] {
+  const map = new Map<string, PersonalRecord>()
   for (const w of history) {
     for (const ex of w.exercises) {
       const key = ex.name.toLowerCase().trim()
@@ -89,9 +135,9 @@ export function personalRecords(history) {
  * Ostatnia istotna seria danego ćwiczenia z historii (najnowszy trening, pierwsza nie-pusta seria).
  * Zwraca { weight, reps, rpe, date } lub null jeśli brak. rpe może być undefined.
  */
-export function lastSetFor(history, exerciseName) {
+export function lastSetFor(history: Workout[], exerciseName: string): LastSetResult | null {
   const key = exerciseName.toLowerCase().trim()
-  const sorted = [...history].sort((a, b) => new Date(b.date) - new Date(a.date))
+  const sorted = [...history].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   for (const w of sorted) {
     for (const ex of w.exercises) {
       if (ex.name.toLowerCase().trim() !== key) continue
@@ -106,19 +152,19 @@ export function lastSetFor(history, exerciseName) {
 /**
  * N ostatnich sesji danego typu (push/pull/legs/...).
  */
-export function recentSessionsOfType(history, type, count = 2) {
+export function recentSessionsOfType(history: Workout[], type: string, count: number = 2): Workout[] {
   return [...history]
     .filter(w => w.type === type)
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, count)
 }
 
 /**
  * Streak — liczba kolejnych tygodni z co najmniej 1 treningiem.
  */
-export function currentStreak(history) {
+export function currentStreak(history: Workout[]): number {
   if (!history.length) return 0
-  const weeks = new Set()
+  const weeks = new Set<string>()
   for (const w of history) {
     const d = new Date(w.date)
     const monday = new Date(d)
@@ -129,7 +175,7 @@ export function currentStreak(history) {
   const today = new Date()
   const thisMonday = new Date(today)
   thisMonday.setDate(today.getDate() - ((today.getDay() + 6) % 7))
-  let cursor = new Date(thisMonday)
+  const cursor = new Date(thisMonday)
   while (weeks.has(cursor.toISOString().slice(0, 10))) {
     streak++
     cursor.setDate(cursor.getDate() - 7)

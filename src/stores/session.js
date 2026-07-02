@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import { useWorkoutsStore } from './workouts.js'
-import { suggestNextWeight } from '../lib/progression.js'
+import { suggestNextWeight } from '../lib/progression'
 
 const DRAFT_KEY = 'tp_session_draft_v1'
 

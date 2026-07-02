@@ -1,9 +1,57 @@
 // Schemat grupowania ćwiczeń wg partii mięśniowej per typ treningu.
 // Skopiowany z legacy/index.html (line 2278+) — zachowuje znajomy układ kart.
 
-import { detectMuscle } from './muscles.js'
+import { detectMuscle } from './muscles'
+import type { MuscleKey } from './muscles'
 
-export const WORKOUT_SCHEMA = {
+// --- Types ---
+
+export type WorkoutType =
+  | 'push' | 'pull' | 'legs'
+  | 'upper_a' | 'upper_b'
+  | 'lower_a' | 'lower_b'
+  | 'fbw_a' | 'fbw_b' | 'fbw_c'
+
+export type GroupId =
+  | 'klatka' | 'barki' | 'triceps'
+  | 'plecy' | 'biceps' | 'przedramię'
+  | 'czworogłowy' | 'hamstring' | 'pośladki' | 'łydki'
+  | 'core' | 'inne'
+
+export type ExerciseSource = 'ai' | 'library' | 'custom'
+
+export interface SchemaGroup {
+  id: GroupId
+  count: number
+  muscles?: MuscleKey[]
+}
+
+export interface IndexGroup {
+  group: GroupId
+  count: number
+}
+
+export interface GroupLabel {
+  name: string
+  icon: string
+}
+
+export interface ExerciseGroup {
+  groupId: GroupId
+  label: string
+  icon: string
+  exerciseIndices: number[]
+}
+
+export interface Exercise {
+  name: string
+  primaryMuscle?: string
+  [key: string]: unknown
+}
+
+// --- Constants ---
+
+export const WORKOUT_SCHEMA: Record<WorkoutType, SchemaGroup[]> = {
   push: [
     { id: 'klatka',  count: 3, muscles: ['chest_upper', 'chest_middle', 'chest_lower'] },
     { id: 'barki',   count: 2, muscles: ['shoulder_front', 'shoulder_side'] },
@@ -53,29 +101,29 @@ export const WORKOUT_SCHEMA = {
 }
 
 // Mapowanie głów mięśniowych na partie (auto-generated z WORKOUT_SCHEMA)
-export const MUSCLE_TO_GROUP = {}
-Object.values(WORKOUT_SCHEMA).forEach(groups => {
-  groups.forEach(g => {
-    if (g.muscles) g.muscles.forEach(m => { MUSCLE_TO_GROUP[m] = g.id })
+export const MUSCLE_TO_GROUP: Record<string, GroupId> = {}
+Object.values(WORKOUT_SCHEMA).forEach((groups: SchemaGroup[]) => {
+  groups.forEach((g: SchemaGroup) => {
+    if (g.muscles) g.muscles.forEach((m: MuscleKey) => { MUSCLE_TO_GROUP[m] = g.id })
   })
 })
 
 // Kolejność partii per typ treningu (auto-generated)
-export const GROUP_ORDER = {}
-Object.entries(WORKOUT_SCHEMA).forEach(([type, groups]) => {
-  GROUP_ORDER[type] = groups.map(g => g.id)
+export const GROUP_ORDER: Record<string, GroupId[]> = {}
+Object.entries(WORKOUT_SCHEMA).forEach(([type, groups]: [string, SchemaGroup[]]) => {
+  GROUP_ORDER[type] = groups.map((g: SchemaGroup) => g.id)
 })
 
 // Schemat indeksowy dla planów AI (deterministyczny układ niezależny od nazw)
-export const INDEX_GROUPS = {}
-Object.entries(WORKOUT_SCHEMA).forEach(([type, groups]) => {
-  INDEX_GROUPS[type] = groups.map(g => ({ group: g.id, count: g.count }))
+export const INDEX_GROUPS: Record<string, IndexGroup[]> = {}
+Object.entries(WORKOUT_SCHEMA).forEach(([type, groups]: [string, SchemaGroup[]]) => {
+  INDEX_GROUPS[type] = groups.map((g: SchemaGroup) => ({ group: g.id, count: g.count }))
 })
 
 // Mapowanie primaryMuscle (klucze angielskie z planów AI) na klucze grup używane w GROUP_LABELS.
 // Używane w statystykach: jeśli ex.primaryMuscle jest ustawione (plan AI), używamy tego
 // zamiast detectMuscle(ex.name) — dzięki temu plany AI od razu trafiają we właściwą partię.
-export const PRIMARY_TO_GROUP = {
+export const PRIMARY_TO_GROUP: Record<string, GroupId> = {
   chest: 'klatka',
   shoulders: 'barki',
   rear_shoulders: 'barki',
@@ -90,7 +138,7 @@ export const PRIMARY_TO_GROUP = {
   core: 'core'
 }
 
-export const GROUP_LABELS = {
+export const GROUP_LABELS: Record<GroupId, GroupLabel> = {
   'klatka':      { name: 'Klatka piersiowa', icon: 'ti-shirt' },
   'barki':       { name: 'Barki', icon: 'ti-user' },
   'triceps':     { name: 'Triceps', icon: 'ti-hand-three-fingers' },
@@ -105,15 +153,13 @@ export const GROUP_LABELS = {
   'inne':        { name: 'Pozostałe', icon: 'ti-circle-dot' }
 }
 
+// --- Functions ---
+
 /**
  * Grupuje ćwiczenia z aktywnej sesji wg partii mięśniowej.
  * Zwraca: [{ groupId, label, icon, exerciseIndices: [i,i,...] }]
- *
- * @param {Array} exercises - ćwiczenia z aktywnej sesji (każde z `name`)
- * @param {string} type - typ treningu (push/pull/legs/upper_a/...)
- * @param {string} source - 'ai' | 'library' | 'custom' (decyduje o algorytmie grupowania)
  */
-function makeGroup(groupId, exerciseIndices) {
+function makeGroup(groupId: GroupId, exerciseIndices: number[]): ExerciseGroup {
   return {
     groupId,
     label: GROUP_LABELS[groupId]?.name || groupId,
@@ -122,15 +168,21 @@ function makeGroup(groupId, exerciseIndices) {
   }
 }
 
-// Grupowanie po wykrytej partii (zachowuje kolejność per typ ze schematu).
-function groupByDetectedMuscle(exercises, type) {
-  const order = GROUP_ORDER[type] || ['inne']
-  const groupMap = {}
-  const unknownIndices = []
+interface DetectedResult {
+  groupMap: Record<string, number[]>
+  unknownIndices: number[]
+  order: GroupId[]
+}
 
-  exercises.forEach((ex, idx) => {
-    const muscle = detectMuscle(ex.name)
-    const groupId = muscle ? MUSCLE_TO_GROUP[muscle] : null
+// Grupowanie po wykrytej partii (zachowuje kolejność per typ ze schematu).
+function groupByDetectedMuscle(exercises: Exercise[], type: string): DetectedResult {
+  const order: GroupId[] = GROUP_ORDER[type] || ['inne']
+  const groupMap: Record<string, number[]> = {}
+  const unknownIndices: number[] = []
+
+  exercises.forEach((ex: Exercise, idx: number) => {
+    const muscle: MuscleKey | null = detectMuscle(ex.name)
+    const groupId: GroupId | undefined = muscle ? MUSCLE_TO_GROUP[muscle] as GroupId : undefined
     if (groupId) {
       if (!groupMap[groupId]) groupMap[groupId] = []
       groupMap[groupId].push(idx)
@@ -142,44 +194,48 @@ function groupByDetectedMuscle(exercises, type) {
   return { groupMap, unknownIndices, order }
 }
 
-export function groupExercisesByMuscle(exercises, type, source = 'library') {
+export function groupExercisesByMuscle(
+  exercises: Exercise[],
+  type: string,
+  source: ExerciseSource = 'library'
+): ExerciseGroup[] {
   const { groupMap, unknownIndices, order } = groupByDetectedMuscle(exercises, type)
 
   // Liczymy "trafność" wykrycia: ile ćwiczeń znaleźliśmy w schemacie
-  const detectedCount = exercises.length - unknownIndices.length
-  const detectionRatio = exercises.length > 0 ? detectedCount / exercises.length : 0
+  const detectedCount: number = exercises.length - unknownIndices.length
+  const detectionRatio: number = exercises.length > 0 ? detectedCount / exercises.length : 0
 
   // === Tryb AI: jeśli detekcja słaba (< 60%), używamy index-based fallback ===
   // Tak też plany AI z nietypowymi nazwami nadal się sensownie pogrupują.
   if (source === 'ai' && detectionRatio < 0.6 && INDEX_GROUPS[type]) {
-    const schema = INDEX_GROUPS[type]
-    const result = []
-    let cursor = 0
-    schema.forEach(({ group, count }) => {
-      const slice = exercises.slice(cursor, cursor + count)
+    const schema: IndexGroup[] = INDEX_GROUPS[type]
+    const result: ExerciseGroup[] = []
+    let cursor: number = 0
+    schema.forEach(({ group, count }: IndexGroup) => {
+      const slice: Exercise[] = exercises.slice(cursor, cursor + count)
       if (slice.length) {
-        result.push(makeGroup(group, slice.map((_, i) => cursor + i)))
+        result.push(makeGroup(group, slice.map((_: Exercise, i: number) => cursor + i)))
       }
       cursor += count
     })
     if (cursor < exercises.length && result.length) {
-      const last = result[result.length - 1]
-      for (let i = cursor; i < exercises.length; i++) last.exerciseIndices.push(i)
+      const last: ExerciseGroup = result[result.length - 1]
+      for (let i: number = cursor; i < exercises.length; i++) last.exerciseIndices.push(i)
     }
     return result
   }
 
   // === Standardowe grupowanie po muscle (library/custom/AI z dobrymi nazwami) ===
-  const result = []
-  order.forEach(g => {
+  const result: ExerciseGroup[] = []
+  order.forEach((g: GroupId) => {
     if (groupMap[g] && groupMap[g].length) {
       result.push(makeGroup(g, groupMap[g]))
       delete groupMap[g]
     }
   })
   // Dorzuć grupy nieujęte w schemacie (np. core dla push)
-  Object.keys(groupMap).forEach(g => {
-    result.push(makeGroup(g, groupMap[g]))
+  Object.keys(groupMap).forEach((g: string) => {
+    result.push(makeGroup(g as GroupId, groupMap[g]))
   })
 
   // Niezdetekowane ćwiczenia (custom nazwy AI lub user): przypisz w pobliżu
@@ -187,15 +243,17 @@ export function groupExercisesByMuscle(exercises, type, source = 'library') {
   if (unknownIndices.length) {
     for (const orphanIdx of unknownIndices) {
       // Znajdź grupę najbliższego sąsiada (prev/next) w oryginalnej kolejności
-      let assigned = false
-      for (let delta = 1; delta < exercises.length && !assigned; delta++) {
+      let assigned: boolean = false
+      for (let delta: number = 1; delta < exercises.length && !assigned; delta++) {
         for (const dir of [-1, 1]) {
-          const neighbor = orphanIdx + delta * dir
+          const neighbor: number = orphanIdx + delta * dir
           if (neighbor < 0 || neighbor >= exercises.length) continue
-          const targetGroup = result.find(g => g.exerciseIndices.includes(neighbor))
+          const targetGroup: ExerciseGroup | undefined = result.find(
+            (g: ExerciseGroup) => g.exerciseIndices.includes(neighbor)
+          )
           if (targetGroup) {
             targetGroup.exerciseIndices.push(orphanIdx)
-            targetGroup.exerciseIndices.sort((a, b) => a - b)
+            targetGroup.exerciseIndices.sort((a: number, b: number) => a - b)
             assigned = true
             break
           }
@@ -203,7 +261,9 @@ export function groupExercisesByMuscle(exercises, type, source = 'library') {
       }
       if (!assigned) {
         // Naprawdę nic nie pasuje → "Inne"
-        const inne = result.find(g => g.groupId === 'inne')
+        const inne: ExerciseGroup | undefined = result.find(
+          (g: ExerciseGroup) => g.groupId === 'inne'
+        )
         if (inne) inne.exerciseIndices.push(orphanIdx)
         else result.push(makeGroup('inne', [orphanIdx]))
       }

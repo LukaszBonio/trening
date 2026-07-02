@@ -1,5 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import { REQUIRE_AUTH } from '../lib/authConfig.js'
+import { REQUIRE_AUTH } from '../lib/authConfig'
 
 const routes = [
   { path: '/', redirect: { name: 'workout' } },

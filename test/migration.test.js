@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, beforeAll } from 'vitest'
-import { transformLegacyEntry, migrateFromLegacy } from '../src/lib/migration.js'
+import { transformLegacyEntry, migrateFromLegacy } from '../src/lib/migration'
 
 // Środowisko testów to 'node' (vite.config.js) — brak localStorage. Lekki in-memory stub.
 beforeAll(() => {

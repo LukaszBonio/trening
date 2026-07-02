@@ -1,21 +1,42 @@
 // Pure functions: derive achievements from history + body log.
 // Each achievement = { id, icon, title, desc, unlockedAt: ISO|null, progress?: {current, target} }
 
-import { currentStreak, personalRecords } from './analytics.js'
+import { currentStreak, personalRecords } from './analytics'
+import type { Workout } from './analytics'
 
-function date(workout) { return new Date(workout.date) }
+export interface AchievementProgress {
+  current: number
+  target: number
+}
 
-function firstWorkoutBy(history, predicate) {
-  const sorted = [...history].sort((a, b) => date(a) - date(b))
+export interface Achievement {
+  id: string
+  icon: string
+  title: string
+  desc: string
+  unlockedAt: string | null
+  progress?: AchievementProgress | null
+}
+
+export interface BodyEntry {
+  date: string
+  weight?: number
+  [key: string]: unknown
+}
+
+function date(workout: Workout): Date { return new Date(workout.date) }
+
+function firstWorkoutBy(history: Workout[], predicate: (w: Workout) => boolean): string | null {
+  const sorted = [...history].sort((a, b) => date(a).getTime() - date(b).getTime())
   return sorted.find(predicate)?.date || null
 }
 
-export function computeAchievements(history, bodyEntries) {
-  const list = []
+export function computeAchievements(history: Workout[], bodyEntries: BodyEntry[] | undefined | null): Achievement[] {
+  const list: Achievement[] = []
 
   // Count-based
   const counts = [1, 10, 25, 50, 100, 250]
-  const sorted = [...history].sort((a, b) => date(a) - date(b))
+  const sorted = [...history].sort((a, b) => date(a).getTime() - date(b).getTime())
   for (const n of counts) {
     const w = sorted[n - 1]
     list.push({
@@ -43,7 +64,7 @@ export function computeAchievements(history, bodyEntries) {
   }
 
   // Push/Pull/Legs balance
-  for (const t of ['push', 'pull', 'legs']) {
+  for (const t of ['push', 'pull', 'legs'] as const) {
     const n = history.filter(w => w.type === t).length
     list.push({
       id: `${t}_10`,
@@ -84,6 +105,6 @@ export function computeAchievements(history, bodyEntries) {
   return list
 }
 
-export function unlockedCount(achievements) {
+export function unlockedCount(achievements: Achievement[]): number {
   return achievements.filter(a => a.unlockedAt).length
 }

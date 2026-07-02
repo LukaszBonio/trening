@@ -1,4 +1,25 @@
-export const MUSCLE_NAMES = {
+export type MuscleKey =
+  | 'chest_upper' | 'chest_middle' | 'chest_lower'
+  | 'shoulder_front' | 'shoulder_side' | 'shoulder_rear'
+  | 'back_upper' | 'back_lats' | 'back_middle' | 'back_lower'
+  | 'biceps_long' | 'biceps_short' | 'biceps_brach'
+  | 'triceps_long' | 'triceps_lat' | 'triceps_med'
+  | 'forearms'
+  | 'quads' | 'hamstrings' | 'glutes' | 'calves' | 'adductors'
+  | 'abs' | 'obliques' | 'core';
+
+export interface EquipmentInfo {
+  label: string;
+  icon: string;
+}
+
+interface EquipmentKeyword {
+  pattern: string;
+  label: string;
+  icon: string;
+}
+
+export const MUSCLE_NAMES: Record<MuscleKey, string> = {
   'chest_upper':    'Klatka górna',
   'chest_middle':   'Klatka środkowa',
   'chest_lower':    'Klatka dolna',
@@ -26,7 +47,7 @@ export const MUSCLE_NAMES = {
   'core':           'Core (głębokie stabilizatory)'
 };
 
-export const EXERCISE_TO_MUSCLE = {
+export const EXERCISE_TO_MUSCLE: Record<string, MuscleKey> = {
   // KLATKA - GÓRNA
   'wyciskanie sztangi na ławce skośnej dodatniej': 'chest_upper',
   'wyciskanie sztangi na ławce skośnej':           'chest_upper',
@@ -316,14 +337,14 @@ export const EXERCISE_TO_MUSCLE = {
   'skłony boczne':                                 'obliques'
 };
 
-const SORTED_MUSCLE_KEYS = Object.keys(EXERCISE_TO_MUSCLE).sort((a, b) => b.length - a.length);
-const _muscleCache = new Map();
+const SORTED_MUSCLE_KEYS: string[] = Object.keys(EXERCISE_TO_MUSCLE).sort((a, b) => b.length - a.length);
+const _muscleCache: Map<string, MuscleKey | null> = new Map();
 
-export function detectMuscle(exerciseName) {
+export function detectMuscle(exerciseName: string | null | undefined): MuscleKey | null {
   if (!exerciseName) return null;
-  const name = exerciseName.toLowerCase().trim();
-  if (_muscleCache.has(name)) return _muscleCache.get(name);
-  let result = null;
+  const name: string = exerciseName.toLowerCase().trim();
+  if (_muscleCache.has(name)) return _muscleCache.get(name)!;
+  let result: MuscleKey | null = null;
   for (const key of SORTED_MUSCLE_KEYS) {
     if (name.includes(key)) { result = EXERCISE_TO_MUSCLE[key]; break; }
   }
@@ -331,7 +352,7 @@ export function detectMuscle(exerciseName) {
   return result;
 }
 
-const EQUIPMENT_KEYWORDS = [
+const EQUIPMENT_KEYWORDS: EquipmentKeyword[] = [
   { pattern: 'sztang', label: 'Sztanga', icon: 'ti-barbell' },
   { pattern: 'hantl', label: 'Hantle', icon: 'ti-barbell' },
   { pattern: 'maszyn', label: 'Maszyna', icon: 'ti-settings-cog' },
@@ -358,17 +379,17 @@ const EQUIPMENT_KEYWORDS = [
   { pattern: 'martwy ciąg', label: 'Sztanga', icon: 'ti-barbell' },
   { pattern: 'wyciskanie', label: 'Sztanga', icon: 'ti-barbell' },
   { pattern: 'wiosłowanie', label: 'Sztanga', icon: 'ti-barbell' },
-]
+];
 
-export function detectEquipment(exerciseName) {
-  if (!exerciseName) return null
-  const name = exerciseName.toLowerCase().trim()
+export function detectEquipment(exerciseName: string | null | undefined): EquipmentInfo | null {
+  if (!exerciseName) return null;
+  const name: string = exerciseName.toLowerCase().trim();
   for (const eq of EQUIPMENT_KEYWORDS) {
-    if (name.includes(eq.pattern)) return { label: eq.label, icon: eq.icon }
+    if (name.includes(eq.pattern)) return { label: eq.label, icon: eq.icon };
   }
-  return null
+  return null;
 }
 
-export function getMuscleName(key) {
-  return MUSCLE_NAMES[key] || key;
+export function getMuscleName(key: string): string {
+  return MUSCLE_NAMES[key as MuscleKey] || key;
 }

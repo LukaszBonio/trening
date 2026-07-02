@@ -1,15 +1,110 @@
 // AI helper — calls Claude API via Cloudflare Worker proxy.
 // Worker URL can be overridden by localStorage 'tp_proxy_url' for testing.
 
-import { PRIMARY_TO_GROUP } from './workoutSchema.js'
-import { getAuthToken } from './auth.js'
-import { translateExerciseName } from './substitutions.js'
+import { PRIMARY_TO_GROUP } from './workoutSchema'
+import { getAuthToken } from './auth'
+import { translateExerciseName } from './substitutions'
+
+// --- Interfaces ---
+
+interface CallClaudeOptions {
+  prompt: string
+  maxTokens?: number
+  signal?: AbortSignal
+  timeoutMs?: number
+}
+
+interface ClaudeMessage {
+  role: string
+  content: string
+}
+
+interface ClaudeRequestBody {
+  model: string
+  max_tokens: number
+  messages: ClaudeMessage[]
+}
+
+interface ClaudeContentBlock {
+  text?: string
+}
+
+interface ClaudeResponse {
+  content: ClaudeContentBlock[]
+}
+
+interface ClaudeErrorResponse {
+  error?: { message?: string }
+}
+
+export interface AIExercise {
+  name: string
+  primaryMuscle: string | null
+  muscleHead: string | null
+  exerciseType: string | null
+  movementPattern: string | null
+  sets: number
+  reps: string
+  tip: string
+  suggestedWeight: number | null
+}
+
+export interface AnalysisEntry {
+  muscle: string
+  status: 'progress' | 'stagnation' | 'overreaching' | 'weakly_covered'
+  note: string
+}
+
+export interface AIPlan {
+  name: string
+  exercises: AIExercise[]
+  analysis: AnalysisEntry[]
+}
+
+interface SessionSet {
+  weight?: number
+  reps?: number
+}
+
+interface SessionExercise {
+  name: string
+  sets: SessionSet[]
+}
+
+export interface RecentSession {
+  id?: string
+  date: string | number | Date
+  exercises: SessionExercise[]
+}
+
+interface GenerateAIPlanOptions {
+  type: string
+  goal: string
+  equipment?: string
+  avoid?: string
+  recentSessions?: RecentSession[]
+  signal?: AbortSignal
+}
+
+interface TypeDetail {
+  label: string
+  expectedCount: number
+  structure: string
+  selection: string[]
+}
+
+interface CacheEntry {
+  plan: AIPlan
+  expiresAt: number
+}
+
+// --- Constants ---
 
 // Worker proxy URL — można nadpisać przez `.env` (VITE_AI_PROXY_URL) lub localStorage 'tp_proxy_url'.
-const DEFAULT_PROXY = import.meta.env?.VITE_AI_PROXY_URL || 'https://trening-pro-api.lukasz-mateusz-bonio.workers.dev'
+const DEFAULT_PROXY: string = import.meta.env?.VITE_AI_PROXY_URL || 'https://trening-pro-api.lukasz-mateusz-bonio.workers.dev'
 const MODEL = 'claude-sonnet-4-6'
 
-export function getProxyUrl() {
+export function getProxyUrl(): string {
   try {
     return localStorage.getItem('tp_proxy_url') || DEFAULT_PROXY
   } catch {
@@ -17,7 +112,7 @@ export function getProxyUrl() {
   }
 }
 
-export async function callClaude({ prompt, maxTokens = 2500, signal, timeoutMs = 60000 }) {
+export async function callClaude({ prompt, maxTokens = 2500, signal, timeoutMs = 60000 }: CallClaudeOptions): Promise<string> {
   if (!navigator.onLine) {
     throw new Error('Brak połączenia z internetem')
   }
@@ -25,13 +120,13 @@ export async function callClaude({ prompt, maxTokens = 2500, signal, timeoutMs =
   const timeoutCtrl = new AbortController()
   const timer = setTimeout(() => timeoutCtrl.abort(), timeoutMs)
   // Połącz user signal z timeout signal.
-  const onUserAbort = () => timeoutCtrl.abort()
+  const onUserAbort = (): void => timeoutCtrl.abort()
   if (signal) signal.addEventListener('abort', onUserAbort)
-  const headers = { 'Content-Type': 'application/json' }
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   const token = getAuthToken()
   if (token) headers['Authorization'] = `Bearer ${token}`
 
-  let resp
+  let resp: Response
   try {
     resp = await fetch(getProxyUrl(), {
       method: 'POST',
@@ -41,7 +136,7 @@ export async function callClaude({ prompt, maxTokens = 2500, signal, timeoutMs =
         model: MODEL,
         max_tokens: maxTokens,
         messages: [{ role: 'user', content: prompt }]
-      })
+      } satisfies ClaudeRequestBody)
     })
   } finally {
     clearTimeout(timer)
@@ -49,30 +144,30 @@ export async function callClaude({ prompt, maxTokens = 2500, signal, timeoutMs =
   }
 
   if (!resp.ok) {
-    const err = await resp.json().catch(() => ({}))
+    const err: ClaudeErrorResponse = await resp.json().catch(() => ({}))
     throw new Error(err.error?.message || `HTTP ${resp.status}`)
   }
-  const data = await resp.json()
+  const data: ClaudeResponse = await resp.json()
   if (!Array.isArray(data.content)) throw new Error('Pusta odpowiedź API')
-  const text = data.content.map(c => c.text || '').join('')
+  const text = data.content.map((c: ClaudeContentBlock) => c.text || '').join('')
   return text.replace(/```json|```/g, '').trim()
 }
 
-export function parseClaudeJSON(rawText) {
-  let parsed
+export function parseClaudeJSON(rawText: string): Record<string, unknown> {
+  let parsed: unknown
   try { parsed = JSON.parse(rawText) }
   catch { throw new Error('AI nie zwróciło poprawnego JSON-a — spróbuj ponownie') }
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
     throw new Error('Nieprawidłowy format odpowiedzi — spróbuj ponownie')
   }
-  return parsed
+  return parsed as Record<string, unknown>
 }
 
 // Dozwolone wartości dla pól w odpowiedzi AI.
 // PRIMARY_MUSCLES wyprowadzone z PRIMARY_TO_GROUP — jedno źródło prawdy.
-export const PRIMARY_MUSCLES = Object.keys(PRIMARY_TO_GROUP)
-export const EXERCISE_TYPES = ['compound', 'isolation']
-export const MOVEMENT_PATTERNS = [
+export const PRIMARY_MUSCLES: string[] = Object.keys(PRIMARY_TO_GROUP)
+export const EXERCISE_TYPES: string[] = ['compound', 'isolation']
+export const MOVEMENT_PATTERNS: string[] = [
   'horizontal_push', 'vertical_push',
   'horizontal_pull', 'vertical_pull',
   'squat', 'hinge', 'lunge', 'calf', 'core',
@@ -81,7 +176,7 @@ export const MOVEMENT_PATTERNS = [
 
 // Dozwolone głowy mięśniowe (muscleHead) per typ treningu — używane do walidacji
 // w `generateAIPlan` i jako lista hintów dla AI w prompcie.
-export const MUSCLE_HEADS_BY_TYPE = {
+export const MUSCLE_HEADS_BY_TYPE: Record<string, string[]> = {
   push:    ['chest_upper', 'chest_middle', 'chest_lower', 'shoulder_front', 'shoulder_side', 'triceps_long', 'triceps_lat', 'triceps_med'],
   pull:    ['back_lats', 'back_middle', 'back_upper', 'back_lower', 'shoulder_rear', 'biceps_long', 'biceps_short', 'biceps_brach', 'forearms'],
   legs:    ['quads', 'hamstrings', 'glutes', 'adductors', 'calves', 'abs', 'obliques', 'core'],
@@ -95,7 +190,7 @@ export const MUSCLE_HEADS_BY_TYPE = {
 }
 
 // Szczegóły dla każdego typu treningu — struktura, zasady doboru, oczekiwana liczba ćwiczeń.
-const TYPE_DETAILS = {
+const TYPE_DETAILS: Record<string, TypeDetail> = {
   push: {
     label: 'PUSH',
     expectedCount: 7,
@@ -223,7 +318,7 @@ const TYPE_DETAILS = {
   }
 }
 
-const GOAL_HINTS = {
+const GOAL_HINTS: Record<string, string> = {
   mass:          'masa mięśniowa: 8-12 powtórzeń, 3-4 serie, tempo umiarkowane',
   strength:      'siła: 3-6 powtórzeń, 4-5 serii, ciężary submaksymalne',
   endurance:     'wytrzymałość mięśniowa: 15-20 powtórzeń, 2-4 serie, krótkie przerwy',
@@ -233,23 +328,31 @@ const GOAL_HINTS = {
 
 // Kompaktowy zapis sesji do prompta — bez RPE, bez notatek.
 // Format: "- <nazwa>: 60x10, 60x10, 60x8"
-export function formatSessionCompact(session) {
+export function formatSessionCompact(session: RecentSession): string {
   const date = new Date(session.date).toISOString().slice(0, 10)
-  const lines = session.exercises.map(ex => {
+  const lines = session.exercises.map((ex: SessionExercise) => {
     const sets = ex.sets
-      .map(s => `${s.weight || 0}x${s.reps || 0}`)
+      .map((s: SessionSet) => `${s.weight || 0}x${s.reps || 0}`)
       .join(', ')
     return `- ${ex.name}: ${sets}`
   })
   return `Sesja ${date}:\n${lines.join('\n')}`
 }
 
-function buildPrompt({ type, goal, equipment, avoid, recentSessions }) {
+interface BuildPromptOptions {
+  type: string
+  goal: string
+  equipment: string
+  avoid: string
+  recentSessions: RecentSession[]
+}
+
+function buildPrompt({ type, goal, equipment, avoid, recentSessions }: BuildPromptOptions): string {
   const td = TYPE_DETAILS[type] || TYPE_DETAILS.push
   const goalDesc = GOAL_HINTS[goal] || GOAL_HINTS.mass
   const hasHistory = recentSessions.length > 0
 
-  const parts = []
+  const parts: string[] = []
 
   parts.push(`Wygeneruj plan treningowy typu ${td.label} dla osoby trenującej w ${equipment}.`)
   parts.push(`Cel: ${goalDesc}`)
@@ -264,7 +367,7 @@ function buildPrompt({ type, goal, equipment, avoid, recentSessions }) {
   }
 
   parts.push(`DOBÓR ĆWICZEŃ:
-${td.selection.map(s => `- ${s}`).join('\n')}
+${td.selection.map((s: string) => `- ${s}`).join('\n')}
 - Nie duplikuj tego samego ćwiczenia w planie.`)
 
   if (avoid && avoid.trim()) {
@@ -334,10 +437,10 @@ ${recentSessions.map(formatSessionCompact).join('\n\n')}`)
 ${setsRule}
 - "reps" musi być stringiem z zakresem ('6-8', '10-12', '12-15').
 - Nazwy ćwiczeń wyłącznie po polsku, standardowe (np. "Wyciskanie sztangi na ławce poziomej", "Przysiad ze sztangą", "Martwy ciąg rumuński").
-- "primaryMuscle" musi być jedną z: ${PRIMARY_MUSCLES.map(m => `"${m}"`).join(', ')}.
-- "muscleHead" musi być jedną z (dozwolone dla typu ${td.label}): ${allowedHeads.map(h => `"${h}"`).join(', ')}.
-- "exerciseType" musi być jedną z: ${EXERCISE_TYPES.map(t => `"${t}"`).join(', ')}.
-- "movementPattern" musi być jedną z: ${MOVEMENT_PATTERNS.map(p => `"${p}"`).join(', ')}.
+- "primaryMuscle" musi być jedną z: ${PRIMARY_MUSCLES.map((m: string) => `"${m}"`).join(', ')}.
+- "muscleHead" musi być jedną z (dozwolone dla typu ${td.label}): ${allowedHeads.map((h: string) => `"${h}"`).join(', ')}.
+- "exerciseType" musi być jedną z: ${EXERCISE_TYPES.map((t: string) => `"${t}"`).join(', ')}.
+- "movementPattern" musi być jedną z: ${MOVEMENT_PATTERNS.map((p: string) => `"${p}"`).join(', ')}.
 - "suggestedWeight" musi być liczbą (w kg) lub null.
 - Liczba ćwiczeń musi być DOKŁADNIE ${td.expectedCount} — nie pomijaj i nie dodawaj ćwiczeń.
 - Wybieraj wyłącznie ćwiczenia możliwe do wykonania przy dostępnym sprzęcie — nie proponuj maszyn ani wyciągów, jeśli sprzęt to "dom z hantlami" lub "dom bez sprzętu (calisthenics)".
@@ -363,16 +466,16 @@ const MAX_AVOID_LENGTH = 200
 // In-memory cache krótkotrwały (5 min) — chroni przed double-click / przypadkowym
 // powtórzonym requestem przy tej samej konfiguracji. NIE cachujemy długoterminowo
 // bo każdorazowe generowanie ma dawać różnorodność (zob. sekcja RÓŻNORODNOŚĆ w prompcie).
-const _planCache = new Map()
+const _planCache = new Map<string, CacheEntry>()
 const PLAN_CACHE_TTL_MS = 5 * 60 * 1000
 
-function planCacheKey({ type, goal, equipment, avoid, recentSessions }) {
+function planCacheKey({ type, goal, equipment, avoid, recentSessions }: BuildPromptOptions): string {
   // Klucz zawiera tylko stabilne wejście — historia identyfikowana po id ostatnich sesji.
-  const sessionsKey = recentSessions.map(s => s.id || s.date).join(',')
+  const sessionsKey = recentSessions.map((s: RecentSession) => s.id || String(s.date)).join(',')
   return `${type}|${goal}|${equipment}|${avoid}|${sessionsKey}`
 }
 
-function getCachedPlan(key) {
+function getCachedPlan(key: string): AIPlan | null {
   const entry = _planCache.get(key)
   if (!entry) return null
   if (entry.expiresAt < Date.now()) {
@@ -382,17 +485,17 @@ function getCachedPlan(key) {
   return entry.plan
 }
 
-function setCachedPlan(key, plan) {
+function setCachedPlan(key: string, plan: AIPlan): void {
   _planCache.set(key, { plan, expiresAt: Date.now() + PLAN_CACHE_TTL_MS })
 }
 
 // Dozwolone statusy analizy per partia (zwracane przez AI gdy była historia).
-const ALLOWED_ANALYSIS_STATUS = ['progress', 'stagnation', 'overreaching', 'weakly_covered']
+const ALLOWED_ANALYSIS_STATUS: string[] = ['progress', 'stagnation', 'overreaching', 'weakly_covered']
 
 // Walidacja + normalizacja surowego planu z AI. Czysta funkcja (bez sieci) — testowalna.
 // Rzuca błąd przy twardych naruszeniach (brak nazwy/ćwiczeń, zła liczba ćwiczeń,
 // brakujące pola ćwiczenia). Miękkie naruszenia (zła partia/głowa/typ) → null.
-export function normalizePlan(plan, { type, goal }) {
+export function normalizePlan(plan: Record<string, any>, { type, goal }: { type: string; goal: string }): AIPlan {
   const td = TYPE_DETAILS[type] || TYPE_DETAILS.push
 
   if (!plan || !plan.name || !Array.isArray(plan.exercises) || !plan.exercises.length) {
@@ -407,8 +510,8 @@ export function normalizePlan(plan, { type, goal }) {
   // Normalizacja pola analysis (z planów AI gdy była historia) — UI to pokaże.
   if (Array.isArray(plan.analysis)) {
     plan.analysis = plan.analysis
-      .filter(a => a && typeof a.muscle === 'string' && ALLOWED_ANALYSIS_STATUS.includes(a.status))
-      .map(a => ({
+      .filter((a: any) => a && typeof a.muscle === 'string' && ALLOWED_ANALYSIS_STATUS.includes(a.status))
+      .map((a: any) => ({
         muscle: String(a.muscle).trim().slice(0, 40),
         status: a.status,
         note: typeof a.note === 'string' ? a.note.trim().slice(0, 120) : ''
@@ -438,7 +541,7 @@ export function normalizePlan(plan, { type, goal }) {
       ex.suggestedWeight = null
     }
   }
-  return plan
+  return plan as unknown as AIPlan
 }
 
 export async function generateAIPlan({
@@ -448,7 +551,7 @@ export async function generateAIPlan({
   avoid = '',
   recentSessions = [],
   signal
-}) {
+}: GenerateAIPlanOptions): Promise<AIPlan> {
   // Sanityzacja: ucinamy do MAX_AVOID_LENGTH, usuwamy znaki nowej linii (które mogłyby
   // wstrzyknąć nowe "instrukcje" do prompta).
   const safeAvoid = String(avoid || '').replace(/[\r\n]+/g, ' ').slice(0, MAX_AVOID_LENGTH).trim()
@@ -462,19 +565,19 @@ export async function generateAIPlan({
 
   // 1 silent retry przy błędzie parse — czasem Claude zwraca tekst zaczynający się od ```json
   // lub pełen JSON z jednym brakiem; ponowna próba w 90% przypadków wystarcza.
-  let text, plan
+  let text: string | undefined, plan: Record<string, unknown> | undefined
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       text = await callClaude({ prompt, maxTokens: 3000, signal })
       plan = parseClaudeJSON(text)
       break
-    } catch (e) {
+    } catch (e: any) {
       if (e.name === 'AbortError') throw e
       if (attempt === 1) throw e
     }
   }
 
-  const normalized = normalizePlan(plan, { type, goal })
+  const normalized = normalizePlan(plan!, { type, goal })
   setCachedPlan(cacheKey, normalized)
   return normalized
 }

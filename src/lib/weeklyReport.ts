@@ -1,18 +1,52 @@
 // Tygodniowy raport AI — analizuje historię z ostatnich 14 dni i zwraca tekst po polsku.
 // Cache w localStorage żeby nie generować na każde wejście (1×/tydzień).
 
-import { callClaude, parseClaudeJSON } from './ai.js'
+import { callClaude, parseClaudeJSON } from './ai'
 
 const CACHE_KEY = 'tp_weekly_report_v1'
+
+interface WorkoutSet {
+  weight?: number
+  reps?: number
+  rpe?: number
+}
+
+interface WorkoutExercise {
+  name: string
+  sets: WorkoutSet[]
+}
+
+interface WorkoutEntry {
+  date: string
+  type: string
+  exercises: WorkoutExercise[]
+}
+
+interface HistorySnapshot {
+  lines: string
+  count: number
+}
+
+export interface WeeklyReport {
+  summary: string
+  highlights: string[]
+  suggestions: string[]
+  generatedAt: string
+  sessionsCount: number
+}
+
+interface GenerateOptions {
+  signal?: AbortSignal
+}
 
 /**
  * Buduje kompaktowy snapshot historii dla AI: per dzień typ + ćwiczenia z wagą×powt+RPE.
  */
-function buildHistorySnapshot(history, days = 14) {
+function buildHistorySnapshot(history: WorkoutEntry[], days: number = 14): HistorySnapshot | null {
   const cutoff = Date.now() - days * 86400000
   const recent = history
     .filter(w => new Date(w.date).getTime() >= cutoff)
-    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
   if (!recent.length) return null
 
@@ -35,7 +69,7 @@ function buildHistorySnapshot(history, days = 14) {
  *   { summary: string, highlights: string[], suggestions: string[], generatedAt: ISO }
  * Lub rzuca błąd przy fail.
  */
-export async function generateWeeklyReport(history, { signal } = {}) {
+export async function generateWeeklyReport(history: WorkoutEntry[], { signal }: GenerateOptions = {}): Promise<WeeklyReport> {
   const snapshot = buildHistorySnapshot(history, 14)
   if (!snapshot) {
     throw new Error('Brak treningów w ostatnich 14 dniach — nic do podsumowania.')
@@ -72,8 +106,8 @@ WAŻNE:
   // Normalizacja
   return {
     summary: typeof parsed.summary === 'string' ? parsed.summary.slice(0, 300) : '',
-    highlights: Array.isArray(parsed.highlights) ? parsed.highlights.filter(s => typeof s === 'string').slice(0, 4) : [],
-    suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions.filter(s => typeof s === 'string').slice(0, 4) : [],
+    highlights: Array.isArray(parsed.highlights) ? parsed.highlights.filter((s: unknown) => typeof s === 'string').slice(0, 4) : [],
+    suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions.filter((s: unknown) => typeof s === 'string').slice(0, 4) : [],
     generatedAt: new Date().toISOString(),
     sessionsCount: snapshot.count
   }
@@ -82,7 +116,7 @@ WAŻNE:
 /**
  * Lokalny cache 7 dni — żeby nie generować raportu przy każdym wejściu w Statystyki.
  */
-export function loadCachedReport() {
+export function loadCachedReport(): WeeklyReport | null {
   try {
     const raw = localStorage.getItem(CACHE_KEY)
     if (!raw) return null
@@ -90,19 +124,19 @@ export function loadCachedReport() {
     if (!data?.generatedAt) return null
     const age = Date.now() - new Date(data.generatedAt).getTime()
     if (age > 7 * 86400000) return null  // > 7 dni → stale
-    return data
+    return data as WeeklyReport
   } catch {
     return null
   }
 }
 
-export function saveCachedReport(report) {
+export function saveCachedReport(report: WeeklyReport): void {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(report))
   } catch {}
 }
 
-export function clearCachedReport() {
+export function clearCachedReport(): void {
   try {
     localStorage.removeItem(CACHE_KEY)
   } catch {}

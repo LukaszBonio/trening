@@ -1,21 +1,21 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useWorkoutsStore } from '../stores/workouts.js'
-import { detectMuscle } from '../lib/muscles.js'
-import { MUSCLE_TO_GROUP, GROUP_LABELS, PRIMARY_TO_GROUP } from '../lib/workoutSchema.js'
-import { workoutVolume, totalSets as totalSetsOf } from '../lib/workoutMath.js'
+import { detectMuscle } from '../lib/muscles'
+import { MUSCLE_TO_GROUP, GROUP_LABELS, PRIMARY_TO_GROUP } from '../lib/workoutSchema'
+import { workoutVolume, totalSets as totalSetsOf } from '../lib/workoutMath'
 import {
   uniqueExercises,
   exerciseProgress,
   personalRecords,
   currentStreak
-} from '../lib/analytics.js'
+} from '../lib/analytics'
 import VolumeChart from '../components/VolumeChart.vue'
 import WeeklyChart from '../components/WeeklyChart.vue'
 import ExerciseProgressChart from '../components/ExerciseProgressChart.vue'
 import AchievementsGrid from '../components/AchievementsGrid.vue'
 import CalendarHeatmap from '../components/CalendarHeatmap.vue'
-import { generateWeeklyReport, loadCachedReport, saveCachedReport, clearCachedReport } from '../lib/weeklyReport.js'
+import { generateWeeklyReport, loadCachedReport, saveCachedReport, clearCachedReport } from '../lib/weeklyReport'
 import { useToast } from '../composables/useToast.js'
 import BaseCard from '../components/BaseCard.vue'
 

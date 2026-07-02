@@ -19,13 +19,45 @@
 //   - 20-40kg     → krok 1kg
 //   - < 20kg      → krok 0.5kg (małe hantle, izolacja)
 
-import { lastSetFor } from './analytics.js'
+import { lastSetFor } from './analytics'
+
+/** Dane ostatniej serii zwracane przez lastSetFor */
+export interface LastSetData {
+  weight: number
+  reps: number
+  rpe: number | null
+  date: string
+}
+
+/** Wynik z workouts.history — uproszczony interfejs potrzebny przez lastSetFor */
+export interface WorkoutSet {
+  weight?: number
+  reps?: number
+  rpe?: number | null
+}
+
+export interface WorkoutExercise {
+  name: string
+  sets: WorkoutSet[]
+}
+
+export interface WorkoutEntry {
+  date: string
+  exercises: WorkoutExercise[]
+}
+
+/** Wynik sugestii progresji */
+export interface WeightSuggestion {
+  weight: number
+  reason: string
+  basedOn: LastSetData
+}
 
 /**
  * Parse range powtórzeń (np. "10-12" → [10, 12], "8" → [8, 8]).
  * Fallback do [8, 12] dla nieparsowalnych wartości.
  */
-export function parseRepsRange(reps) {
+export function parseRepsRange(reps: string): [number, number] {
   if (typeof reps !== 'string') return [8, 12]
   const m = reps.match(/(\d+)\s*-\s*(\d+)/)
   if (m) return [parseInt(m[1], 10), parseInt(m[2], 10)]
@@ -40,7 +72,7 @@ export function parseRepsRange(reps) {
 /**
  * Zaokrąglij wagę do sensownego kroku zależnego od jej skali.
  */
-export function roundToPlateStep(weight) {
+export function roundToPlateStep(weight: number): number {
   if (weight <= 0) return 0
   const step = weight >= 40 ? 2.5 : (weight >= 20 ? 1 : 0.5)
   return Math.round(weight / step) * step
@@ -49,7 +81,7 @@ export function roundToPlateStep(weight) {
 /**
  * Krok progresji w górę dla danej wagi (mała progresja przy osiągnięciu max reps).
  */
-function smallProgressionIncrement(weight) {
+function smallProgressionIncrement(weight: number): number {
   if (weight >= 50) return 2.5
   if (weight >= 20) return 1
   return 0.5
@@ -58,23 +90,24 @@ function smallProgressionIncrement(weight) {
 /**
  * Sugestia kolejnego ciężaru dla ćwiczenia bazująca na ostatniej sesji.
  *
- * @param {Array} history - workouts.history (z lastSetFor pobierze najnowszą serię)
- * @param {string} exerciseName - nazwa ćwiczenia
- * @param {string} targetReps - docelowy zakres powt. (np. "10-12")
- * @returns {{weight: number, reason: string, basedOn: object} | null}
- *   - weight: sugerowana waga (już zaokrąglona)
- *   - reason: krótkie polskie uzasadnienie (do UI hint)
- *   - basedOn: ostatnia seria która stała się podstawą
+ * @param history - workouts.history (z lastSetFor pobierze najnowszą serię)
+ * @param exerciseName - nazwa ćwiczenia
+ * @param targetReps - docelowy zakres powt. (np. "10-12")
+ * @returns sugestia wagi lub null jeśli brak danych
  */
-export function suggestNextWeight(history, exerciseName, targetReps) {
-  const last = lastSetFor(history, exerciseName)
+export function suggestNextWeight(
+  history: WorkoutEntry[],
+  exerciseName: string,
+  targetReps: string
+): WeightSuggestion | null {
+  const last: LastSetData | null = lastSetFor(history, exerciseName)
   if (!last || !last.weight || last.weight <= 0) return null
 
   const [minReps, maxReps] = parseRepsRange(targetReps)
   const { weight, reps, rpe } = last
 
-  let nextWeight = weight
-  let reason = 'utrzymaj ciężar'
+  let nextWeight: number = weight
+  let reason: string = 'utrzymaj ciężar'
 
   if (rpe != null && rpe > 0) {
     // === Decyzja z RPE ===
@@ -88,7 +121,7 @@ export function suggestNextWeight(history, exerciseName, targetReps) {
       nextWeight = weight * 1.05
       reason = `RPE ${rpe} i max powt. → +5%`
     } else if (rpe <= 8 && reps >= maxReps) {
-      const inc = smallProgressionIncrement(weight)
+      const inc: number = smallProgressionIncrement(weight)
       nextWeight = weight + inc
       reason = `RPE ${rpe} i max powt. → +${inc}kg`
     } else {
@@ -97,7 +130,7 @@ export function suggestNextWeight(history, exerciseName, targetReps) {
   } else {
     // === Decyzja bez RPE (fallback) ===
     if (reps >= maxReps) {
-      const inc = smallProgressionIncrement(weight)
+      const inc: number = smallProgressionIncrement(weight)
       nextWeight = weight + inc
       reason = `max powt. (${reps}/${maxReps}) → +${inc}kg`
     } else if (reps < minReps) {

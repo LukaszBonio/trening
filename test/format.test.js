@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatDuration, formatClock, formatDateTime } from '../src/lib/format.js'
+import { formatDuration, formatClock, formatDateTime } from '../src/lib/format'
 
 describe('formatDuration', () => {
   it('zwraca "—" dla 0/null/undefined', () => {

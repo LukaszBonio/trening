@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
-import { formatClock } from '../lib/format.js'
-import { notifyTimerEnd } from '../lib/notifications.js'
+import { formatClock } from '../lib/format'
+import { notifyTimerEnd } from '../lib/notifications'
 
 export function useRestTimer(defaultSeconds = 90) {
   const restRemaining = ref(0)

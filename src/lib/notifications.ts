@@ -1,19 +1,25 @@
-// Helpers for local browser notifications (no server / push subscription).
-// Uses Notification API + vibration + Web Audio beep.
+export interface SpeakOptions {
+  lang?: string
+  rate?: number
+  pitch?: number
+  volume?: number
+}
+
+export type NotificationPermissionState = NotificationPermission | 'unsupported'
 
 const PERMISSION_KEY = 'tp_notif_permission_asked_v1'
 
-let _audioCtx = null
-function getAudioCtx() {
+let _audioCtx: AudioContext | null = null
+function getAudioCtx(): AudioContext | null {
   if (_audioCtx) return _audioCtx
   try {
-    const AC = window.AudioContext || window.webkitAudioContext
+    const AC = window.AudioContext || (window as any).webkitAudioContext
     if (AC) _audioCtx = new AC()
   } catch {}
   return _audioCtx
 }
 
-function singleBeep(ctx, startAt, freq, duration) {
+function singleBeep(ctx: AudioContext, startAt: number, freq: number, duration: number): void {
   const osc = ctx.createOscillator()
   const gain = ctx.createGain()
   osc.type = 'sine'
@@ -27,14 +33,12 @@ function singleBeep(ctx, startAt, freq, duration) {
   osc.stop(startAt + duration + 0.02)
 }
 
-export function playTimerEndSound() {
+export function playTimerEndSound(): void {
   const ctx = getAudioCtx()
   if (!ctx) return
   try {
     if (ctx.state === 'suspended') ctx.resume()
     const t0 = ctx.currentTime
-    // Dłuższa, głośniejsza sekwencja końca timera — bardziej zauważalna w hałaśliwej siłowni.
-    // 4 dźwięki rosnące + finalny akcent. Gain 0.5 (było 0.35).
     singleBeep(ctx, t0,        660, 0.18)
     singleBeep(ctx, t0 + 0.22, 880, 0.18)
     singleBeep(ctx, t0 + 0.44, 1100, 0.18)
@@ -44,9 +48,7 @@ export function playTimerEndSound() {
   }
 }
 
-// Web Speech API — odtwarza komunikat głosowy po polsku.
-// Działa offline (na większości urządzeń wykorzystuje wbudowany silnik).
-export function speak(text, opts = {}) {
+export function speak(text: string, opts: SpeakOptions = {}): void {
   try {
     if (!('speechSynthesis' in window)) return
     const utter = new SpeechSynthesisUtterance(text)
@@ -54,7 +56,6 @@ export function speak(text, opts = {}) {
     utter.rate = opts.rate ?? 1.05
     utter.pitch = opts.pitch ?? 1.0
     utter.volume = opts.volume ?? 1.0
-    // Anuluj poprzednie wypowiedzi żeby nie kumulowały się.
     window.speechSynthesis.cancel()
     window.speechSynthesis.speak(utter)
   } catch (e) {
@@ -62,16 +63,16 @@ export function speak(text, opts = {}) {
   }
 }
 
-export function isSupported() {
+export function isSupported(): boolean {
   return typeof window !== 'undefined' && 'Notification' in window
 }
 
-export function permission() {
+export function permission(): NotificationPermissionState {
   if (!isSupported()) return 'unsupported'
   return Notification.permission
 }
 
-export async function requestPermission() {
+export async function requestPermission(): Promise<NotificationPermissionState> {
   if (!isSupported()) return 'unsupported'
   if (Notification.permission === 'granted') return 'granted'
   if (Notification.permission === 'denied') return 'denied'
@@ -83,31 +84,23 @@ export async function requestPermission() {
   }
 }
 
-export function wasAsked() {
+export function wasAsked(): boolean {
   try { return !!localStorage.getItem(PERMISSION_KEY) } catch { return false }
 }
 
-// Pełny sygnał końca timera: wibracja + dźwięk + głos + system notification.
-// Używaj zamiast `notify()` po końcu odpoczynku.
-export function notifyTimerEnd(title = 'Koniec przerwy', message = 'Wracaj do ćwiczeń') {
-  // Wibracja
+export function notifyTimerEnd(title: string = 'Koniec przerwy', message: string = 'Wracaj do ćwiczeń'): Notification | null {
   try {
     if (navigator.vibrate) navigator.vibrate([400, 100, 400, 100, 400])
   } catch {}
-  // Dźwięk
   playTimerEndSound()
-  // Głos po polsku
   speak(message)
-  // System notification
   return notify(title, { body: message, tag: 'rest-timer' })
 }
 
-export function notify(title, options = {}) {
-  // Always vibrate (works without permission on most mobile)
+export function notify(title: string, options: NotificationOptions = {}): Notification | null {
   try {
     if (navigator.vibrate) navigator.vibrate([300, 100, 300])
   } catch {}
-  // Always beep — works offline without notification permission
   playTimerEndSound()
 
   if (!isSupported() || Notification.permission !== 'granted') return null

@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useWorkoutsStore } from '../stores/workouts.js'
 import { useBodyStore } from '../stores/body.js'
-import { computeAchievements, unlockedCount } from '../lib/achievements.js'
+import { computeAchievements, unlockedCount } from '../lib/achievements'
 
 const workouts = useWorkoutsStore()
 const body = useBodyStore()

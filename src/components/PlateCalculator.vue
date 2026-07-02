@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { calculatePlates, DEFAULT_BAR } from '../lib/plates.js'
+import { calculatePlates, DEFAULT_BAR } from '../lib/plates'
 
 const weight = ref(60)
 const barWeight = ref(DEFAULT_BAR)

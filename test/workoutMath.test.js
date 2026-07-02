@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { workoutVolume, totalSets } from '../src/lib/workoutMath.js'
+import { workoutVolume, totalSets } from '../src/lib/workoutMath'
 
 describe('workoutVolume', () => {
   it('sumuje wagę × powtórzenia we wszystkich seriach', () => {
