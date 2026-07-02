@@ -3,7 +3,6 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCloudStore } from '../stores/cloud.js'
 import { REQUIRE_AUTH } from '../lib/authConfig.js'
-import { useProfileStore } from '../stores/profile.js'
 import { useWorkoutsStore } from '../stores/workouts.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { permission as notifPermission, requestPermission as requestNotifPermission, isSupported as notifSupported } from '../lib/notifications.js'
@@ -17,7 +16,6 @@ const toast = useToast()
 
 const cloud = useCloudStore()
 const router = useRouter()
-const profile = useProfileStore()
 const workouts = useWorkoutsStore()
 const settingsStore = useSettingsStore()
 
@@ -68,14 +66,6 @@ function showOnboardingTour() {
   window.dispatchEvent(new CustomEvent('show-onboarding'))
 }
 
-async function addProfile() {
-  const name = await dialog.prompt('Nazwa profilu:', '', {
-    title: 'Nowy profil',
-    okLabel: 'Dodaj'
-  })
-  if (name) profile.addProfile(name)
-}
-
 async function logout() {
   const ok = await dialog.confirm('Wylogować się? Dane lokalne zostaną zachowane.', {
     title: 'Wyloguj się',
@@ -91,8 +81,6 @@ function exportBackup() {
   const data = {
     version: 1,
     exportedAt: new Date().toISOString(),
-    profiles: profile.profiles,
-    activeProfileId: profile.activeId,
     history: workouts.history
   }
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
@@ -370,37 +358,6 @@ function onFileChange(e) {
         </div>
     </BaseCard>
 
-    <!-- Profiles -->
-    <BaseCard collapsible title="Profile lokalne">
-        <p class="muted" style="margin-bottom: var(--space-3)">
-          Aktywny: <strong>{{ profile.activeProfile?.name }}</strong>
-        </p>
-        <ul class="profile-list">
-          <li v-for="p in profile.profiles" :key="p.id" class="profile-row">
-            <button
-              class="profile-name"
-              :class="{ active: p.id === profile.activeId }"
-              @click="profile.setActive(p.id)"
-            >
-              {{ p.name }}
-            </button>
-            <button
-              v-if="profile.profiles.length > 1"
-              class="btn-tiny"
-              @click="profile.removeProfile(p.id)"
-              :aria-label="'Usuń profil ' + p.name"
-            >
-              <i class="ti ti-trash" aria-hidden="true"></i>
-            </button>
-          </li>
-        </ul>
-        <button
-          class="btn-tiny"
-          @click="addProfile"
-        >
-          <i class="ti ti-plus"></i> Dodaj profil
-        </button>
-    </BaseCard>
   </div>
 </template>
 
@@ -461,25 +418,6 @@ function onFileChange(e) {
 
 .backup-actions { display: flex; gap: 8px; }
 
-.profile-list { list-style: none; display: flex; flex-direction: column; gap: 6px; margin-bottom: var(--space-3); }
-.profile-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: var(--bg-elev-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-}
-.profile-name {
-  flex: 1;
-  text-align: left;
-  background: transparent;
-  border: none;
-  color: var(--text);
-  font-size: 14px;
-}
-.profile-name.active { color: var(--accent); font-weight: 600; }
 .btn-tiny {
   background: transparent;
   border: 1px dashed var(--border);
