@@ -73,6 +73,9 @@ const lastSetDateLabel = computed(() => {
 
 const equipment = computed(() => currentEx.value ? detectEquipment(currentEx.value.name) : null)
 const ytUrl = computed(() => currentEx.value ? youtubeSearchUrl(currentEx.value.name) : '#')
+
+const isExerciseChange = computed(() => nextEx.value && nextEx.value.name !== currentEx.value?.name)
+const nextYtUrl = computed(() => nextEx.value ? youtubeSearchUrl(nextEx.value.name) : '#')
 const substitutes = computed(() =>
   currentEx.value
     ? findSubstitutes(currentEx.value.name, 3, currentEx.value.muscleHead || null)
@@ -223,6 +226,15 @@ watch([exIdx, setIdx, () => session.active?.id], suggestWeightIfEmpty, { immedia
           Seria {{ nextSetIdx + 1 }} / {{ nextEx.sets.length }} ·
           target <strong>{{ nextEx.reps }}</strong>
         </div>
+        <a
+          v-if="isExerciseChange"
+          :href="nextYtUrl"
+          target="_blank"
+          rel="noopener"
+          class="rest-yt-btn"
+        >
+          <i class="ti ti-brand-youtube"></i> Obejrzyj technikę
+        </a>
       </div>
 
       <button class="skip-btn btn btn-primary" @click="skipRest">
@@ -552,6 +564,22 @@ watch([exIdx, setIdx, () => session.active?.id], suggestWeightIfEmpty, { immedia
   color: var(--text-muted);
 }
 .rest-next-meta strong { color: var(--text); }
+.rest-yt-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  background: #ff000018;
+  color: #ff4444;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background var(--dur);
+}
+.rest-yt-btn:hover { background: #ff000028; }
+.rest-yt-btn .ti { font-size: 18px; }
 
 .skip-btn {
   padding: 14px var(--space-5);
