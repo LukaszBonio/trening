@@ -5,7 +5,10 @@ import {
   personalRecords,
   currentStreak,
   lastSetFor,
-  recentSessionsOfType
+  recentSessionsOfType,
+  compoundIsolationRatio,
+  movementPatternBalance,
+  pushPullRatio
 } from '../src/lib/analytics'
 
 describe('estimated1RM (Epley)', () => {
@@ -89,5 +92,114 @@ describe('recentSessionsOfType', () => {
 describe('currentStreak', () => {
   it('zwraca 0 dla pustej historii', () => {
     expect(currentStreak([])).toBe(0)
+  })
+})
+
+// --- Analiza wzorców ruchowych ---
+
+const historyWithMeta = [
+  {
+    date: '2026-06-01',
+    exercises: [
+      { name: 'Bench Press', sets: [{ weight: 80, reps: 8 }, { weight: 80, reps: 8 }], exerciseType: 'compound', movementPattern: 'horizontal_push' },
+      { name: 'OHP', sets: [{ weight: 40, reps: 10 }], exerciseType: 'compound', movementPattern: 'vertical_push' },
+      { name: 'Rozpiętki', sets: [{ weight: 12, reps: 12 }], exerciseType: 'isolation', movementPattern: 'horizontal_push' }
+    ]
+  },
+  {
+    date: '2026-06-02',
+    exercises: [
+      { name: 'Wiosłowanie', sets: [{ weight: 70, reps: 8 }, { weight: 70, reps: 8 }], exerciseType: 'compound', movementPattern: 'horizontal_pull' },
+      { name: 'Podciąganie', sets: [{ weight: 0, reps: 10 }], exerciseType: 'compound', movementPattern: 'vertical_pull' },
+      { name: 'Uginanie ramion', sets: [{ weight: 14, reps: 12 }], exerciseType: 'isolation', movementPattern: 'elbow_flexion' }
+    ]
+  }
+]
+
+describe('compoundIsolationRatio', () => {
+  it('zwraca 0/0/0 dla pustej historii', () => {
+    const r = compoundIsolationRatio([])
+    expect(r.compound).toBe(0)
+    expect(r.isolation).toBe(0)
+    expect(r.compoundRatio).toBe(0)
+  })
+
+  it('liczy compound vs isolation', () => {
+    const r = compoundIsolationRatio(historyWithMeta)
+    expect(r.compound).toBe(4)
+    expect(r.isolation).toBe(2)
+    expect(r.compoundRatio).toBe(67)
+    expect(r.unknown).toBe(0)
+  })
+
+  it('liczy unknown dla ćwiczeń bez exerciseType', () => {
+    const history = [
+      { date: '2026-06-01', exercises: [
+        { name: 'Squat', sets: [{ weight: 100, reps: 5 }] },
+        { name: 'Bench', sets: [{ weight: 80, reps: 8 }], exerciseType: 'compound' }
+      ]}
+    ]
+    const r = compoundIsolationRatio(history)
+    expect(r.compound).toBe(1)
+    expect(r.unknown).toBe(1)
+    expect(r.compoundRatio).toBe(100)
+  })
+})
+
+describe('movementPatternBalance', () => {
+  it('zwraca pustą tablicę dla pustej historii', () => {
+    expect(movementPatternBalance([])).toEqual([])
+  })
+
+  it('liczy serie per wzorzec ruchowy', () => {
+    const r = movementPatternBalance(historyWithMeta)
+    const push = r.find(p => p.key === 'horizontal_push')
+    expect(push.sets).toBe(3)
+    const pull = r.find(p => p.key === 'horizontal_pull')
+    expect(pull.sets).toBe(2)
+    const vPull = r.find(p => p.key === 'vertical_pull')
+    expect(vPull.sets).toBe(1)
+  })
+
+  it('sortuje malejąco po seriach', () => {
+    const r = movementPatternBalance(historyWithMeta)
+    for (let i = 1; i < r.length; i++) {
+      expect(r[i].sets).toBeLessThanOrEqual(r[i - 1].sets)
+    }
+  })
+
+  it('pomija ćwiczenia bez movementPattern', () => {
+    const history = [
+      { date: '2026-06-01', exercises: [
+        { name: 'Squat', sets: [{ weight: 100, reps: 5 }] }
+      ]}
+    ]
+    expect(movementPatternBalance(history)).toEqual([])
+  })
+})
+
+describe('pushPullRatio', () => {
+  it('zwraca null ratio dla pustej historii', () => {
+    const r = pushPullRatio([])
+    expect(r.ratio).toBe(null)
+  })
+
+  it('liczy stosunek push/pull', () => {
+    const r = pushPullRatio(historyWithMeta)
+    expect(r.pushSets).toBe(4)
+    expect(r.pullSets).toBe(3)
+    expect(r.ratio).toBe(1.33)
+  })
+
+  it('nie liczy elbow_flexion jako pull', () => {
+    const history = [
+      { date: '2026-06-01', exercises: [
+        { name: 'Curl', sets: [{ weight: 10, reps: 12 }], movementPattern: 'elbow_flexion' }
+      ]}
+    ]
+    const r = pushPullRatio(history)
+    expect(r.pushSets).toBe(0)
+    expect(r.pullSets).toBe(0)
+    expect(r.ratio).toBe(null)
   })
 })

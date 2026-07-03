@@ -10,6 +10,8 @@ export interface WorkoutSet {
 export interface Exercise {
   name: string
   sets: WorkoutSet[]
+  exerciseType?: string | null
+  movementPattern?: string | null
 }
 
 export interface Workout {
@@ -181,4 +183,95 @@ export function currentStreak(history: Workout[]): number {
     cursor.setDate(cursor.getDate() - 7)
   }
   return streak
+}
+
+// --- Analiza wzorców ruchowych (exerciseType + movementPattern) ---
+
+export interface CompoundIsolationStats {
+  compound: number
+  isolation: number
+  unknown: number
+  compoundRatio: number
+}
+
+export function compoundIsolationRatio(history: Workout[]): CompoundIsolationStats {
+  let compound = 0, isolation = 0, unknown = 0
+  for (const w of history) {
+    for (const ex of w.exercises) {
+      const t = (ex as Exercise).exerciseType
+      if (t === 'compound') compound++
+      else if (t === 'isolation') isolation++
+      else unknown++
+    }
+  }
+  const total = compound + isolation
+  return {
+    compound,
+    isolation,
+    unknown,
+    compoundRatio: total > 0 ? Math.round(compound / total * 100) : 0
+  }
+}
+
+export const MOVEMENT_PATTERN_LABELS: Record<string, string> = {
+  horizontal_push: 'Wyciskanie poziome',
+  vertical_push: 'Wyciskanie pionowe',
+  horizontal_pull: 'Przyciąganie poziome',
+  vertical_pull: 'Przyciąganie pionowe',
+  squat: 'Przysiad',
+  hinge: 'Hip hinge',
+  lunge: 'Wypady',
+  calf: 'Łydki',
+  core: 'Core',
+  elbow_flexion: 'Zginanie łokcia',
+  elbow_extension: 'Prostowanie łokcia',
+  shoulder_isolation: 'Izolacja barków'
+}
+
+export interface PatternEntry {
+  key: string
+  label: string
+  sets: number
+}
+
+export function movementPatternBalance(history: Workout[]): PatternEntry[] {
+  const map: Record<string, number> = {}
+  for (const w of history) {
+    for (const ex of w.exercises) {
+      const p = (ex as Exercise).movementPattern
+      if (p) map[p] = (map[p] || 0) + ex.sets.length
+    }
+  }
+  return Object.entries(map)
+    .map(([key, sets]) => ({
+      key,
+      label: MOVEMENT_PATTERN_LABELS[key] || key,
+      sets
+    }))
+    .sort((a, b) => b.sets - a.sets)
+}
+
+export interface PushPullStats {
+  pushSets: number
+  pullSets: number
+  ratio: number | null
+}
+
+const PUSH_PATTERNS = new Set(['horizontal_push', 'vertical_push'])
+const PULL_PATTERNS = new Set(['horizontal_pull', 'vertical_pull'])
+
+export function pushPullRatio(history: Workout[]): PushPullStats {
+  let pushSets = 0, pullSets = 0
+  for (const w of history) {
+    for (const ex of w.exercises) {
+      const p = (ex as Exercise).movementPattern
+      if (p && PUSH_PATTERNS.has(p)) pushSets += ex.sets.length
+      else if (p && PULL_PATTERNS.has(p)) pullSets += ex.sets.length
+    }
+  }
+  return {
+    pushSets,
+    pullSets,
+    ratio: pullSets > 0 ? Math.round(pushSets / pullSets * 100) / 100 : null
+  }
 }

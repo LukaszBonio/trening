@@ -8,7 +8,10 @@ import {
   uniqueExercises,
   exerciseProgress,
   personalRecords,
-  currentStreak
+  currentStreak,
+  compoundIsolationRatio,
+  movementPatternBalance,
+  pushPullRatio
 } from '../lib/analytics'
 import VolumeChart from '../components/VolumeChart.vue'
 import WeeklyChart from '../components/WeeklyChart.vue'
@@ -121,6 +124,17 @@ const metric = ref('best1RM')
 const progressPoints = computed(() =>
   selectedExercise.value ? exerciseProgress(workouts.history, selectedExercise.value) : []
 )
+
+// --- Analiza wzorców ruchowych ---
+const ciStats = computed(() => compoundIsolationRatio(workouts.history))
+const hasTypeData = computed(() => ciStats.value.compound + ciStats.value.isolation > 0)
+
+const patterns = computed(() => movementPatternBalance(workouts.history))
+const maxPatternSets = computed(() => Math.max(...patterns.value.map(p => p.sets), 1))
+const hasPatternData = computed(() => patterns.value.length > 0)
+
+const ppStats = computed(() => pushPullRatio(workouts.history))
+const hasPushPullData = computed(() => ppStats.value.ratio !== null)
 </script>
 
 <template>
@@ -219,6 +233,92 @@ const progressPoints = computed(() =>
 
     <BaseCard v-if="totalWorkouts" title="Kalendarz treningowy">
       <CalendarHeatmap :workouts="workouts.history" />
+    </BaseCard>
+
+    <!-- Analiza wzorców ruchowych -->
+    <BaseCard v-if="hasTypeData || hasPatternData" title="Analiza wzorców">
+      <!-- Compound vs Isolation -->
+      <div v-if="hasTypeData" class="pattern-section">
+        <div class="pattern-section-title">
+          <i class="ti ti-barbell"></i> Compound vs Isolation
+        </div>
+        <div class="ci-bar-container">
+          <div class="ci-bar">
+            <div class="ci-fill ci-compound" :style="{ width: ciStats.compoundRatio + '%' }"></div>
+          </div>
+          <div class="ci-labels">
+            <span class="ci-label">
+              <span class="ci-dot ci-dot-compound"></span>
+              Compound {{ ciStats.compoundRatio }}%
+              <span class="dim">({{ ciStats.compound }})</span>
+            </span>
+            <span class="ci-label">
+              <span class="ci-dot ci-dot-isolation"></span>
+              Isolation {{ 100 - ciStats.compoundRatio }}%
+              <span class="dim">({{ ciStats.isolation }})</span>
+            </span>
+          </div>
+        </div>
+        <p v-if="ciStats.compoundRatio < 50" class="pattern-hint pattern-hint-warn">
+          <i class="ti ti-alert-triangle"></i>
+          Mało compound — zalecane ~60-70% ćwiczeń wielostawowych.
+        </p>
+        <p v-else-if="ciStats.compoundRatio >= 60 && ciStats.compoundRatio <= 80" class="pattern-hint pattern-hint-ok">
+          <i class="ti ti-check"></i>
+          Dobry balans compound/isolation.
+        </p>
+      </div>
+
+      <!-- Push/Pull ratio -->
+      <div v-if="hasPushPullData" class="pattern-section">
+        <div class="pattern-section-title">
+          <i class="ti ti-arrows-exchange"></i> Push / Pull
+        </div>
+        <div class="pp-row">
+          <div class="pp-stat">
+            <span class="pp-value">{{ ppStats.pushSets }}</span>
+            <span class="pp-label">Push serii</span>
+          </div>
+          <div class="pp-ratio" :class="{
+            'pp-ok': ppStats.ratio >= 0.7 && ppStats.ratio <= 1.3,
+            'pp-warn': ppStats.ratio < 0.7 || ppStats.ratio > 1.3
+          }">
+            {{ ppStats.ratio }}
+          </div>
+          <div class="pp-stat">
+            <span class="pp-value">{{ ppStats.pullSets }}</span>
+            <span class="pp-label">Pull serii</span>
+          </div>
+        </div>
+        <p v-if="ppStats.ratio < 0.7 || ppStats.ratio > 1.3" class="pattern-hint pattern-hint-warn">
+          <i class="ti ti-alert-triangle"></i>
+          Nierównowaga push/pull — zalecany stosunek 0.7–1.3.
+        </p>
+        <p v-else class="pattern-hint pattern-hint-ok">
+          <i class="ti ti-check"></i>
+          Zbalansowany stosunek push/pull.
+        </p>
+      </div>
+
+      <!-- Movement patterns -->
+      <div v-if="hasPatternData" class="pattern-section">
+        <div class="pattern-section-title">
+          <i class="ti ti-activity"></i> Wzorce ruchowe
+        </div>
+        <div class="pattern-bars">
+          <div v-for="p in patterns" :key="p.key" class="pattern-row">
+            <div class="pattern-name">{{ p.label }}</div>
+            <div class="pattern-bar">
+              <div class="pattern-fill" :style="{ width: (p.sets / maxPatternSets * 100) + '%' }"></div>
+            </div>
+            <div class="pattern-val">{{ p.sets }}</div>
+          </div>
+        </div>
+      </div>
+
+      <p v-if="ciStats.unknown > 0" class="dim" style="font-size: 11px; margin-top: var(--space-3)">
+        {{ ciStats.unknown }} ćwiczeń bez metadanych AI (plany lokalne/custom).
+      </p>
     </BaseCard>
 
     <BaseCard v-if="totalWorkouts" title="Wolumen w czasie">
@@ -535,11 +635,104 @@ const progressPoints = computed(() =>
 .muscle-ex-name { color: var(--text); }
 .muscle-ex-vol { color: var(--text-muted); font-variant-numeric: tabular-nums; }
 
+/* Analiza wzorców */
+.pattern-section { margin-bottom: var(--space-4); }
+.pattern-section:last-child { margin-bottom: 0; }
+.pattern-section + .pattern-section { padding-top: var(--space-4); border-top: 1px solid var(--border); }
+.pattern-section-title {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 700;
+  margin-bottom: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.pattern-section-title i { color: var(--accent); font-size: 14px; }
+
+.ci-bar-container { display: flex; flex-direction: column; gap: 8px; }
+.ci-bar {
+  height: 12px;
+  background: var(--pull);
+  border-radius: 100px;
+  overflow: hidden;
+}
+.ci-fill { height: 100%; border-radius: 100px; transition: width var(--dur); }
+.ci-compound { background: var(--accent-grad); }
+.ci-labels { display: flex; justify-content: space-between; gap: 8px; }
+.ci-label { font-size: 12px; color: var(--text-muted); display: inline-flex; align-items: center; gap: 6px; }
+.ci-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.ci-dot-compound { background: var(--accent); }
+.ci-dot-isolation { background: var(--pull); }
+
+.pp-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+}
+.pp-stat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.pp-value {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+}
+.pp-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.pp-ratio {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+}
+.pp-ok { color: var(--success); background: rgba(74, 222, 128, 0.1); }
+.pp-warn { color: var(--warning); background: rgba(251, 146, 60, 0.1); }
+
+.pattern-hint {
+  font-size: 12px;
+  margin-top: 8px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.pattern-hint-ok { color: var(--success); background: rgba(74, 222, 128, 0.08); }
+.pattern-hint-warn { color: var(--warning); background: rgba(251, 146, 60, 0.08); }
+
+.pattern-bars { display: flex; flex-direction: column; gap: 8px; }
+.pattern-row {
+  display: grid;
+  grid-template-columns: 160px 1fr 40px;
+  gap: var(--space-3);
+  align-items: center;
+}
+.pattern-name { font-size: 12px; color: var(--text-muted); }
+.pattern-bar {
+  height: 10px;
+  background: var(--bg-elev-2);
+  border-radius: 100px;
+  overflow: hidden;
+}
+.pattern-fill {
+  height: 100%;
+  background: var(--accent-grad);
+  transition: width var(--dur);
+}
+.pattern-val { font-size: 12px; text-align: right; font-weight: 600; }
+
 @media (max-width: 640px) {
   .muscle-row { grid-template-columns: 1fr 60px; }
   .muscle-bar { grid-column: 1 / -1; order: 2; }
   .muscle-name { grid-column: 1; }
   .muscle-val { grid-column: 2; }
   .muscle-ex-list { margin-left: 8px; }
+  .pattern-row { grid-template-columns: 1fr 40px; }
+  .pattern-bar { grid-column: 1 / -1; order: 2; }
+  .pattern-name { grid-column: 1; }
+  .pattern-val { grid-column: 2; }
 }
 </style>
