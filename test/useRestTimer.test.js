@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { useRestTimer } from '../src/composables/useRestTimer.js'
+import { useRestTimer } from '../src/composables/useRestTimer'
 
 vi.mock('../src/lib/notifications.js', () => ({
   notifyTimerEnd: vi.fn()

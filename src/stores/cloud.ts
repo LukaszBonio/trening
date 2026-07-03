@@ -1,81 +1,73 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
-import { createClient } from '@supabase/supabase-js'
-import { useWorkoutsStore } from './workouts.js'
-import { useBodyStore } from './body.js'
-import { useSettingsStore } from './settings.js'
+import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js'
+import { useWorkoutsStore } from './workouts'
+import { useBodyStore } from './body'
+import { useSettingsStore } from './settings'
 import { offlineQueue } from '../lib/offlineQueue'
 import { setAuthToken } from '../lib/auth'
 
-// Default fallback — działa bez konfiguracji `.env` (backward compatibility z poprzednim setupem).
-// Aby użyć innego projektu Supabase: utwórz `.env` z VITE_SUPABASE_URL i VITE_SUPABASE_KEY.
 const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL || 'https://envscdgmonrlczfleoib.supabase.co'
 const SUPABASE_KEY = import.meta.env?.VITE_SUPABASE_KEY || 'sb_publishable_Nob9dd2IzFjYQsqPGwb4qg_4Mf5giRz'
 
 export const useCloudStore = defineStore('cloud', () => {
-  const client = ref(null)
-  const user = ref(null)
-  const syncStatus = ref('idle')
-  const lastError = ref(null)
-  const lastSyncedAt = ref(null)
+  const client = ref<SupabaseClient | null>(null)
+  const user = ref<User | null>(null)
+  const syncStatus = ref<'idle' | 'syncing' | 'ok' | 'error' | 'queued'>('idle')
+  const lastError = ref<string | null>(null)
+  const lastSyncedAt = ref<number | null>(null)
   const isOnline = ref(typeof navigator === 'undefined' ? true : navigator.onLine)
   const queueSize = ref(offlineQueue.size())
 
-  // authReady = sesja została odczytana z localStorage (getSession zakończony).
-  // Router guard czeka na to przed decyzją o przekierowaniu, żeby nie wyrzucić
-  // zalogowanego użytkownika na ekran logowania zanim sesja się wczyta.
   const authReady = ref(false)
-  let _resolveAuthReady
-  const _authReadyPromise = new Promise((res) => { _resolveAuthReady = res })
-  function waitForAuth() { return _authReadyPromise }
+  let _resolveAuthReady: () => void
+  const _authReadyPromise = new Promise<void>((res) => { _resolveAuthReady = res })
+  function waitForAuth(): Promise<void> { return _authReadyPromise }
 
-  let _workoutSyncDebounce = null
-  let _settingsSyncDebounce = null
-  let _watchers = []
-  let _lastUserId = null
-  let _knownWorkoutIds = new Set()
-  let _knownBodyIds = new Set()
-  let _dirtyWorkoutIds = new Set()
-  let _dirtyBodyIds = new Set()
+  let _workoutSyncDebounce: ReturnType<typeof setTimeout> | null = null
+  let _settingsSyncDebounce: ReturnType<typeof setTimeout> | null = null
+  let _watchers: (() => void)[] = []
+  let _lastUserId: string | null = null
+  let _knownWorkoutIds = new Set<string>()
+  let _knownBodyIds = new Set<string>()
+  let _dirtyWorkoutIds = new Set<string>()
+  let _dirtyBodyIds = new Set<string>()
 
   const isLoggedIn = computed(() => !!user.value)
 
-  function init() {
+  function init(): SupabaseClient {
     if (client.value) return client.value
     client.value = createClient(SUPABASE_URL, SUPABASE_KEY, {
       auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
     })
 
-    // Online/offline tracking
     if (typeof window !== 'undefined') {
       window.addEventListener('online', () => { isOnline.value = true })
       window.addEventListener('offline', () => { isOnline.value = false })
     }
 
-    // Register queue handlers
-    offlineQueue.registerHandler('upsertWorkouts', async (rows) => {
-      const { error } = await client.value.from('workouts').upsert(rows)
+    offlineQueue.registerHandler('upsertWorkouts', async (rows: unknown[]) => {
+      const { error } = await client.value!.from('workouts').upsert(rows)
       if (error) throw error
     })
-    offlineQueue.registerHandler('deleteWorkouts', async (ids) => {
-      const { error } = await client.value.from('workouts').delete().in('id', ids)
+    offlineQueue.registerHandler('deleteWorkouts', async (ids: string[]) => {
+      const { error } = await client.value!.from('workouts').delete().in('id', ids)
       if (error) throw error
     })
-    offlineQueue.registerHandler('upsertBody', async (rows) => {
-      const { error } = await client.value.from('body_log').upsert(rows)
+    offlineQueue.registerHandler('upsertBody', async (rows: unknown[]) => {
+      const { error } = await client.value!.from('body_log').upsert(rows)
       if (error && error.code !== '42P01') throw error
     })
-    offlineQueue.registerHandler('deleteBody', async (ids) => {
-      const { error } = await client.value.from('body_log').delete().in('id', ids)
+    offlineQueue.registerHandler('deleteBody', async (ids: string[]) => {
+      const { error } = await client.value!.from('body_log').delete().in('id', ids)
       if (error && error.code !== '42P01') throw error
     })
-    offlineQueue.registerHandler('upsertSettings', async (data) => {
-      const { error } = await client.value.from('user_settings')
+    offlineQueue.registerHandler('upsertSettings', async (data: unknown) => {
+      const { error } = await client.value!.from('user_settings')
         .upsert({ user_id: user.value?.id, data })
       if (error && error.code !== '42P01') throw error
     })
 
-    // Track queue size for UI
     offlineQueue.on('change', () => { queueSize.value = offlineQueue.size() })
     offlineQueue.on('flush-end', () => { queueSize.value = offlineQueue.size() })
 
@@ -85,15 +77,13 @@ export const useCloudStore = defineStore('cloud', () => {
       user.value = u
       if (u) onLogin(u)
     }).catch((e) => {
-      // Offline bez zapisanej sesji: getSession odczytuje z localStorage,
-      // ale na wszelki wypadek nie blokujemy startu aplikacji.
       console.warn('[cloud] getSession failed:', e)
     }).finally(() => {
       authReady.value = true
       _resolveAuthReady()
     })
 
-    client.value.auth.onAuthStateChange((event, session) => {
+    client.value.auth.onAuthStateChange((_event, session) => {
       const u = session?.user || null
       setAuthToken(session?.access_token || null)
       const prevId = _lastUserId
@@ -106,7 +96,7 @@ export const useCloudStore = defineStore('cloud', () => {
     return client.value
   }
 
-  async function onLogin(u) {
+  async function onLogin(_u: User): Promise<void> {
     _knownWorkoutIds = new Set()
     _knownBodyIds = new Set()
     _dirtyWorkoutIds = new Set()
@@ -115,7 +105,7 @@ export const useCloudStore = defineStore('cloud', () => {
     armWatchers()
   }
 
-  function onLogout() {
+  function onLogout(): void {
     _knownWorkoutIds = new Set()
     _knownBodyIds = new Set()
     _dirtyWorkoutIds = new Set()
@@ -124,15 +114,13 @@ export const useCloudStore = defineStore('cloud', () => {
     _watchers = []
   }
 
-  function armWatchers() {
+  function armWatchers(): void {
     if (_watchers.length) return
     const workouts = useWorkoutsStore()
     const body = useBodyStore()
     const settings = useSettingsStore()
 
     _watchers.push(watch(() => workouts.history, () => {
-      // Deep watcher fires on any change — mark all current IDs as dirty
-      // since pinpointing which specific record changed without JSON diffing is expensive
       const currentIds = new Set(workouts.history.map(w => w.id))
       for (const id of currentIds) _dirtyWorkoutIds.add(id)
       scheduleDeltaSync()
@@ -145,7 +133,7 @@ export const useCloudStore = defineStore('cloud', () => {
     _watchers.push(watch(() => settings.settings, () => scheduleSettingsSync(), { deep: true }))
   }
 
-  async function initialSync() {
+  async function initialSync(): Promise<void> {
     if (!user.value) return
     syncStatus.value = 'syncing'
     lastError.value = null
@@ -154,22 +142,19 @@ export const useCloudStore = defineStore('cloud', () => {
       const body = useBodyStore()
       const settings = useSettingsStore()
 
-      // --- Workouts ---
-      const { data: cloudWorkouts, error: wErr } = await client.value
+      const { data: cloudWorkouts, error: wErr } = await client.value!
         .from('workouts').select('id, data')
       if (wErr) throw wErr
 
-      const wCloud = new Map(cloudWorkouts.map(r => [r.id, r.data]))
+      const wCloud = new Map(cloudWorkouts!.map((r: any) => [r.id, r.data]))
       const wLocal = new Map(workouts.history.map(w => [w.id, w]))
       const wMerged = new Map()
-      // Merge all IDs from both sources
       const allWorkoutIds = new Set([...wCloud.keys(), ...wLocal.keys()])
       for (const id of allWorkoutIds) {
-        const cloud = wCloud.get(id)
+        const cloud = wCloud.get(id) as any
         const local = wLocal.get(id)
         if (!cloud) { wMerged.set(id, local); continue }
         if (!local) { wMerged.set(id, cloud); continue }
-        // Both exist — compare timestamps, keep newer; tie-break by field count
         const cloudTs = cloud.finishedAt || cloud.date || ''
         const localTs = local.finishedAt || local.date || ''
         if (localTs > cloudTs) { wMerged.set(id, local) }
@@ -180,25 +165,24 @@ export const useCloudStore = defineStore('cloud', () => {
 
       const wToUpload = Array.from(wLocal.entries())
         .filter(([id]) => !wCloud.has(id))
-        .map(([id, w]) => ({ id, user_id: user.value.id, data: w }))
+        .map(([id, w]) => ({ id, user_id: user.value!.id, data: w }))
       if (wToUpload.length) {
-        const { error } = await client.value.from('workouts').upsert(wToUpload)
+        const { error } = await client.value!.from('workouts').upsert(wToUpload)
         if (error) throw error
       }
       _knownWorkoutIds = new Set(wMerged.keys())
 
-      // --- Body log ---
-      const { data: cloudBody, error: bErr } = await client.value
+      const { data: cloudBody, error: bErr } = await client.value!
         .from('body_log').select('id, data')
-      if (bErr && bErr.code !== '42P01') throw bErr  // 42P01 = table doesn't exist yet
+      if (bErr && bErr.code !== '42P01') throw bErr
 
       if (!bErr) {
-        const bCloud = new Map(cloudBody.map(r => [r.id, r.data]))
+        const bCloud = new Map(cloudBody!.map((r: any) => [r.id, r.data]))
         const bLocal = new Map(body.entries.map(e => [e.id, e]))
         const bMerged = new Map()
         const allBodyIds = new Set([...bCloud.keys(), ...bLocal.keys()])
         for (const id of allBodyIds) {
-          const cloud = bCloud.get(id)
+          const cloud = bCloud.get(id) as any
           const local = bLocal.get(id)
           if (!cloud) { bMerged.set(id, local); continue }
           if (!local) { bMerged.set(id, cloud); continue }
@@ -212,74 +196,69 @@ export const useCloudStore = defineStore('cloud', () => {
 
         const bToUpload = Array.from(bLocal.entries())
           .filter(([id]) => !bCloud.has(id))
-          .map(([id, e]) => ({ id, user_id: user.value.id, data: e }))
+          .map(([id, e]) => ({ id, user_id: user.value!.id, data: e }))
         if (bToUpload.length) {
-          const { error } = await client.value.from('body_log').upsert(bToUpload)
+          const { error } = await client.value!.from('body_log').upsert(bToUpload)
           if (error && error.code !== '42P01') throw error
         }
         _knownBodyIds = new Set(bMerged.keys())
       }
 
-      // --- Settings (single row per user) ---
-      const { data: cloudSettings, error: sErr } = await client.value
-        .from('user_settings').select('data').eq('user_id', user.value.id).maybeSingle()
+      const { data: cloudSettings, error: sErr } = await client.value!
+        .from('user_settings').select('data').eq('user_id', user.value!.id).maybeSingle()
       if (sErr && sErr.code !== '42P01' && sErr.code !== 'PGRST116') throw sErr
 
       if (cloudSettings?.data) {
-        // Cloud settings exist — apply to local (cloud wins on initial)
-        settings.applyRemote(cloudSettings.data)
+        settings.applyRemote(cloudSettings.data as any)
       } else if (!sErr || sErr.code === 'PGRST116') {
-        // No cloud settings → upload local
-        const { error } = await client.value.from('user_settings')
-          .upsert({ user_id: user.value.id, data: settings.settings })
+        const { error } = await client.value!.from('user_settings')
+          .upsert({ user_id: user.value!.id, data: settings.settings })
         if (error && error.code !== '42P01') throw error
       }
 
       syncStatus.value = 'ok'
       lastSyncedAt.value = Date.now()
-    } catch (e) {
+    } catch (e: any) {
       syncStatus.value = 'error'
       lastError.value = e.message || String(e)
       console.error('[cloud] initialSync error:', e)
     }
   }
 
-  function scheduleDeltaSync() {
+  function scheduleDeltaSync(): void {
     if (!user.value) return
     if (_workoutSyncDebounce) clearTimeout(_workoutSyncDebounce)
     _workoutSyncDebounce = setTimeout(() => deltaSync(), 1500)
   }
 
-  function scheduleSettingsSync() {
+  function scheduleSettingsSync(): void {
     if (!user.value) return
     if (_settingsSyncDebounce) clearTimeout(_settingsSyncDebounce)
     _settingsSyncDebounce = setTimeout(() => settingsSync(), 800)
   }
 
-  async function deltaSync() {
+  async function deltaSync(): Promise<void> {
     if (!user.value) return
     const workouts = useWorkoutsStore()
     const body = useBodyStore()
     syncStatus.value = 'syncing'
     lastError.value = null
     try {
-      // Workouts — only upsert dirty (new/changed) records
       const wIds = new Set(workouts.history.map(w => w.id))
       const wDel = [..._knownWorkoutIds].filter(id => !wIds.has(id))
       const wUp = workouts.history
         .filter(w => _dirtyWorkoutIds.has(w.id))
-        .map(w => ({ id: w.id, user_id: user.value.id, data: w }))
+        .map(w => ({ id: w.id, user_id: user.value!.id, data: w }))
       if (wUp.length) offlineQueue.enqueue('upsertWorkouts', wUp)
       if (wDel.length) offlineQueue.enqueue('deleteWorkouts', wDel)
       _knownWorkoutIds = wIds
       _dirtyWorkoutIds = new Set()
 
-      // Body log — only upsert dirty records
       const bIds = new Set(body.entries.map(e => e.id))
       const bDel = [..._knownBodyIds].filter(id => !bIds.has(id))
       const bUp = body.entries
         .filter(e => _dirtyBodyIds.has(e.id))
-        .map(e => ({ id: e.id, user_id: user.value.id, data: e }))
+        .map(e => ({ id: e.id, user_id: user.value!.id, data: e }))
       if (bUp.length) offlineQueue.enqueue('upsertBody', bUp)
       if (bDel.length) offlineQueue.enqueue('deleteBody', bDel)
       _knownBodyIds = bIds
@@ -287,45 +266,45 @@ export const useCloudStore = defineStore('cloud', () => {
 
       syncStatus.value = isOnline.value ? 'ok' : 'queued'
       lastSyncedAt.value = Date.now()
-    } catch (e) {
+    } catch (e: any) {
       syncStatus.value = 'error'
       lastError.value = e.message || String(e)
       console.error('[cloud] deltaSync error:', e)
     }
   }
 
-  async function settingsSync() {
+  async function settingsSync(): Promise<void> {
     if (!user.value) return
     const settings = useSettingsStore()
     offlineQueue.enqueue('upsertSettings', { ...settings.settings })
     lastSyncedAt.value = Date.now()
   }
 
-  async function signUp(email, password) {
+  async function signUp(email: string, password: string) {
     lastError.value = null
-    const { data, error } = await client.value.auth.signUp({ email, password })
+    const { data, error } = await client.value!.auth.signUp({ email, password })
     if (error) { lastError.value = error.message; throw error }
     return data
   }
 
-  async function signIn(email, password) {
+  async function signIn(email: string, password: string) {
     lastError.value = null
-    const { data, error } = await client.value.auth.signInWithPassword({ email, password })
+    const { data, error } = await client.value!.auth.signInWithPassword({ email, password })
     if (error) { lastError.value = error.message; throw error }
     return data
   }
 
-  async function signOut() {
-    await client.value.auth.signOut()
+  async function signOut(): Promise<void> {
+    await client.value!.auth.signOut()
     user.value = null
   }
 
-  async function forceSync() {
+  async function forceSync(): Promise<void> {
     await deltaSync()
     await settingsSync()
   }
 
-  async function flushQueue() {
+  async function flushQueue(): Promise<void> {
     await offlineQueue.flush()
   }
 

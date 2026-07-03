@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch, nextTick } from 'vue'
-import { useDialog } from '../composables/useDialog.js'
+import { useDialog } from '../composables/useDialog'
 
 const { current } = useDialog()
 const inputRef = ref(null)

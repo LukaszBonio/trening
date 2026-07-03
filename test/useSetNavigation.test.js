@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { ref } from 'vue'
-import { useSetNavigation } from '../src/composables/useSetNavigation.js'
+import { useSetNavigation } from '../src/composables/useSetNavigation'
 
 function makeExercises() {
   return ref([

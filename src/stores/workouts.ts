@@ -3,7 +3,35 @@ import { ref, computed, watch } from 'vue'
 
 const STORAGE_KEY = 'tp_history_v1'
 
-function loadHistory() {
+export interface WorkoutSet {
+  weight: number
+  reps: number
+  rpe?: number
+  note?: string
+}
+
+export interface WorkoutExercise {
+  name: string
+  sets: WorkoutSet[]
+  primaryMuscle?: string
+  muscleHead?: string
+  exerciseType?: string
+  movementPattern?: string
+  [key: string]: unknown
+}
+
+export interface Workout {
+  id: string
+  type?: string
+  planName?: string
+  date: string
+  finishedAt?: number
+  duration?: number
+  exercises: WorkoutExercise[]
+  [key: string]: unknown
+}
+
+function loadHistory(): Workout[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     return raw ? JSON.parse(raw) : []
@@ -13,11 +41,9 @@ function loadHistory() {
 }
 
 export const useWorkoutsStore = defineStore('workouts', () => {
-  const history = ref(loadHistory())
+  const history = ref<Workout[]>(loadHistory())
 
   const count = computed(() => history.value.length)
-  // Najświeższy trening chronologicznie. Nie używamy history[length-1] bo tablica
-  // po imporcie/sync może mieć dowolną kolejność (np. backup wczytuje w kolejności pliku).
   const lastWorkout = computed(() => {
     if (!history.value.length) return null
     let latest = history.value[0]
@@ -27,22 +53,22 @@ export const useWorkoutsStore = defineStore('workouts', () => {
     return latest
   })
 
-  function addWorkout(workout) {
+  function addWorkout(workout: Partial<Workout>): void {
     if (!workout.id) workout.id = `w_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
     if (!workout.date) workout.date = new Date().toISOString()
-    history.value.push(workout)
+    history.value.push(workout as Workout)
   }
 
-  function removeWorkout(id) {
+  function removeWorkout(id: string): void {
     history.value = history.value.filter(w => w.id !== id)
   }
 
-  function updateWorkout(id, patch) {
+  function updateWorkout(id: string, patch: Partial<Workout>): void {
     const idx = history.value.findIndex(w => w.id === id)
     if (idx >= 0) history.value[idx] = { ...history.value[idx], ...patch }
   }
 
-  function setHistory(arr) {
+  function setHistory(arr: Workout[]): void {
     history.value = arr
   }
 

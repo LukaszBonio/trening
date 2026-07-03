@@ -1,15 +1,15 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
-import { useSessionStore } from '../stores/session.js'
-import { useSettingsStore } from '../stores/settings.js'
-import { useWorkoutsStore } from '../stores/workouts.js'
+import { useSessionStore } from '../stores/session'
+import { useSettingsStore } from '../stores/settings'
+import { useWorkoutsStore } from '../stores/workouts'
 import { detectMuscle, getMuscleName, detectEquipment } from '../lib/muscles'
 import { findSubstitutes, youtubeSearchUrl } from '../lib/substitutions'
 import { lastSetFor } from '../lib/analytics'
 import { suggestNextWeight } from '../lib/progression'
-import { useDialog } from '../composables/useDialog.js'
-import { useRestTimer } from '../composables/useRestTimer.js'
-import { useSetNavigation } from '../composables/useSetNavigation.js'
+import { useDialog } from '../composables/useDialog'
+import { useRestTimer } from '../composables/useRestTimer'
+import { useSetNavigation } from '../composables/useSetNavigation'
 
 const dialog = useDialog()
 

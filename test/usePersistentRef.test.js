@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, beforeAll } from 'vitest'
-import { usePersistentRef } from '../src/composables/usePersistentRef.js'
+import { usePersistentRef } from '../src/composables/usePersistentRef'
 
 beforeAll(() => {
   if (typeof globalThis.localStorage === 'undefined') {

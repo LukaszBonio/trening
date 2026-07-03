@@ -1,8 +1,8 @@
 <script setup>
 import { ref, computed, onBeforeUnmount } from 'vue'
 import { generateAIPlan } from '../lib/ai'
-import { useWorkoutsStore } from '../stores/workouts.js'
-import { useSettingsStore, GOALS, goalLabel } from '../stores/settings.js'
+import { useWorkoutsStore } from '../stores/workouts'
+import { useSettingsStore, GOALS, goalLabel } from '../stores/settings'
 import { recentSessionsOfType } from '../lib/analytics'
 
 const workouts = useWorkoutsStore()

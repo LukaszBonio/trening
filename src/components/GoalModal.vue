@@ -1,5 +1,5 @@
 <script setup>
-import { useSettingsStore, GOALS } from '../stores/settings.js'
+import { useSettingsStore, GOALS } from '../stores/settings'
 
 const settings = useSettingsStore()
 const emit = defineEmits(['close'])

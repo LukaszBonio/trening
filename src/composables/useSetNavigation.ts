@@ -1,6 +1,16 @@
-import { ref, computed } from 'vue'
+import { ref, computed, type Ref } from 'vue'
 
-export function useSetNavigation(exercises) {
+interface NavigationSet {
+  done?: boolean
+  [key: string]: unknown
+}
+
+interface NavigationExercise {
+  sets: NavigationSet[]
+  [key: string]: unknown
+}
+
+export function useSetNavigation(exercises: Ref<NavigationExercise[]>) {
   const exIdx = ref(0)
   const setIdx = ref(0)
 
@@ -37,7 +47,7 @@ export function useSetNavigation(exercises) {
     return { done, total, currentGlobalIdx }
   })
 
-  function advance() {
+  function advance(): boolean {
     if (!currentEx.value) return false
     if (setIdx.value < currentEx.value.sets.length - 1) {
       setIdx.value++
@@ -51,7 +61,7 @@ export function useSetNavigation(exercises) {
     return false
   }
 
-  function goBackPosition() {
+  function goBackPosition(): void {
     if (setIdx.value > 0) {
       setIdx.value--
     } else if (exIdx.value > 0) {
@@ -60,7 +70,7 @@ export function useSetNavigation(exercises) {
     }
   }
 
-  function jumpToFirstUnchecked() {
+  function jumpToFirstUnchecked(): void {
     for (let ei = 0; ei < exercises.value.length; ei++) {
       for (let si = 0; si < exercises.value[ei].sets.length; si++) {
         if (!exercises.value[ei].sets[si].done) {
@@ -72,7 +82,7 @@ export function useSetNavigation(exercises) {
     }
   }
 
-  function reset() {
+  function reset(): void {
     exIdx.value = 0
     setIdx.value = 0
   }

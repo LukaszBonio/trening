@@ -2,7 +2,7 @@
 import { computed, onMounted } from 'vue'
 import confetti from 'canvas-confetti'
 import { personalRecords } from '../lib/analytics'
-import { useWorkoutsStore } from '../stores/workouts.js'
+import { useWorkoutsStore } from '../stores/workouts'
 import { workoutVolume, totalSets } from '../lib/workoutMath'
 import { formatDuration } from '../lib/format'
 

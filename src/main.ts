@@ -3,11 +3,9 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import './styles/global.css'
-// Tabler Icons z npm zamiast CDN — działa offline, jeden mniej punkt awarii.
 import '@tabler/icons-webfont/dist/tabler-icons.min.css'
 import { migrateFromLegacy } from './lib/migration'
 
-// Migracja danych z legacy formatu (uruchamia się raz, przed bootstrapem store'ów)
 const migration = migrateFromLegacy()
 if (migration.migrated) {
   console.log(`✓ Migracja: ${migration.count} treningów + ${migration.bodyCount} pomiarów wagi z legacy`)
@@ -17,8 +15,7 @@ const app = createApp(App)
 app.use(createPinia())
 app.use(router)
 
-// Trigger settings store init (applies accent color CSS var)
-import { useSettingsStore } from './stores/settings.js'
+import { useSettingsStore } from './stores/settings'
 useSettingsStore()
 
 app.mount('#app')

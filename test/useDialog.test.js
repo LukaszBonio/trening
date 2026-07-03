@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { useDialog } from '../src/composables/useDialog.js'
+import { useDialog } from '../src/composables/useDialog'
 
 beforeEach(() => {
   const d = useDialog()

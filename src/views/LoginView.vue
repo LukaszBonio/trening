@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useCloudStore } from '../stores/cloud.js'
+import { useCloudStore } from '../stores/cloud'
 
 const cloud = useCloudStore()
 const router = useRouter()

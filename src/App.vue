@@ -5,8 +5,8 @@ import OnboardingTour from './components/OnboardingTour.vue'
 import GoalModal from './components/GoalModal.vue'
 import ToastContainer from './components/ToastContainer.vue'
 import DialogContainer from './components/DialogContainer.vue'
-import { useSettingsStore, GOALS } from './stores/settings.js'
-import { useToast } from './composables/useToast.js'
+import { useSettingsStore, GOALS } from './stores/settings'
+import { useToast } from './composables/useToast'
 
 const toast = useToast()
 

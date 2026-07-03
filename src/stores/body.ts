@@ -1,9 +1,15 @@
 import { defineStore } from 'pinia'
 import { computed } from 'vue'
-import { usePersistentRef } from '../composables/usePersistentRef.js'
+import { usePersistentRef } from '../composables/usePersistentRef'
+
+export interface BodyEntry {
+  id: string
+  date: string
+  weight: number
+}
 
 export const useBodyStore = defineStore('body', () => {
-  const entries = usePersistentRef('tp_body_v1', [])
+  const entries = usePersistentRef<BodyEntry[]>('tp_body_v1', [])
 
   const sortedAsc = computed(() =>
     [...entries.value].sort((a, b) => a.date.localeCompare(b.date))
@@ -20,7 +26,7 @@ export const useBodyStore = defineStore('body', () => {
     return Math.round((last.weight - first.weight) * 10) / 10
   })
 
-  function addEntry(weight, dateISO = null) {
+  function addEntry(weight: number, dateISO: string | null = null): void {
     const date = dateISO || new Date().toISOString().slice(0, 10)
     const existing = entries.value.findIndex(e => e.date === date)
     if (existing >= 0) {
@@ -34,11 +40,11 @@ export const useBodyStore = defineStore('body', () => {
     }
   }
 
-  function removeEntry(id) {
+  function removeEntry(id: string): void {
     entries.value = entries.value.filter(e => e.id !== id)
   }
 
-  function replaceEntries(newEntries) {
+  function replaceEntries(newEntries: BodyEntry[]): void {
     entries.value = newEntries
   }
 

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { useSessionStore } from '../stores/session.js'
-import { useSettingsStore } from '../stores/settings.js'
+import { useSessionStore } from '../stores/session'
+import { useSettingsStore } from '../stores/settings'
 
 const props = defineProps({
   exIdx: { type: Number, required: true }

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { useToast } from '../src/composables/useToast.js'
+import { useToast } from '../src/composables/useToast'
 
 beforeEach(() => {
   // Reset state między testami

@@ -6,7 +6,7 @@ export function useRestTimer(defaultSeconds = 90) {
   const restRemaining = ref(0)
   const restTotal = ref(defaultSeconds)
   const timerEndFlash = ref(false)
-  let restInterval = null
+  let restInterval: ReturnType<typeof setInterval> | null = null
 
   const restDisplay = computed(() => formatClock(restRemaining.value))
   const restProgress = computed(() => {
@@ -14,9 +14,9 @@ export function useRestTimer(defaultSeconds = 90) {
     return (1 - restRemaining.value / restTotal.value) * 100
   })
 
-  let _onEnd = null
+  let _onEnd: (() => void) | null = null
 
-  function startRest(seconds) {
+  function startRest(seconds?: number): void {
     restTotal.value = seconds || defaultSeconds
     restRemaining.value = restTotal.value
     if (restInterval) clearInterval(restInterval)
@@ -32,16 +32,16 @@ export function useRestTimer(defaultSeconds = 90) {
     }, 1000)
   }
 
-  function stopRest() {
+  function stopRest(): void {
     if (restInterval) { clearInterval(restInterval); restInterval = null }
   }
 
-  function adjustRest(delta) {
+  function adjustRest(delta: number): void {
     restRemaining.value = Math.max(0, restRemaining.value + delta)
     if (restRemaining.value > restTotal.value) restTotal.value = restRemaining.value
   }
 
-  function onTimerEnd(cb) {
+  function onTimerEnd(cb: () => void): void {
     _onEnd = cb
   }
 

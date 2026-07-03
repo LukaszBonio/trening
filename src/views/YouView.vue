@@ -1,14 +1,14 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useCloudStore } from '../stores/cloud.js'
+import { useCloudStore } from '../stores/cloud'
 import { REQUIRE_AUTH } from '../lib/authConfig'
-import { useWorkoutsStore } from '../stores/workouts.js'
-import { useSettingsStore } from '../stores/settings.js'
+import { useWorkoutsStore } from '../stores/workouts'
+import { useSettingsStore } from '../stores/settings'
 import { permission as notifPermission, requestPermission as requestNotifPermission, isSupported as notifSupported } from '../lib/notifications'
 import { transformLegacyEntry } from '../lib/migration'
-import { useDialog } from '../composables/useDialog.js'
-import { useToast } from '../composables/useToast.js'
+import { useDialog } from '../composables/useDialog'
+import { useToast } from '../composables/useToast'
 import BaseCard from '../components/BaseCard.vue'
 
 const dialog = useDialog()

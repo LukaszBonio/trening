@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { useWorkoutsStore } from '../stores/workouts.js'
+import { useWorkoutsStore } from '../stores/workouts'
 import { detectMuscle } from '../lib/muscles'
 import { MUSCLE_TO_GROUP, GROUP_LABELS, PRIMARY_TO_GROUP } from '../lib/workoutSchema'
 import { workoutVolume, totalSets as totalSetsOf } from '../lib/workoutMath'
@@ -19,7 +19,7 @@ import ExerciseProgressChart from '../components/ExerciseProgressChart.vue'
 import AchievementsGrid from '../components/AchievementsGrid.vue'
 import CalendarHeatmap from '../components/CalendarHeatmap.vue'
 import { generateWeeklyReport, loadCachedReport, saveCachedReport, clearCachedReport } from '../lib/weeklyReport'
-import { useToast } from '../composables/useToast.js'
+import { useToast } from '../composables/useToast'
 import BaseCard from '../components/BaseCard.vue'
 
 const workouts = useWorkoutsStore()

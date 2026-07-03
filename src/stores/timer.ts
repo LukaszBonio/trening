@@ -1,12 +1,12 @@
 import { defineStore } from 'pinia'
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed } from 'vue'
 
 export const useTimerStore = defineStore('timer', () => {
   const seconds = ref(0)
   const running = ref(false)
   const target = ref(90)
 
-  let intervalId = null
+  let intervalId: ReturnType<typeof setInterval> | null = null
 
   const display = computed(() => {
     const s = Math.max(0, target.value - seconds.value)
@@ -15,7 +15,7 @@ export const useTimerStore = defineStore('timer', () => {
     return `${mm}:${ss}`
   })
 
-  function start(targetSec = 90) {
+  function start(targetSec = 90): void {
     target.value = targetSec
     seconds.value = 0
     running.value = true
@@ -28,7 +28,7 @@ export const useTimerStore = defineStore('timer', () => {
     }, 1000)
   }
 
-  function stop() {
+  function stop(): void {
     running.value = false
     if (intervalId) {
       clearInterval(intervalId)
@@ -36,7 +36,7 @@ export const useTimerStore = defineStore('timer', () => {
     }
   }
 
-  function reset() {
+  function reset(): void {
     stop()
     seconds.value = 0
   }

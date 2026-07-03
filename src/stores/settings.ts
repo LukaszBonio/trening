@@ -1,8 +1,21 @@
 import { defineStore } from 'pinia'
 import { watch } from 'vue'
-import { usePersistentRef } from '../composables/usePersistentRef.js'
+import { usePersistentRef } from '../composables/usePersistentRef'
 
-const DEFAULTS = {
+export interface Settings {
+  restTimerDefault: number
+  units: string
+  showRpe: boolean
+  autoStartTimer: boolean
+  accentColor: string
+  weekStartsMonday: boolean
+  theme: string
+  workoutMode: string
+  goal: string
+  [key: string]: unknown
+}
+
+const DEFAULTS: Settings = {
   restTimerDefault: 90,
   units: 'kg',
   showRpe: true,
@@ -14,7 +27,13 @@ const DEFAULTS = {
   goal: 'mass'
 }
 
-export const GOALS = [
+export interface GoalOption {
+  key: string
+  label: string
+  icon: string
+}
+
+export const GOALS: GoalOption[] = [
   { key: 'mass',          label: 'Masa',          icon: 'ti-flame' },
   { key: 'strength',      label: 'Siła',          icon: 'ti-barbell' },
   { key: 'endurance',     label: 'Wytrzymałość',  icon: 'ti-run' },
@@ -22,33 +41,32 @@ export const GOALS = [
   { key: 'recomposition', label: 'Rekompozycja',  icon: 'ti-refresh' }
 ]
 
-export function goalLabel(key) {
+export function goalLabel(key: string): string {
   return GOALS.find(g => g.key === key)?.label || 'Masa'
 }
 
 export const useSettingsStore = defineStore('settings', () => {
-  const raw = usePersistentRef('tp_settings_v1', () => ({ ...DEFAULTS }))
-  // Merge: nowe pola z DEFAULTS trafiają do zapisanych ustawień (forward-compat)
+  const raw = usePersistentRef<Settings>('tp_settings_v1', () => ({ ...DEFAULTS }))
   if (typeof raw.value === 'object' && raw.value !== null) {
-    for (const k of Object.keys(DEFAULTS)) {
-      if (!(k in raw.value)) raw.value[k] = DEFAULTS[k]
+    for (const k of Object.keys(DEFAULTS) as (keyof Settings)[]) {
+      if (!(k in raw.value)) (raw.value as Record<string, unknown>)[k] = DEFAULTS[k]
     }
   }
   const settings = raw
 
-  function set(key, value) {
-    settings.value[key] = value
+  function set(key: string, value: unknown): void {
+    (settings.value as Record<string, unknown>)[key] = value
   }
 
-  function reset() {
+  function reset(): void {
     settings.value = { ...DEFAULTS }
   }
 
-  function applyAccentColor() {
+  function applyAccentColor(): void {
     document.documentElement.style.setProperty('--accent', settings.value.accentColor)
   }
 
-  function applyTheme() {
+  function applyTheme(): void {
     document.documentElement.dataset.theme = settings.value.theme || 'dark'
   }
 
@@ -60,7 +78,7 @@ export const useSettingsStore = defineStore('settings', () => {
   applyAccentColor()
   applyTheme()
 
-  function applyRemote(remote) {
+  function applyRemote(remote: Partial<Settings>): void {
     Object.assign(settings.value, remote)
     applyTheme()
     applyAccentColor()

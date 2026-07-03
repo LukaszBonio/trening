@@ -1,8 +1,8 @@
 <script setup>
 import { computed } from 'vue'
 import { PLANS } from '../lib/plans'
-import { useCustomPlansStore } from '../stores/customPlans.js'
-import { useFavoritesStore } from '../stores/favorites.js'
+import { useCustomPlansStore } from '../stores/customPlans'
+import { useFavoritesStore } from '../stores/favorites'
 
 const props = defineProps({
   type: { type: String, required: true }
