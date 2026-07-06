@@ -10,7 +10,6 @@ import { suggestNextWeight } from '../lib/progression'
 import { useDialog } from '../composables/useDialog'
 import { useRestTimer } from '../composables/useRestTimer'
 import { useSetNavigation } from '../composables/useSetNavigation'
-import { useVoiceInput } from '../composables/useVoiceInput'
 
 const dialog = useDialog()
 
@@ -42,19 +41,6 @@ onTimerEnd(() => {
   mode.value = 'setup'
   nextTick(() => { weightInputRef.value?.focus() })
 })
-
-const { isListening, isSupported: voiceSupported, startListening, stopListening } = useVoiceInput()
-const voiceTarget = ref(null)
-
-function voiceFor(field) {
-  if (isListening.value) { stopListening(); voiceTarget.value = null; return }
-  voiceTarget.value = field
-  startListening((val) => {
-    if (!currentSet.value) return
-    session.updateSet(exIdx.value, setIdx.value, { [field]: val })
-    voiceTarget.value = null
-  })
-}
 
 const showSubstitutes = ref(false)
 const showRpeHelp = ref(false)
@@ -334,15 +320,6 @@ watch([exIdx, setIdx, () => session.active?.id], suggestWeightIfEmpty, { immedia
               placeholder="—"
               class="set-input-focus"
             />
-            <button
-              v-if="voiceSupported"
-              class="voice-btn"
-              :class="{ active: isListening && voiceTarget === 'weight' }"
-              @click="voiceFor('weight')"
-              :aria-label="'Dyktuj ' + settings.settings.units"
-            >
-              <i class="ti ti-microphone"></i>
-            </button>
           </div>
           <div class="big-input-block">
             <label>powt.</label>
@@ -352,15 +329,6 @@ watch([exIdx, setIdx, () => session.active?.id], suggestWeightIfEmpty, { immedia
               v-model="currentSet.reps"
               placeholder="—"
             />
-            <button
-              v-if="voiceSupported"
-              class="voice-btn"
-              :class="{ active: isListening && voiceTarget === 'reps' }"
-              @click="voiceFor('reps')"
-              aria-label="Dyktuj powtórzenia"
-            >
-              <i class="ti ti-microphone"></i>
-            </button>
           </div>
           <div v-if="settings.settings.showRpe" class="big-input-block rpe">
             <label class="rpe-label">
@@ -822,31 +790,6 @@ watch([exIdx, setIdx, () => session.active?.id], suggestWeightIfEmpty, { immedia
   background: var(--bg-elev);
 }
 .big-input-block.rpe input { font-size: 22px; padding: 22px 8px; }
-.voice-btn {
-  width: 36px; height: 36px;
-  border-radius: 50%;
-  background: var(--bg-elev-2);
-  border: 1px solid var(--border);
-  color: var(--text-muted);
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all var(--dur);
-  align-self: center;
-}
-.voice-btn:hover { border-color: var(--accent); color: var(--accent); }
-.voice-btn.active {
-  background: var(--accent);
-  color: #000;
-  border-color: var(--accent);
-  animation: voice-pulse 1s ease-in-out infinite;
-}
-@keyframes voice-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 var(--accent-soft-2); }
-  50% { box-shadow: 0 0 0 8px transparent; }
-}
 .rpe-label {
   display: inline-flex !important;
   align-items: center;
