@@ -46,7 +46,7 @@ prowadzi Cię przez trening seria po serii i analizuje postępy. Działa offline
 **Trening Pro** to aplikacja webowa (PWA) do planowania i rejestrowania treningów siłowych.
 Plany generuje **Claude** (model `claude-sonnet-4-6`) z uwzględnieniem Twojego celu i historii.
 
-Aplikacja zbudowana jest na **Vue 3 + TypeScript + Vite + Pinia** — 20 komponentów, 5 composables, 8 stores,
+Aplikacja zbudowana jest na **Vue 3 + TypeScript + Vite + Pinia** — 20 komponentów, 6 composables, 8 stores,
 19 lib modules z 156 testami (Vitest). PWA z Service Workerem zapewnia działanie offline.
 Klucz API jest ukryty za serwerem proxy (Cloudflare Worker z JWT auth) — **użytkownik nie potrzebuje własnego klucza API.**
 
@@ -80,7 +80,8 @@ Klucz API jest ukryty za serwerem proxy (Cloudflare Worker z JWT auth) — **uż
 - **Tryb kart** (domyślny) — jedna partia mięśniowa na ekran, swipe między kartami
 - **Tryb listy** — wszystkie ćwiczenia w jednym widoku (toggle w ustawieniach)
 - **Logowanie serii** — ciężar, powtórzenia, RPE (1-10), notatki tekstowe
-- **Timer odpoczynku** — auto-start po zaznaczeniu serii, presety 60/90/120/180s, ±15s
+- **Timer odpoczynku** — auto-start po zaznaczeniu serii, presety 60/90/120/180s, ±15s, drift-corrected (działa z zablokowanym ekranem)
+- **Voice input** — dyktuj ciężar i powtórzenia głosem (Web Speech API, przycisk mikrofonu przy polach)
 - **Powiadomienia + wibracja** — koniec przerwy działa nawet w tle
 - **Live duration** — zegar treningu w nagłówku sesji (mm:ss)
 - **Kalkulator talerzy** — wpisz ciężar, zobacz rozkład per stronę (kolory IPF)
@@ -298,7 +299,7 @@ trening/
 │   │   ├── HistoryView.vue     #   Lista treningów, edycja, PDF, zapis jako plan
 │   │   └── YouView.vue         #   Konto, ustawienia, backup
 │   ├── components/             # 20 komponentów (BaseCard, WorkoutCards, RestTimer, ...)
-│   ├── composables/            # 5 composables (useRestTimer, useSetNavigation, ...)
+│   ├── composables/            # 6 composables (useRestTimer, useVoiceInput, useSetNavigation, ...)
 │   ├── stores/                 # 8 Pinia stores (workouts, session, cloud, ...)
 │   ├── lib/                    # 19 pure modules (muscles, plans, analytics, ai, ...)
 │   └── styles/global.css       # CSS variables (dark/light themes)
@@ -317,7 +318,8 @@ trening/
 | **stores/cloud.ts** | Supabase auth, init/delta sync, integracja z offlineQueue |
 | **stores/customPlans.ts** | Własne plany użytkownika (CRUD) |
 | **stores/favorites.ts** | Ulubione plany (library + custom) |
-| **composables/useRestTimer** | Timer odpoczynku: countdown, notification, flash, callback |
+| **composables/useRestTimer** | Timer odpoczynku: drift-corrected countdown, wake lock, notification, flash |
+| **composables/useVoiceInput** | Web Speech API: rozpoznawanie mowy → liczby dla KG/POWT |
 | **composables/useSetNavigation** | Nawigacja po seriach: advance, goBack, jump, progress |
 | **composables/usePersistentRef** | Ref z auto-persist do localStorage (5 stores go używa) |
 | **composables/useDialog** | Modale confirm/prompt przez provide/inject |
@@ -351,7 +353,7 @@ trening/
 | **Cloud** | [Supabase](https://supabase.com/) — auth + PostgreSQL z RLS |
 | **AI** | [Claude API](https://www.anthropic.com/) — `claude-sonnet-4-6` przez Cloudflare Worker proxy |
 | **Ikony / fonty** | [Tabler Icons](https://tabler-icons.io/) · Google Fonts (Inter, Space Grotesk) |
-| **Web API** | Service Worker · localStorage · Notification API · Vibration · Drag-Drop |
+| **Web API** | Service Worker · localStorage · Notification API · Vibration · Drag-Drop · Screen Wake Lock · Web Speech API |
 | **Hosting** | GitHub Pages (frontend) + Cloudflare (proxy) + Supabase (cloud sync) |
 
 ---
@@ -480,7 +482,7 @@ podczas treningu. Możesz przełączyć na tryb listy w **Ty → Ustawienia → 
 
 **Architektura:**
 - [x] Vue 3 + Vite + Pinia (port z 8270-LOC monolitu vanilla JS)
-- [x] 8 Pinia stores, 20 komponentów, 5 composables, 5 widoków z lazy-loadingiem
+- [x] 8 Pinia stores, 20 komponentów, 6 composables, 5 widoków z lazy-loadingiem
 - [x] Vue Router (hash mode), page transitions
 - [x] 156 testów Vitest (13 plików) — composables, lib modules, stores
 
@@ -507,11 +509,11 @@ podczas treningu. Możesz przełączyć na tryb listy w **Ty → Ustawienia → 
 
 ### 🚧 V3 — *następne kroki*
 - [x] TypeScript migration — cały `src/` (lib, stores, composables, router, main)
+- [x] Drift-corrected timer — absolutny `endTime` + `Date.now()`, re-sync na `visibilitychange`, działa z zablokowanym telefonem
+- [x] Voice input dla serii (Web Speech API) — przycisk mikrofonu przy polach KG/POWT
+- [x] Timestamp-based conflict resolution — `updatedAt` per rekord, porównanie z DB `updated_at`, nowszy wygrywa
 - [ ] Internacjonalizacja (EN) i przełącznik języka
 - [ ] AI Coach — analiza postępów + czat (port z legacy)
-- [ ] Background Sync API — timer odpoczynku działający z telefonem zablokowanym
-- [ ] Voice input dla serii (Web Speech API)
-- [ ] Lepsze conflict resolution dla cloud sync (timestamp-based)
 
 ### 🔮 V4
 - [ ] Pełny social (obserwowanie, leaderboardy)
