@@ -7,6 +7,29 @@ export function useRestTimer(defaultSeconds = 90) {
   const restTotal = ref(defaultSeconds)
   const timerEndFlash = ref(false)
   let restInterval: ReturnType<typeof setInterval> | null = null
+  let wakeLock: WakeLockSentinel | null = null
+
+  async function acquireWakeLock(): Promise<void> {
+    try {
+      if ('wakeLock' in navigator) {
+        wakeLock = await navigator.wakeLock.request('screen')
+        wakeLock.addEventListener('release', () => { wakeLock = null })
+      }
+    } catch { /* user denied or tab hidden — non-critical */ }
+  }
+
+  function releaseWakeLock(): void {
+    if (wakeLock) { wakeLock.release(); wakeLock = null }
+  }
+
+  function handleVisibilityChange(): void {
+    if (document.visibilityState === 'visible' && restInterval && !wakeLock) {
+      acquireWakeLock()
+    }
+  }
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+  }
 
   const restDisplay = computed(() => formatClock(restRemaining.value))
   const restProgress = computed(() => {
@@ -19,6 +42,7 @@ export function useRestTimer(defaultSeconds = 90) {
   function startRest(seconds?: number): void {
     restTotal.value = seconds || defaultSeconds
     restRemaining.value = restTotal.value
+    acquireWakeLock()
     if (restInterval) clearInterval(restInterval)
     restInterval = setInterval(() => {
       restRemaining.value--
@@ -34,6 +58,7 @@ export function useRestTimer(defaultSeconds = 90) {
 
   function stopRest(): void {
     if (restInterval) { clearInterval(restInterval); restInterval = null }
+    releaseWakeLock()
   }
 
   function adjustRest(delta: number): void {
