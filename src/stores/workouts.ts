@@ -56,6 +56,7 @@ export const useWorkoutsStore = defineStore('workouts', () => {
   function addWorkout(workout: Partial<Workout>): void {
     if (!workout.id) workout.id = `w_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
     if (!workout.date) workout.date = new Date().toISOString()
+    workout.updatedAt = Date.now()
     history.value.push(workout as Workout)
   }
 
@@ -65,7 +66,7 @@ export const useWorkoutsStore = defineStore('workouts', () => {
 
   function updateWorkout(id: string, patch: Partial<Workout>): void {
     const idx = history.value.findIndex(w => w.id === id)
-    if (idx >= 0) history.value[idx] = { ...history.value[idx], ...patch }
+    if (idx >= 0) history.value[idx] = { ...history.value[idx], ...patch, updatedAt: Date.now() }
   }
 
   function setHistory(arr: Workout[]): void {

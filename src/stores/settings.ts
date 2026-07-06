@@ -56,6 +56,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
   function set(key: string, value: unknown): void {
     (settings.value as Record<string, unknown>)[key] = value
+    ;(settings.value as Record<string, unknown>)._updatedAt = Date.now()
   }
 
   function reset(): void {

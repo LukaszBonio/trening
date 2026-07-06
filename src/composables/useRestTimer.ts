@@ -7,6 +7,7 @@ export function useRestTimer(defaultSeconds = 90) {
   const restTotal = ref(defaultSeconds)
   const timerEndFlash = ref(false)
   let restInterval: ReturnType<typeof setInterval> | null = null
+  let endTime = 0
   let wakeLock: WakeLockSentinel | null = null
 
   async function acquireWakeLock(): Promise<void> {
@@ -22,9 +23,21 @@ export function useRestTimer(defaultSeconds = 90) {
     if (wakeLock) { wakeLock.release(); wakeLock = null }
   }
 
+  function syncFromClock(): void {
+    const remaining = Math.ceil((endTime - Date.now()) / 1000)
+    if (remaining <= 0) {
+      restRemaining.value = 0
+      fireEnd()
+    } else {
+      restRemaining.value = remaining
+    }
+  }
+
   function handleVisibilityChange(): void {
-    if (document.visibilityState === 'visible' && restInterval && !wakeLock) {
-      acquireWakeLock()
+    if (document.visibilityState !== 'visible') return
+    if (restInterval) {
+      syncFromClock()
+      if (!wakeLock) acquireWakeLock()
     }
   }
   if (typeof document !== 'undefined') {
@@ -39,31 +52,34 @@ export function useRestTimer(defaultSeconds = 90) {
 
   let _onEnd: (() => void) | null = null
 
+  function fireEnd(): void {
+    stopRest()
+    notifyTimerEnd('Koniec przerwy', 'Wracaj do ćwiczeń')
+    timerEndFlash.value = true
+    setTimeout(() => { timerEndFlash.value = false }, 2000)
+    if (_onEnd) _onEnd()
+  }
+
   function startRest(seconds?: number): void {
     restTotal.value = seconds || defaultSeconds
     restRemaining.value = restTotal.value
+    endTime = Date.now() + restTotal.value * 1000
     acquireWakeLock()
     if (restInterval) clearInterval(restInterval)
-    restInterval = setInterval(() => {
-      restRemaining.value--
-      if (restRemaining.value <= 0) {
-        stopRest()
-        notifyTimerEnd('Koniec przerwy', 'Wracaj do ćwiczeń')
-        timerEndFlash.value = true
-        setTimeout(() => { timerEndFlash.value = false }, 2000)
-        if (_onEnd) _onEnd()
-      }
-    }, 1000)
+    restInterval = setInterval(syncFromClock, 1000)
   }
 
   function stopRest(): void {
     if (restInterval) { clearInterval(restInterval); restInterval = null }
+    endTime = 0
     releaseWakeLock()
   }
 
   function adjustRest(delta: number): void {
-    restRemaining.value = Math.max(0, restRemaining.value + delta)
-    if (restRemaining.value > restTotal.value) restTotal.value = restRemaining.value
+    endTime += delta * 1000
+    const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000))
+    restRemaining.value = remaining
+    if (remaining > restTotal.value) restTotal.value = remaining
   }
 
   function onTimerEnd(cb: () => void): void {

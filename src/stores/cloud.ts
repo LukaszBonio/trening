@@ -143,20 +143,21 @@ export const useCloudStore = defineStore('cloud', () => {
       const settings = useSettingsStore()
 
       const { data: cloudWorkouts, error: wErr } = await client.value!
-        .from('workouts').select('id, data')
+        .from('workouts').select('id, data, updated_at')
       if (wErr) throw wErr
 
-      const wCloud = new Map(cloudWorkouts!.map((r: any) => [r.id, r.data]))
+      const wCloud = new Map(cloudWorkouts!.map((r: any) => [r.id, { data: r.data, dbUpdatedAt: r.updated_at }]))
       const wLocal = new Map(workouts.history.map(w => [w.id, w]))
       const wMerged = new Map()
       const allWorkoutIds = new Set([...wCloud.keys(), ...wLocal.keys()])
       for (const id of allWorkoutIds) {
-        const cloud = wCloud.get(id) as any
+        const cloudEntry = wCloud.get(id)
         const local = wLocal.get(id)
-        if (!cloud) { wMerged.set(id, local); continue }
+        if (!cloudEntry) { wMerged.set(id, local); continue }
+        const cloud = cloudEntry.data as any
         if (!local) { wMerged.set(id, cloud); continue }
-        const cloudTs = cloud.finishedAt || cloud.date || ''
-        const localTs = local.finishedAt || local.date || ''
+        const cloudTs = cloud.updatedAt || new Date(cloudEntry.dbUpdatedAt || 0).getTime() || 0
+        const localTs = local.updatedAt || local.finishedAt || 0
         if (localTs > cloudTs) { wMerged.set(id, local) }
         else if (cloudTs > localTs) { wMerged.set(id, cloud) }
         else { wMerged.set(id, Object.keys(local).length >= Object.keys(cloud).length ? local : cloud) }
@@ -173,21 +174,22 @@ export const useCloudStore = defineStore('cloud', () => {
       _knownWorkoutIds = new Set(wMerged.keys())
 
       const { data: cloudBody, error: bErr } = await client.value!
-        .from('body_log').select('id, data')
+        .from('body_log').select('id, data, updated_at')
       if (bErr && bErr.code !== '42P01') throw bErr
 
       if (!bErr) {
-        const bCloud = new Map(cloudBody!.map((r: any) => [r.id, r.data]))
+        const bCloud = new Map(cloudBody!.map((r: any) => [r.id, { data: r.data, dbUpdatedAt: r.updated_at }]))
         const bLocal = new Map(body.entries.map(e => [e.id, e]))
         const bMerged = new Map()
         const allBodyIds = new Set([...bCloud.keys(), ...bLocal.keys()])
         for (const id of allBodyIds) {
-          const cloud = bCloud.get(id) as any
+          const cloudEntry = bCloud.get(id)
           const local = bLocal.get(id)
-          if (!cloud) { bMerged.set(id, local); continue }
+          if (!cloudEntry) { bMerged.set(id, local); continue }
+          const cloud = cloudEntry.data as any
           if (!local) { bMerged.set(id, cloud); continue }
-          const cloudTs = cloud.date || ''
-          const localTs = local.date || ''
+          const cloudTs = cloud.updatedAt || new Date(cloudEntry.dbUpdatedAt || 0).getTime() || 0
+          const localTs = (local as any).updatedAt || 0
           if (localTs > cloudTs) { bMerged.set(id, local) }
           else if (cloudTs > localTs) { bMerged.set(id, cloud) }
           else { bMerged.set(id, Object.keys(local).length >= Object.keys(cloud).length ? local : cloud) }
@@ -205,11 +207,21 @@ export const useCloudStore = defineStore('cloud', () => {
       }
 
       const { data: cloudSettings, error: sErr } = await client.value!
-        .from('user_settings').select('data').eq('user_id', user.value!.id).maybeSingle()
+        .from('user_settings').select('data, updated_at').eq('user_id', user.value!.id).maybeSingle()
       if (sErr && sErr.code !== '42P01' && sErr.code !== 'PGRST116') throw sErr
 
       if (cloudSettings?.data) {
-        settings.applyRemote(cloudSettings.data as any)
+        const remote = cloudSettings.data as Record<string, unknown>
+        const local = settings.settings as Record<string, unknown>
+        const cloudTs = new Date(cloudSettings.updated_at || 0).getTime()
+        const localTs = (local._updatedAt as number) || 0
+        if (cloudTs > localTs) {
+          settings.applyRemote(remote as any)
+        } else if (localTs > cloudTs) {
+          const { error } = await client.value!.from('user_settings')
+            .upsert({ user_id: user.value!.id, data: settings.settings })
+          if (error && error.code !== '42P01') throw error
+        }
       } else if (!sErr || sErr.code === 'PGRST116') {
         const { error } = await client.value!.from('user_settings')
           .upsert({ user_id: user.value!.id, data: settings.settings })
@@ -248,7 +260,7 @@ export const useCloudStore = defineStore('cloud', () => {
       const wDel = [..._knownWorkoutIds].filter(id => !wIds.has(id))
       const wUp = workouts.history
         .filter(w => _dirtyWorkoutIds.has(w.id))
-        .map(w => ({ id: w.id, user_id: user.value!.id, data: w }))
+        .map(w => ({ id: w.id, user_id: user.value!.id, data: w, updated_at: new Date().toISOString() }))
       if (wUp.length) offlineQueue.enqueue('upsertWorkouts', wUp)
       if (wDel.length) offlineQueue.enqueue('deleteWorkouts', wDel)
       _knownWorkoutIds = wIds
@@ -258,7 +270,7 @@ export const useCloudStore = defineStore('cloud', () => {
       const bDel = [..._knownBodyIds].filter(id => !bIds.has(id))
       const bUp = body.entries
         .filter(e => _dirtyBodyIds.has(e.id))
-        .map(e => ({ id: e.id, user_id: user.value!.id, data: e }))
+        .map(e => ({ id: e.id, user_id: user.value!.id, data: e, updated_at: new Date().toISOString() }))
       if (bUp.length) offlineQueue.enqueue('upsertBody', bUp)
       if (bDel.length) offlineQueue.enqueue('deleteBody', bDel)
       _knownBodyIds = bIds
