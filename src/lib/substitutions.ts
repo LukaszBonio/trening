@@ -2,37 +2,62 @@ import { detectMuscle, EXERCISE_TO_MUSCLE } from './muscles'
 
 const _substitutesCache = new Map<string, string[]>();
 
-export function findSubstitutes(exerciseName: string, max: number = 5, muscleHeadOverride: string | null = null): string[] {
-  const cacheKey = `${(exerciseName || '').toLowerCase().trim()}|${max}|${muscleHeadOverride || ''}`
+function normalizeForDedup(name: string): string {
+  return name
+    .replace(/na ławce płaskiej/g, 'na ławce poziomej')
+    .replace(/\bna skosie\b/g, 'na ławce skośnej')
+}
+
+export function findSubstitutes(
+  exerciseName: string,
+  max: number = 5,
+  muscleHeadOverride: string | null = null,
+  excludeNames: string[] = []
+): string[] {
+  const excludeNorm = excludeNames.map(n => n.toLowerCase().trim())
+  const cacheKey = `${(exerciseName || '').toLowerCase().trim()}|${max}|${muscleHeadOverride || ''}|${excludeNorm.sort().join(',')}`
   if (_substitutesCache.has(cacheKey)) return _substitutesCache.get(cacheKey)!
+
   const targetMuscle = muscleHeadOverride || detectMuscle(exerciseName)
   if (!targetMuscle) { _substitutesCache.set(cacheKey, []); return [] }
+
   const currentNorm = exerciseName.toLowerCase().trim()
-
-  const all = Object.entries(EXERCISE_TO_MUSCLE)
-    .filter(([key, muscle]) => muscle === targetMuscle && key !== currentNorm)
-    .map(([key]) => key)
-
-  all.sort((a, b) => b.length - a.length)
-
-  const filtered: string[] = []
-  for (const key of all) {
-    const isShortVariant = filtered.some(longer => longer.includes(key))
-    if (!isShortVariant) filtered.push(key)
+  const excludeSet = new Set<string>()
+  const rawExcludes = [currentNorm, ...excludeNorm]
+  for (const n of rawExcludes) {
+    excludeSet.add(n)
+    excludeSet.add(normalizeForDedup(n))
+    const tr = translateExerciseName(n).toLowerCase().trim()
+    excludeSet.add(tr)
+    excludeSet.add(normalizeForDedup(tr))
   }
+
+  const rawEntries = Object.entries(EXERCISE_TO_MUSCLE)
+    .filter(([, muscle]) => muscle === targetMuscle)
+    .map(([key]) => translateExerciseName(key))
 
   const seen = new Set<string>()
-  const deduped: string[] = []
-  for (const key of filtered) {
-    const norm = key.toLowerCase().replace(/[-\s]/g, '')
-    if (seen.has(norm)) continue
+  const unique: string[] = []
+  for (const name of rawEntries) {
+    const norm = name.toLowerCase().trim()
+    const synNorm = normalizeForDedup(norm)
+    if (excludeSet.has(norm) || excludeSet.has(synNorm)) continue
+    const stripped = norm.replace(/[-\s]/g, '')
+    if (seen.has(norm) || seen.has(synNorm) || seen.has(stripped)) continue
     seen.add(norm)
-    deduped.push(key)
+    seen.add(synNorm)
+    seen.add(stripped)
+    unique.push(norm)
   }
 
-  const display = deduped
-    .map(k => k.charAt(0).toUpperCase() + k.slice(1))
-    .filter(d => d.toLowerCase() !== currentNorm)
+  unique.sort((a, b) => b.length - a.length)
+  const filtered: string[] = []
+  for (const name of unique) {
+    if (filtered.some(longer => longer.includes(name))) continue
+    filtered.push(name)
+  }
+
+  const display = filtered.map(k => k.charAt(0).toUpperCase() + k.slice(1))
 
   if (display.length <= max) {
     _substitutesCache.set(cacheKey, display)
@@ -66,6 +91,8 @@ const EN_TO_PL: Record<string, string> = {
   'dumbbell press': 'Wyciskanie hantli',
   'decline bench press': 'Wyciskanie na ławce ujemnej',
   'cable crossover': 'Krzyżowanie linek',
+  'cable crossover górny': 'Krzyżowanie linek górne',
+  'cable crossover dolny': 'Krzyżowanie linek dolne',
   'cable fly': 'Krzyżowanie linek',
   'cable flyes': 'Krzyżowanie linek',
   'chest fly': 'Rozpiętki',
@@ -77,6 +104,7 @@ const EN_TO_PL: Record<string, string> = {
   'peck deck': 'Rozpiętki na maszynie',
   'butterfly': 'Rozpiętki na maszynie',
   'chest press': 'Wyciskanie na maszynie',
+  'chest press na maszynie': 'Wyciskanie na maszynie',
   'machine chest press': 'Wyciskanie na maszynie',
   'smith machine bench press': 'Wyciskanie na suwnicy',
   'push up': 'Pompki klasyczne',
@@ -96,10 +124,12 @@ const EN_TO_PL: Record<string, string> = {
   'lateral raise': 'Wznosy hantli bokiem',
   'dumbbell lateral raise': 'Wznosy hantli bokiem',
   'cable lateral raise': 'Wznosy bokiem na wyciągu',
+  'lateral raise na maszynie': 'Wznosy bokiem na maszynie',
   'side lateral raise': 'Wznosy hantli bokiem',
   'upright row': 'Wiosłowanie sztangi pod brodę',
   'face pull': 'Face pull',
   'face pulls': 'Face pull',
+  'cable face pull': 'Face pull',
   'rear delt fly': 'Wznosy hantli w opadzie',
   'reverse fly': 'Odwrotne rozpiętki',
   'reverse pec deck': 'Odwrotne rozpiętki na maszynie',

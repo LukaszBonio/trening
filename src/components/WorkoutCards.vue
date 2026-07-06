@@ -76,11 +76,14 @@ const ytUrl = computed(() => currentEx.value ? youtubeSearchUrl(currentEx.value.
 
 const isExerciseChange = computed(() => nextEx.value && nextEx.value.name !== currentEx.value?.name)
 const nextYtUrl = computed(() => nextEx.value ? youtubeSearchUrl(nextEx.value.name) : '#')
-const substitutes = computed(() =>
-  currentEx.value
-    ? findSubstitutes(currentEx.value.name, 3, currentEx.value.muscleHead || null)
-    : []
-)
+const substitutes = computed(() => {
+  if (!currentEx.value) return []
+  const sessionNames = exercises.value
+    .filter((_, i) => i !== exIdx.value)
+    .map(e => e.name)
+  if (currentEx.value._swappedFrom) sessionNames.push(currentEx.value._swappedFrom)
+  return findSubstitutes(currentEx.value.name, 3, currentEx.value.muscleHead || null, sessionNames)
+})
 
 function goBack() {
   if (mode.value === 'rest') {
