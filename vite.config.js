@@ -34,6 +34,7 @@ export default defineConfig({
         skipWaiting: true,
         clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,png,svg,ico,woff,woff2}'],
+        ignoreURLParametersMatching: [/.*/],
         runtimeCaching: [
           {
             urlPattern: ({ url }) =>
