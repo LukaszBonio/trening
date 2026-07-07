@@ -84,6 +84,7 @@ interface GenerateAIPlanOptions {
   equipment?: string
   avoid?: string
   recentSessions?: RecentSession[]
+  equipmentTags?: string[]
   signal?: AbortSignal
 }
 
@@ -416,6 +417,8 @@ interface BuildPromptOptions {
   equipment: string
   avoid: string
   recentSessions: RecentSession[]
+  // Kategorie sprzętu dla planu Ani (checkboxy). Ignorowane przez pozostałe typy.
+  equipmentTags?: string[]
 }
 
 // === Plan korekcyjny "Ćwiczenia dla Ani" ===
@@ -423,7 +426,19 @@ interface BuildPromptOptions {
 // (do filtrowania wg dostępności) i poziom (baza→progresja). AI wybiera 1 opcję/slot;
 // progresję trudności dobiera na podstawie historii. NIE ma tu ćwiczeń przeciwwskazanych
 // (brak przysiadu ze sztangą, martwego ciągu, osiowego obciążania kręgosłupa).
-interface AniaOption { name: string; equip: Equipment; level: string }
+// Kategorie sprzętu wybierane przez usera dla planu Ani (checkboxy w UI).
+// 'masa_ciala' jest zawsze dostępna (baza). 'maszyna' obejmuje też wyciągi.
+// Sztanga świadomie nieobecna — osiowe obciążanie kręgosłupa to przeciwwskazanie.
+export type AniaEquip = 'masa_ciala' | 'guma' | 'hantle' | 'maszyna'
+
+const ANIA_EQUIP_LABEL: Record<AniaEquip, string> = {
+  masa_ciala: 'masa ciała',
+  guma: 'guma oporowa',
+  hantle: 'hantle / kettle',
+  maszyna: 'maszyna / wyciąg'
+}
+
+interface AniaOption { name: string; equip: AniaEquip; level: string }
 interface AniaSlot {
   title: string
   primaryMuscle: string
@@ -433,40 +448,45 @@ interface AniaSlot {
   options: AniaOption[]
 }
 
+// Kuratorowane menu. Każdy slot MA co najmniej jedną opcję na masę ciała (fallback,
+// bo 'masa_ciala' jest zawsze zaznaczona). Nazwy pokrywające się z bazą ćwiczeń
+// (exerciseDb) dostają metadane z bazy w normalizePlan.
 const ANIA_SLOTS: AniaSlot[] = [
   {
     title: 'Aktywacja core (leżąc, kręgosłup neutralny)',
     primaryMuscle: 'core', muscleHead: 'core', exerciseType: 'isolation', movementPattern: 'core',
     options: [
-      { name: 'Martwy robak', equip: 'własna_waga', level: 'baza' },
-      { name: 'Martwy robak z wyprostem nogi', equip: 'własna_waga', level: 'progresja' },
-      { name: 'Pallof press', equip: 'własna_waga', level: 'anty-rotacja (guma)' }
+      { name: 'Martwy robak', equip: 'masa_ciala', level: 'baza' },
+      { name: 'Martwy robak z wyprostem nogi', equip: 'masa_ciala', level: 'progresja' },
+      { name: 'Pallof press', equip: 'guma', level: 'anty-rotacja' }
     ]
   },
   {
     title: 'Stabilizacja kręgosłupa / izometria core',
     primaryMuscle: 'core', muscleHead: 'core', exerciseType: 'isolation', movementPattern: 'core',
     options: [
-      { name: 'Ptak-pies', equip: 'własna_waga', level: 'baza' },
-      { name: 'Deska', equip: 'własna_waga', level: 'izometria' },
-      { name: 'Deska bokiem', equip: 'własna_waga', level: 'progresja (skolioza/skośne)' }
+      { name: 'Ptak-pies', equip: 'masa_ciala', level: 'baza' },
+      { name: 'Deska', equip: 'masa_ciala', level: 'izometria' },
+      { name: 'Deska bokiem', equip: 'masa_ciala', level: 'progresja (skolioza/skośne)' }
     ]
   },
   {
     title: 'Pośladki — wyprost bioder (neutralne lędźwie)',
     primaryMuscle: 'glutes', muscleHead: 'glutes', exerciseType: 'compound', movementPattern: 'hinge',
     options: [
-      { name: 'Most biodrowy', equip: 'własna_waga', level: 'baza' },
-      { name: 'Most biodrowy jednonóż', equip: 'własna_waga', level: 'progresja' },
-      { name: 'Hip thrust', equip: 'hantle', level: 'progresja z lekkim obciążeniem' }
+      { name: 'Most biodrowy', equip: 'masa_ciala', level: 'baza' },
+      { name: 'Most biodrowy jednonóż', equip: 'masa_ciala', level: 'progresja' },
+      { name: 'Most biodrowy z gumą', equip: 'guma', level: 'progresja z oporem' },
+      { name: 'Hip thrust', equip: 'hantle', level: 'progresja z obciążeniem' }
     ]
   },
   {
     title: 'Stabilizacja miednicy — odwodzenie biodra',
     primaryMuscle: 'glutes', muscleHead: 'glutes', exerciseType: 'isolation', movementPattern: 'hinge',
     options: [
-      { name: 'Muszelka', equip: 'własna_waga', level: 'baza' },
-      { name: 'Odwodzenie nogi leżąc bokiem', equip: 'własna_waga', level: 'progresja' },
+      { name: 'Muszelka', equip: 'masa_ciala', level: 'baza' },
+      { name: 'Odwodzenie nogi leżąc bokiem', equip: 'masa_ciala', level: 'progresja' },
+      { name: 'Muszelka z gumą', equip: 'guma', level: 'progresja z oporem' },
       { name: 'Odwodzenie nóg na maszynie', equip: 'maszyna', level: 'wariant na siłowni' }
     ]
   },
@@ -474,7 +494,8 @@ const ANIA_SLOTS: AniaSlot[] = [
     title: 'Tylna taśma — dwugłowe uda (bez obciążania lędźwi)',
     primaryMuscle: 'hamstrings', muscleHead: 'hamstrings', exerciseType: 'isolation', movementPattern: 'hinge',
     options: [
-      { name: 'Uginanie nóg z gumą', equip: 'własna_waga', level: 'baza (dom)' },
+      { name: 'Most biodrowy ze zsuwaniem pięt', equip: 'masa_ciala', level: 'baza' },
+      { name: 'Uginanie nóg z gumą', equip: 'guma', level: 'z oporem' },
       { name: 'Uginanie nóg leżąc', equip: 'maszyna', level: 'wariant na siłowni' },
       { name: 'Uginanie nóg siedząc', equip: 'maszyna', level: 'wariant na siłowni' }
     ]
@@ -483,7 +504,7 @@ const ANIA_SLOTS: AniaSlot[] = [
     title: 'Czworogłowy / stabilizacja kolana (MCL — kontrolowany zakres, bez koślawości)',
     primaryMuscle: 'quads', muscleHead: 'quads', exerciseType: 'isolation', movementPattern: 'squat',
     options: [
-      { name: 'Wall sit', equip: 'własna_waga', level: 'baza (izometria)' },
+      { name: 'Wall sit', equip: 'masa_ciala', level: 'baza (izometria)' },
       { name: 'Przysiad z hantlem do ławki', equip: 'hantle', level: 'progresja (ograniczony zakres)' },
       { name: 'Wyprosty nóg', equip: 'maszyna', level: 'wariant na siłowni (lekki)' }
     ]
@@ -492,19 +513,20 @@ const ANIA_SLOTS: AniaSlot[] = [
     title: 'Plecy / postawa — ściąganie łopatek',
     primaryMuscle: 'back', muscleHead: 'back_middle', exerciseType: 'compound', movementPattern: 'horizontal_pull',
     options: [
-      { name: 'Wiosłowanie z gumą', equip: 'własna_waga', level: 'baza (dom)' },
+      { name: 'Wznosy T-Y-W leżąc', equip: 'masa_ciala', level: 'baza (postawa)' },
+      { name: 'Wiosłowanie z gumą', equip: 'guma', level: 'z oporem' },
       { name: 'Wiosłowanie hantlą w podparciu', equip: 'hantle', level: 'wariant z hantlami' },
       { name: 'Wiosłowanie na maszynie', equip: 'maszyna', level: 'wariant na siłowni' },
-      { name: 'Ściąganie drążka wyciągu górnego', equip: 'wyciąg', level: 'wariant na siłowni' }
+      { name: 'Ściąganie drążka wyciągu górnego', equip: 'maszyna', level: 'wariant na siłowni' }
     ]
   },
   {
     title: 'Łopatki + górny grzbiet + korekcja ustawienia głowy',
     primaryMuscle: 'rear_shoulders', muscleHead: 'shoulder_rear', exerciseType: 'isolation', movementPattern: 'shoulder_isolation',
     options: [
-      { name: 'Band pull-apart', equip: 'własna_waga', level: 'baza (guma)' },
-      { name: 'Wall angels', equip: 'własna_waga', level: 'korekcja głowy/łopatek' },
-      { name: 'Face pull', equip: 'wyciąg', level: 'wariant na siłowni' }
+      { name: 'Wall angels', equip: 'masa_ciala', level: 'korekcja głowy/łopatek' },
+      { name: 'Band pull-apart', equip: 'guma', level: 'baza z gumą' },
+      { name: 'Face pull', equip: 'maszyna', level: 'wariant na siłowni' }
     ]
   }
 ]
@@ -512,13 +534,18 @@ const ANIA_SLOTS: AniaSlot[] = [
 // Dedykowany builder promptu dla planu Ani. Reużywa formatSessionCompact + reguł pól,
 // ale z profilem korekcyjnym, przeciwwskazaniami i progresją przez trudność (nie ciężar).
 // Eksportowane dla testów.
-export function buildAniaPrompt({ equipment, avoid, recentSessions }: BuildPromptOptions): string {
-  const allowedEq = EQUIPMENT_ACCESS[equipment] || ALL_EQUIPMENT
+export function buildAniaPrompt({ equipmentTags, avoid, recentSessions }: BuildPromptOptions): string {
+  // Masa ciała zawsze dostępna (baza). Reszta wg zaznaczenia usera.
+  const selected = new Set<AniaEquip>(['masa_ciala'])
+  for (const t of (equipmentTags || [])) {
+    if (t === 'guma' || t === 'hantle' || t === 'maszyna') selected.add(t)
+  }
+  const equipSummary = [...selected].map(t => ANIA_EQUIP_LABEL[t]).join(', ')
   const hasHistory = recentSessions.length > 0
   const td = TYPE_DETAILS.ania
   const parts: string[] = []
 
-  parts.push(`Jesteś trenerem personalnym specjalizującym się w treningu korekcyjnym i pracy z osobami początkującymi ze schorzeniami kręgosłupa i stawów. Ułóż BEZPIECZNY, korekcyjno-wzmacniający plan treningowy dla konkretnej osoby (Ania), trenującej w kontekście: ${equipment}.`)
+  parts.push(`Jesteś trenerem personalnym specjalizującym się w treningu korekcyjnym i pracy z osobami początkującymi ze schorzeniami kręgosłupa i stawów. Ułóż BEZPIECZNY, korekcyjno-wzmacniający plan treningowy dla konkretnej osoby (Ania). Dostępny sprzęt: ${equipSummary}.`)
 
   parts.push(`PROFIL:
 - Kobieta, POCZĄTKUJĄCA (brak doświadczenia z treningiem siłowym).
@@ -537,12 +564,12 @@ export function buildAniaPrompt({ equipment, avoid, recentSessions }: BuildPromp
 - Kolano (MCL): bez ruchów bocznych/rotacyjnych, bez koślawienia, bez głębokiego zgięcia pod obciążeniem, bez wyskoków. Zakres kontrolowany i bezbolesny.
 - Bez ćwiczeń balistycznych i szarpanych. Przy rwie kulszowej unikaj mocnego zgięcia bioder z zaokrąglonymi plecami.`)
 
-  // Menu — filtrowane wg dostępnego sprzętu. Każdy slot = jedno ćwiczenie w planie.
+  // Menu — filtrowane wg zaznaczonych kategorii sprzętu. Każdy slot = jedno ćwiczenie.
+  // Masa ciała zawsze w secie → każdy slot ma co najmniej opcję na masę ciała.
   const menuLines: string[] = []
   ANIA_SLOTS.forEach((slot, i) => {
-    const opts = slot.options.filter(o => allowedEq.includes(o.equip))
-    const shown = opts.length ? opts : slot.options.filter(o => o.equip === 'własna_waga')
-    const optText = shown.map(o => `"${o.name}" (${EQUIPMENT_LABEL[o.equip]}, ${o.level})`).join('; ')
+    const shown = slot.options.filter(o => selected.has(o.equip))
+    const optText = shown.map(o => `"${o.name}" (${ANIA_EQUIP_LABEL[o.equip]}, ${o.level})`).join('; ')
     menuLines.push(`SLOT ${i + 1} — ${slot.title}\n  primaryMuscle: "${slot.primaryMuscle}", muscleHead: "${slot.muscleHead}", exerciseType: "${slot.exerciseType}", movementPattern: "${slot.movementPattern}"\n  Wybierz 1 z: ${optText}`)
   })
   parts.push(`MENU ĆWICZEŃ — wybierz DOKŁADNIE JEDNO ćwiczenie dla każdego z ${td.expectedCount} slotów (kolejność zachowana). Używaj nazw DOKŁADNIE jak w menu oraz podanych wartości primaryMuscle/muscleHead/exerciseType/movementPattern dla danego slotu:\n${menuLines.join('\n')}`)
@@ -742,10 +769,11 @@ const MAX_AVOID_LENGTH = 200
 const _planCache = new Map<string, CacheEntry>()
 const PLAN_CACHE_TTL_MS = 5 * 60 * 1000
 
-function planCacheKey({ type, goal, equipment, avoid, recentSessions }: BuildPromptOptions): string {
+function planCacheKey({ type, goal, equipment, avoid, recentSessions, equipmentTags }: BuildPromptOptions): string {
   // Klucz zawiera tylko stabilne wejście — historia identyfikowana po id ostatnich sesji.
   const sessionsKey = recentSessions.map((s: RecentSession) => s.id || String(s.date)).join(',')
-  return `${type}|${goal}|${equipment}|${avoid}|${sessionsKey}`
+  const tagsKey = (equipmentTags || []).slice().sort().join('+')
+  return `${type}|${goal}|${equipment}|${avoid}|${tagsKey}|${sessionsKey}`
 }
 
 function getCachedPlan(key: string): AIPlan | null {
@@ -835,6 +863,7 @@ export async function generateAIPlan({
   equipment = 'siłownia',
   avoid = '',
   recentSessions = [],
+  equipmentTags,
   signal
 }: GenerateAIPlanOptions): Promise<AIPlan> {
   // Sanityzacja: ucinamy do MAX_AVOID_LENGTH, usuwamy znaki nowej linii (które mogłyby
@@ -842,11 +871,11 @@ export async function generateAIPlan({
   const safeAvoid = String(avoid || '').replace(/[\r\n]+/g, ' ').slice(0, MAX_AVOID_LENGTH).trim()
 
   // Cache hit dla identycznego wejścia (chroni przed double-click). TTL 5 min.
-  const cacheKey = planCacheKey({ type, goal, equipment, avoid: safeAvoid, recentSessions })
+  const cacheKey = planCacheKey({ type, goal, equipment, avoid: safeAvoid, recentSessions, equipmentTags })
   const cached = getCachedPlan(cacheKey)
   if (cached) return cached
 
-  const prompt = buildPrompt({ type, goal, equipment, avoid: safeAvoid, recentSessions })
+  const prompt = buildPrompt({ type, goal, equipment, avoid: safeAvoid, recentSessions, equipmentTags })
 
   // 1 silent retry przy błędzie parse — czasem Claude zwraca tekst zaczynający się od ```json
   // lub pełen JSON z jednym brakiem; ponowna próba w 90% przypadków wystarcza.

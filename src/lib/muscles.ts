@@ -356,7 +356,12 @@ export const EXERCISE_TO_MUSCLE: Record<string, MuscleKey> = {
   'band pull-apart':                               'shoulder_rear',
   'rozciąganie gumy w bok':                        'shoulder_rear',
   'wiosłowanie z gumą':                            'back_middle',
-  'uginanie nóg z gumą':                           'hamstrings'
+  'uginanie nóg z gumą':                           'hamstrings',
+  'most biodrowy ze zsuwaniem pięt':               'hamstrings',
+  'most biodrowy z gumą':                          'glutes',
+  'muszelka z gumą':                               'glutes',
+  'wznosy t-y-w leżąc':                            'back_middle',
+  'wznosy t-y-w':                                  'back_middle'
 };
 
 const SORTED_MUSCLE_KEYS: string[] = Object.keys(EXERCISE_TO_MUSCLE).sort((a, b) => b.length - a.length);
@@ -416,6 +421,7 @@ const EQUIPMENT_KEYWORDS: EquipmentKeyword[] = [
   { pattern: 'pull-apart', label: 'Własna waga', icon: 'ti-user' },
   { pattern: 'pull apart', label: 'Własna waga', icon: 'ti-user' },
   { pattern: 'pallof', label: 'Własna waga', icon: 'ti-user' },
+  { pattern: 'wznosy t-y-w', label: 'Własna waga', icon: 'ti-user' },
   { pattern: 'z gumą', label: 'Własna waga', icon: 'ti-user' },
   { pattern: 'hip thrust', label: 'Sztanga', icon: 'ti-barbell' },
   { pattern: 'wypychanie bioder', label: 'Sztanga', icon: 'ti-barbell' },

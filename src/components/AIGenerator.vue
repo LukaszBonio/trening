@@ -42,6 +42,24 @@ const emit = defineEmits(['select', 'use-library'])
 // Plan korekcyjny Ani — cel jest stały (nie z ustawień), więc chowamy sekcję celu.
 const isAnia = computed(() => props.type === 'ania')
 
+// Wybór sprzętu dla planu Ani (checkboxy). Masa ciała zawsze dostępna (baza).
+const aniaEquipOpen = ref(false)
+const aniaEquip = ref({ guma: false, hantle: false, maszyna: false })
+const ANIA_EQUIP_OPTS = [
+  { key: 'guma', label: 'Gumy oporowe' },
+  { key: 'hantle', label: 'Hantle / kettle' },
+  { key: 'maszyna', label: 'Maszyny / wyciągi' }
+]
+const aniaEquipTags = computed(() => {
+  const t = ['masa_ciala']
+  for (const o of ANIA_EQUIP_OPTS) if (aniaEquip.value[o.key]) t.push(o.key)
+  return t
+})
+const aniaEquipSummary = computed(() => {
+  const picked = ANIA_EQUIP_OPTS.filter(o => aniaEquip.value[o.key]).map(o => o.label.toLowerCase())
+  return ['masa ciała', ...picked].join(', ')
+})
+
 const equipment = ref('siłownia')
 const avoid = ref('')
 const generating = ref(false)
@@ -68,6 +86,7 @@ async function generate() {
       equipment: equipment.value,
       avoid: avoid.value,
       recentSessions: recentSessionsOfType(workouts.history, props.type, 3),
+      equipmentTags: isAnia.value ? aniaEquipTags.value : undefined,
       signal: abortCtrl.signal
     })
   } catch (e) {
@@ -156,7 +175,28 @@ function statusIcon(s)  { return STATUS_META[s]?.icon || 'ti-info-circle' }
         </div>
       </template>
 
-      <div class="field">
+      <!-- Ania: rozwijane menu z checkboxami sprzętu (masa ciała zawsze) -->
+      <div v-if="isAnia" class="field">
+        <label>Dostępny sprzęt</label>
+        <button type="button" class="equip-toggle" @click="aniaEquipOpen = !aniaEquipOpen">
+          <span class="equip-summary">{{ aniaEquipSummary }}</span>
+          <i class="ti" :class="aniaEquipOpen ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
+        </button>
+        <div v-if="aniaEquipOpen" class="equip-menu">
+          <label class="equip-item is-locked">
+            <input type="checkbox" checked disabled />
+            <span>Masa ciała</span>
+            <span class="equip-tag">zawsze</span>
+          </label>
+          <label v-for="o in ANIA_EQUIP_OPTS" :key="o.key" class="equip-item">
+            <input type="checkbox" v-model="aniaEquip[o.key]" />
+            <span>{{ o.label }}</span>
+          </label>
+          <p class="equip-hint">Bez sztangi — osiowe obciążanie kręgosłupa jest wykluczone.</p>
+        </div>
+      </div>
+
+      <div v-else class="field">
         <label>Sprzęt</label>
         <select v-model="equipment">
           <option v-for="e in EQUIPMENT" :key="e" :value="e">{{ e }}</option>
@@ -264,6 +304,71 @@ function statusIcon(s)  { return STATUS_META[s]?.icon || 'ti-info-circle' }
   font-family: inherit;
 }
 .field input:focus, .field select:focus { outline: none; border-color: var(--accent); }
+
+/* Menu wyboru sprzętu (plan Ani) */
+.equip-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+  text-align: left;
+}
+.equip-toggle:hover { border-color: var(--border-strong); }
+.equip-summary {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-transform: capitalize;
+}
+.equip-menu {
+  margin-top: 6px;
+  padding: 6px;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.equip-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background var(--dur);
+}
+.equip-item:hover { background: var(--bg-hover); }
+.equip-item input { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+.equip-item.is-locked { cursor: default; color: var(--text-muted); }
+.equip-item.is-locked:hover { background: none; }
+.equip-item > span:nth-of-type(1) { flex: 1; }
+.equip-tag {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 2px 7px;
+  border-radius: 100px;
+}
+.equip-hint {
+  margin: 4px 6px 2px;
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
 
 .goal-info {
   display: flex;

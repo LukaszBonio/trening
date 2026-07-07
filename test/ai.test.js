@@ -312,10 +312,11 @@ describe('plan Ani (typ ania)', () => {
 })
 
 describe('buildAniaPrompt', () => {
-  const base = { type: 'ania', goal: 'mass', avoid: '', recentSessions: [] }
+  const base = { type: 'ania', goal: 'mass', equipment: '', avoid: '', recentSessions: [] }
+  const ALL = ['masa_ciala', 'guma', 'hantle', 'maszyna']
 
   it('zawiera profil, przeciwwskazania i 8 slotów menu', () => {
-    const p = buildAniaPrompt({ ...base, equipment: 'siłownia' })
+    const p = buildAniaPrompt({ ...base, equipmentTags: ALL })
     expect(p).toContain('dyskopatia')
     expect(p).toContain('PRZECIWWSKAZANIA')
     expect(p).toContain('SLOT 1')
@@ -323,27 +324,49 @@ describe('buildAniaPrompt', () => {
     expect(p).toContain('Ćwiczenia wzmacniające dla Ani')
     expect(p).toContain('DOKŁADNIE 8')
   })
-  it('siłownia → udostępnia warianty maszynowe/wyciągowe', () => {
-    const p = buildAniaPrompt({ ...base, equipment: 'siłownia' })
-    expect(p).toContain('Uginanie nóg leżąc')
-    expect(p).toContain('Face pull')
+  it('wszystkie kategorie → udostępnia warianty maszynowe, hantlowe i gumowe', () => {
+    const p = buildAniaPrompt({ ...base, equipmentTags: ALL })
+    expect(p).toContain('Uginanie nóg leżąc')   // maszyna
+    expect(p).toContain('Face pull')            // maszyna (wyciąg)
+    expect(p).toContain('Hip thrust')           // hantle
+    expect(p).toContain('Band pull-apart')      // guma
   })
-  it('dom bez sprzętu → tylko masa ciała, bez maszyn/wyciągów', () => {
-    const p = buildAniaPrompt({ ...base, equipment: 'dom bez sprzętu (calisthenics)' })
+  it('tylko masa ciała → bez gum, hantli, maszyn', () => {
+    const p = buildAniaPrompt({ ...base, equipmentTags: ['masa_ciala'] })
     expect(p).toContain('Martwy robak')
     expect(p).toContain('Wall sit')
+    expect(p).toContain('Wznosy T-Y-W leżąc')   // bodyweight fallback dla pleców
     expect(p).not.toContain('Uginanie nóg leżąc')
     expect(p).not.toContain('Odwodzenie nóg na maszynie')
     expect(p).not.toContain('Face pull')
+    expect(p).not.toContain('Hip thrust')
+    expect(p).not.toContain('Band pull-apart')
+  })
+  it('brak equipmentTags → domyślnie masa ciała', () => {
+    const p = buildAniaPrompt({ ...base })
+    expect(p).toContain('masa ciała')
+    expect(p).not.toContain('Face pull')
+  })
+  it('masa ciała + gumy → dochodzą warianty z gumą, nadal bez maszyn', () => {
+    const p = buildAniaPrompt({ ...base, equipmentTags: ['masa_ciala', 'guma'] })
+    expect(p).toContain('Band pull-apart')
+    expect(p).toContain('Uginanie nóg z gumą')
+    expect(p).not.toContain('Uginanie nóg leżąc')
+    expect(p).not.toContain('Face pull')
+  })
+  it('każdy z 8 slotów ma opcję nawet przy samej masie ciała', () => {
+    const p = buildAniaPrompt({ ...base, equipmentTags: ['masa_ciala'] })
+    // Żaden slot nie może mieć pustej listy "Wybierz 1 z:"
+    expect(p).not.toMatch(/Wybierz 1 z:\s*(\n|$)/)
   })
   it('bez historii → instrukcja startowa; z historią → analiza postępów', () => {
-    const noHist = buildAniaPrompt({ ...base, equipment: 'siłownia' })
+    const noHist = buildAniaPrompt({ ...base, equipmentTags: ALL })
     expect(noHist).toContain('BRAK HISTORII')
     expect(noHist).not.toContain('ANALIZA POSTĘPÓW')
 
     const withHist = buildAniaPrompt({
       ...base,
-      equipment: 'siłownia',
+      equipmentTags: ALL,
       recentSessions: [{ date: '2026-07-01', exercises: [{ name: 'Most biodrowy', sets: [{ weight: 0, reps: 15 }] }] }]
     })
     expect(withHist).toContain('ANALIZA POSTĘPÓW')
