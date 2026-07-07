@@ -241,6 +241,8 @@ function toggleSystem(sysId) {
 
 function selectDay(dayKey) {
   selectedType.value = dayKey
+  // Plan Ani tworzony jest przez AI — otwórz od razu generator, pomiń bibliotekę.
+  if (dayKey === 'ania') planSource.value = 'ai'
   localStorage.setItem('tp_last_type', dayKey)
 }
 
@@ -319,6 +321,18 @@ async function discardWorkout() {
           :initial="editingPlan !== 'new' ? editingPlan : null"
           @save="onSavePlan"
           @cancel="editingPlan = null"
+        />
+      </template>
+
+      <!-- Plan Ani: dedykowany, generowany wyłącznie przez AI (bez biblioteki/edytora) -->
+      <template v-else-if="selectedType === 'ania'">
+        <h2 class="card-title" style="margin-bottom: var(--space-2)">
+          Ćwiczenia wzmacniające dla Ani
+        </h2>
+        <AIGenerator
+          type="ania"
+          @select="onPickPlan"
+          @use-library="() => {}"
         />
       </template>
 
@@ -428,6 +442,23 @@ async function discardWorkout() {
           <i class="ti ti-chevron-right day-arrow"></i>
         </button>
       </div>
+    </BaseCard>
+
+    <!-- Dedykowany plan korekcyjny — generowany przez AI z analizą postępów -->
+    <BaseCard class="ania-card">
+      <button class="ania-btn" @click="selectDay('ania')">
+        <div class="ania-icon">
+          <i class="ti ti-heart-handshake"></i>
+        </div>
+        <div class="ania-info">
+          <div class="ania-title-row">
+            <h2 class="ania-name">Ćwiczenia wzmacniające dla Ani</h2>
+            <span class="ania-badge"><i class="ti ti-sparkles"></i> AI</span>
+          </div>
+          <p class="ania-desc">Plan korekcyjny — core, pośladki, postawa. AI analizuje postępy i dobiera progresję.</p>
+        </div>
+        <i class="ti ti-chevron-right ania-arrow"></i>
+      </button>
     </BaseCard>
   </div>
   </div>
@@ -675,6 +706,80 @@ async function discardWorkout() {
 }
 .day-btn:hover .day-arrow {
   color: var(--c);
+  transform: translateX(2px);
+}
+
+/* Kafelek planu Ani */
+.ania-card {
+  padding: 0;
+  overflow: hidden;
+  border-color: var(--accent-soft-2);
+  background: linear-gradient(135deg, var(--accent-soft), transparent 70%);
+}
+.ania-btn {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: var(--space-4);
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--dur);
+}
+.ania-btn:hover { background: var(--bg-hover); }
+.ania-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--accent);
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.ania-info { flex: 1; min-width: 0; }
+.ania-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.ania-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0;
+}
+.ania-badge {
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--accent);
+  color: #000;
+  padding: 3px 8px;
+  border-radius: 100px;
+  letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.ania-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 4px 0 0;
+}
+.ania-arrow {
+  font-size: 18px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: transform var(--dur);
+}
+.ania-btn:hover .ania-arrow {
+  color: var(--accent);
   transform: translateX(2px);
 }
 

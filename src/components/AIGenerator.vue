@@ -39,6 +39,9 @@ const props = defineProps({
 })
 const emit = defineEmits(['select', 'use-library'])
 
+// Plan korekcyjny Ani — cel jest stały (nie z ustawień), więc chowamy sekcję celu.
+const isAnia = computed(() => props.type === 'ania')
+
 const equipment = ref('siłownia')
 const avoid = ref('')
 const generating = ref(false)
@@ -121,18 +124,37 @@ function statusIcon(s)  { return STATUS_META[s]?.icon || 'ti-info-circle' }
     </div>
 
     <div v-else-if="!plan" class="ai-form">
-      <p class="muted" style="margin-bottom: var(--space-3)">
-        AI wygeneruje spersonalizowany plan na bazie twojego celu i sprzętu.
-      </p>
-
-      <div class="goal-info">
-        <i class="ti" :class="currentGoal.icon"></i>
-        <div class="goal-info-text">
-          <div class="goal-info-label">Cel</div>
-          <div class="goal-info-value">{{ currentGoal.label }}</div>
+      <!-- Plan Ani: profil korekcyjny zamiast celu z ustawień -->
+      <template v-if="isAnia">
+        <p class="muted" style="margin-bottom: var(--space-3)">
+          Bezpieczny plan korekcyjno-wzmacniający dla początkującej. AI dobiera ćwiczenia
+          pod stabilizację kręgosłupa, pośladki, postawę i kolano — i analizuje postępy
+          przy kolejnych treningach.
+        </p>
+        <div class="goal-info">
+          <i class="ti ti-heart-handshake"></i>
+          <div class="goal-info-text">
+            <div class="goal-info-label">Program</div>
+            <div class="goal-info-value">Korekcyjny · początkujący</div>
+          </div>
+          <span class="goal-info-hint">masa ciała</span>
         </div>
-        <span class="goal-info-hint">Zmień u góry strony</span>
-      </div>
+      </template>
+
+      <template v-else>
+        <p class="muted" style="margin-bottom: var(--space-3)">
+          AI wygeneruje spersonalizowany plan na bazie twojego celu i sprzętu.
+        </p>
+
+        <div class="goal-info">
+          <i class="ti" :class="currentGoal.icon"></i>
+          <div class="goal-info-text">
+            <div class="goal-info-label">Cel</div>
+            <div class="goal-info-value">{{ currentGoal.label }}</div>
+          </div>
+          <span class="goal-info-hint">Zmień u góry strony</span>
+        </div>
+      </template>
 
       <div class="field">
         <label>Sprzęt</label>
@@ -163,7 +185,7 @@ function statusIcon(s)  { return STATUS_META[s]?.icon || 'ti-info-circle' }
         <p class="error-msg">
           <i class="ti ti-alert-triangle"></i> {{ error }}
         </p>
-        <button class="btn btn-fallback" @click="emit('use-library')">
+        <button v-if="!isAnia" class="btn btn-fallback" @click="emit('use-library')">
           <i class="ti ti-book"></i> Użyj planu z biblioteki
         </button>
       </div>

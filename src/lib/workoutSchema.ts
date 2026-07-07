@@ -11,6 +11,7 @@ export type WorkoutType =
   | 'upper_a' | 'upper_b'
   | 'lower_a' | 'lower_b'
   | 'fbw_a' | 'fbw_b' | 'fbw_c'
+  | 'ania'
 
 export type GroupId =
   | 'klatka' | 'barki' | 'triceps'
@@ -97,6 +98,16 @@ export const WORKOUT_SCHEMA: Record<WorkoutType, SchemaGroup[]> = {
   fbw_c: [
     { id: 'czworogłowy', count: 1 }, { id: 'klatka', count: 1 }, { id: 'plecy', count: 1 },
     { id: 'pośladki', count: 1 }, { id: 'barki', count: 1 }, { id: 'biceps', count: 1 }, { id: 'łydki', count: 1 },
+  ],
+  // Plan korekcyjno-wzmacniający "Ćwiczenia dla Ani" — kolejność slotów zgodna z promptem
+  // (aktywacja core → stabilizacja → pośladki → biodro → tylna taśma → kolano → plecy → łopatki).
+  ania: [
+    { id: 'core',        count: 2, muscles: ['core', 'abs', 'obliques'] },
+    { id: 'pośladki',    count: 2, muscles: ['glutes', 'adductors'] },
+    { id: 'hamstring',   count: 1, muscles: ['hamstrings'] },
+    { id: 'czworogłowy', count: 1, muscles: ['quads'] },
+    { id: 'plecy',       count: 1, muscles: ['back_lats', 'back_middle', 'back_lower', 'back_upper'] },
+    { id: 'barki',       count: 1, muscles: ['shoulder_rear'] },
   ],
 }
 

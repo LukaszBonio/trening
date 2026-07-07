@@ -4,6 +4,7 @@ import {
   formatSessionCompact,
   normalizePlan,
   buildExerciseCatalog,
+  buildAniaPrompt,
   PRIMARY_MUSCLES,
   MUSCLE_HEADS_BY_TYPE
 } from '../src/lib/ai'
@@ -62,6 +63,21 @@ function pushPlan(overrides = {}) {
     suggestedWeight: 60
   }))
   return { name: 'Plan push', exercises, ...overrides }
+}
+
+// Minimalny poprawny plan Ani (expectedCount = 8).
+function aniaPlan(overrides = {}) {
+  const exercises = Array.from({ length: 8 }, (_, i) => ({
+    name: `Ćwiczenie ${i + 1}`,
+    primaryMuscle: 'core',
+    muscleHead: 'core',
+    exerciseType: 'isolation',
+    movementPattern: 'core',
+    sets: 3,
+    reps: '10-15',
+    suggestedWeight: null
+  }))
+  return { name: 'Ćwiczenia wzmacniające dla Ani', exercises, ...overrides }
 }
 
 describe('normalizePlan — walidacja twarda', () => {
@@ -250,5 +266,87 @@ describe('normalizePlan — metadata z bazy ćwiczeń', () => {
     const out = normalizePlan(plan, { type: 'push', goal: 'mass' })
     expect(out.exercises[0].name).toBe('Jakieś nieznane ćwiczenie')
     expect(out.exercises[0].primaryMuscle).toBeNull()
+  })
+})
+
+describe('plan Ani (typ ania)', () => {
+  it('MUSCLE_HEADS_BY_TYPE.ania zawiera core, glutes, hamstrings — bez klatki/bicepsa', () => {
+    const heads = MUSCLE_HEADS_BY_TYPE.ania
+    expect(heads).toContain('core')
+    expect(heads).toContain('glutes')
+    expect(heads).toContain('hamstrings')
+    expect(heads).toContain('shoulder_rear')
+    expect(heads).not.toContain('chest_middle')
+    expect(heads).not.toContain('biceps_short')
+  })
+  it('normalizePlan akceptuje dokładnie 8 ćwiczeń', () => {
+    const out = normalizePlan(aniaPlan(), { type: 'ania', goal: 'mass' })
+    expect(out.exercises).toHaveLength(8)
+  })
+  it('7 ćwiczeń → błąd (oczekiwane 8)', () => {
+    const plan = aniaPlan()
+    plan.exercises.pop()
+    expect(() => normalizePlan(plan, { type: 'ania', goal: 'mass' })).toThrow(/7 ćwiczeń zamiast 8/)
+  })
+  it('cel redukcja NIE wymusza 3 serii (progresja przez trudność, nie ciężar)', () => {
+    const plan = aniaPlan()
+    plan.exercises[0].sets = 2
+    const out = normalizePlan(plan, { type: 'ania', goal: 'cut' })
+    expect(out.exercises[0].sets).toBe(2)
+  })
+  it('ćwiczenie z bazy (Most biodrowy) → metadata z bazy', () => {
+    const plan = aniaPlan()
+    plan.exercises[2].name = 'Most biodrowy'
+    const out = normalizePlan(plan, { type: 'ania', goal: 'mass' })
+    expect(out.exercises[2].muscleHead).toBe('glutes')
+    expect(out.exercises[2].primaryMuscle).toBe('glutes')
+  })
+  it('ćwiczenie korekcyjne spoza bazy (Martwy robak) zachowuje dozwoloną głowę core', () => {
+    const plan = aniaPlan()
+    plan.exercises[0].name = 'Martwy robak'
+    plan.exercises[0].muscleHead = 'core'
+    const out = normalizePlan(plan, { type: 'ania', goal: 'mass' })
+    expect(out.exercises[0].name).toBe('Martwy robak')
+    expect(out.exercises[0].muscleHead).toBe('core')
+  })
+})
+
+describe('buildAniaPrompt', () => {
+  const base = { type: 'ania', goal: 'mass', avoid: '', recentSessions: [] }
+
+  it('zawiera profil, przeciwwskazania i 8 slotów menu', () => {
+    const p = buildAniaPrompt({ ...base, equipment: 'siłownia' })
+    expect(p).toContain('dyskopatia')
+    expect(p).toContain('PRZECIWWSKAZANIA')
+    expect(p).toContain('SLOT 1')
+    expect(p).toContain('SLOT 8')
+    expect(p).toContain('Ćwiczenia wzmacniające dla Ani')
+    expect(p).toContain('DOKŁADNIE 8')
+  })
+  it('siłownia → udostępnia warianty maszynowe/wyciągowe', () => {
+    const p = buildAniaPrompt({ ...base, equipment: 'siłownia' })
+    expect(p).toContain('Uginanie nóg leżąc')
+    expect(p).toContain('Face pull')
+  })
+  it('dom bez sprzętu → tylko masa ciała, bez maszyn/wyciągów', () => {
+    const p = buildAniaPrompt({ ...base, equipment: 'dom bez sprzętu (calisthenics)' })
+    expect(p).toContain('Martwy robak')
+    expect(p).toContain('Wall sit')
+    expect(p).not.toContain('Uginanie nóg leżąc')
+    expect(p).not.toContain('Odwodzenie nóg na maszynie')
+    expect(p).not.toContain('Face pull')
+  })
+  it('bez historii → instrukcja startowa; z historią → analiza postępów', () => {
+    const noHist = buildAniaPrompt({ ...base, equipment: 'siłownia' })
+    expect(noHist).toContain('BRAK HISTORII')
+    expect(noHist).not.toContain('ANALIZA POSTĘPÓW')
+
+    const withHist = buildAniaPrompt({
+      ...base,
+      equipment: 'siłownia',
+      recentSessions: [{ date: '2026-07-01', exercises: [{ name: 'Most biodrowy', sets: [{ weight: 0, reps: 15 }] }] }]
+    })
+    expect(withHist).toContain('ANALIZA POSTĘPÓW')
+    expect(withHist).toContain('progresja')
   })
 })

@@ -187,7 +187,9 @@ export const MUSCLE_HEADS_BY_TYPE: Record<string, string[]> = {
   lower_b: ['quads', 'hamstrings', 'glutes', 'adductors', 'calves', 'abs', 'obliques', 'core'],
   fbw_a:   ['chest_middle', 'chest_upper', 'back_lats', 'back_middle', 'shoulder_front', 'shoulder_side', 'shoulder_rear', 'quads', 'hamstrings', 'glutes', 'biceps_short', 'triceps_lat', 'abs', 'core'],
   fbw_b:   ['chest_middle', 'chest_upper', 'back_lats', 'back_middle', 'back_lower', 'shoulder_front', 'shoulder_side', 'quads', 'hamstrings', 'glutes', 'triceps_long', 'triceps_lat', 'abs', 'core'],
-  fbw_c:   ['chest_middle', 'chest_upper', 'back_lats', 'back_middle', 'shoulder_front', 'shoulder_side', 'shoulder_rear', 'quads', 'hamstrings', 'glutes', 'biceps_short', 'calves', 'core']
+  fbw_c:   ['chest_middle', 'chest_upper', 'back_lats', 'back_middle', 'shoulder_front', 'shoulder_side', 'shoulder_rear', 'quads', 'hamstrings', 'glutes', 'biceps_short', 'calves', 'core'],
+  // Plan korekcyjny Ani — bez klatki/przednich barków/tricepsa/bicepsa (górna część minimalna).
+  ania:    ['core', 'abs', 'obliques', 'glutes', 'adductors', 'hamstrings', 'quads', 'back_lats', 'back_middle', 'back_lower', 'back_upper', 'shoulder_rear', 'calves']
 }
 
 // Szczegóły dla każdego typu treningu — struktura, zasady doboru, oczekiwana liczba ćwiczeń.
@@ -316,6 +318,18 @@ const TYPE_DETAILS: Record<string, TypeDetail> = {
       'Wybieraj ćwiczenia efektywne czasowo.',
       'Unikaj nadmiaru ćwiczeń izolowanych.'
     ]
+  },
+  // Plan korekcyjno-wzmacniający dla Ani. Ma własny builder promptu (buildAniaPrompt),
+  // więc structure/selection są tu tylko informacyjne — normalizePlan używa expectedCount.
+  ania: {
+    label: 'ĆWICZENIA DLA ANI',
+    expectedCount: 8,
+    structure: '2× core/stabilizacja + 2× pośladki/biodro + 1× tylna taśma + 1× czworogłowy/kolano + 1× plecy/postawa + 1× łopatki/postawa',
+    selection: [
+      'Wyłącznie bezpieczne ćwiczenia dla osoby początkującej ze schorzeniami kręgosłupa i kolana.',
+      'Kręgosłup w pozycji neutralnej, bez obciążonego zginania lędźwi i osiowego obciążania.',
+      'Kolano bez koślawości, rotacji i głębokiego zgięcia pod obciążeniem.'
+    ]
   }
 }
 
@@ -404,7 +418,202 @@ interface BuildPromptOptions {
   recentSessions: RecentSession[]
 }
 
-function buildPrompt({ type, goal, equipment, avoid, recentSessions }: BuildPromptOptions): string {
+// === Plan korekcyjny "Ćwiczenia dla Ani" ===
+// Kuratorowane menu BEZPIECZNYCH ćwiczeń per slot struktury. Każda opcja ma tag sprzętu
+// (do filtrowania wg dostępności) i poziom (baza→progresja). AI wybiera 1 opcję/slot;
+// progresję trudności dobiera na podstawie historii. NIE ma tu ćwiczeń przeciwwskazanych
+// (brak przysiadu ze sztangą, martwego ciągu, osiowego obciążania kręgosłupa).
+interface AniaOption { name: string; equip: Equipment; level: string }
+interface AniaSlot {
+  title: string
+  primaryMuscle: string
+  muscleHead: string
+  exerciseType: ExerciseType
+  movementPattern: string
+  options: AniaOption[]
+}
+
+const ANIA_SLOTS: AniaSlot[] = [
+  {
+    title: 'Aktywacja core (leżąc, kręgosłup neutralny)',
+    primaryMuscle: 'core', muscleHead: 'core', exerciseType: 'isolation', movementPattern: 'core',
+    options: [
+      { name: 'Martwy robak', equip: 'własna_waga', level: 'baza' },
+      { name: 'Martwy robak z wyprostem nogi', equip: 'własna_waga', level: 'progresja' },
+      { name: 'Pallof press', equip: 'własna_waga', level: 'anty-rotacja (guma)' }
+    ]
+  },
+  {
+    title: 'Stabilizacja kręgosłupa / izometria core',
+    primaryMuscle: 'core', muscleHead: 'core', exerciseType: 'isolation', movementPattern: 'core',
+    options: [
+      { name: 'Ptak-pies', equip: 'własna_waga', level: 'baza' },
+      { name: 'Deska', equip: 'własna_waga', level: 'izometria' },
+      { name: 'Deska bokiem', equip: 'własna_waga', level: 'progresja (skolioza/skośne)' }
+    ]
+  },
+  {
+    title: 'Pośladki — wyprost bioder (neutralne lędźwie)',
+    primaryMuscle: 'glutes', muscleHead: 'glutes', exerciseType: 'compound', movementPattern: 'hinge',
+    options: [
+      { name: 'Most biodrowy', equip: 'własna_waga', level: 'baza' },
+      { name: 'Most biodrowy jednonóż', equip: 'własna_waga', level: 'progresja' },
+      { name: 'Hip thrust', equip: 'hantle', level: 'progresja z lekkim obciążeniem' }
+    ]
+  },
+  {
+    title: 'Stabilizacja miednicy — odwodzenie biodra',
+    primaryMuscle: 'glutes', muscleHead: 'glutes', exerciseType: 'isolation', movementPattern: 'hinge',
+    options: [
+      { name: 'Muszelka', equip: 'własna_waga', level: 'baza' },
+      { name: 'Odwodzenie nogi leżąc bokiem', equip: 'własna_waga', level: 'progresja' },
+      { name: 'Odwodzenie nóg na maszynie', equip: 'maszyna', level: 'wariant na siłowni' }
+    ]
+  },
+  {
+    title: 'Tylna taśma — dwugłowe uda (bez obciążania lędźwi)',
+    primaryMuscle: 'hamstrings', muscleHead: 'hamstrings', exerciseType: 'isolation', movementPattern: 'hinge',
+    options: [
+      { name: 'Uginanie nóg z gumą', equip: 'własna_waga', level: 'baza (dom)' },
+      { name: 'Uginanie nóg leżąc', equip: 'maszyna', level: 'wariant na siłowni' },
+      { name: 'Uginanie nóg siedząc', equip: 'maszyna', level: 'wariant na siłowni' }
+    ]
+  },
+  {
+    title: 'Czworogłowy / stabilizacja kolana (MCL — kontrolowany zakres, bez koślawości)',
+    primaryMuscle: 'quads', muscleHead: 'quads', exerciseType: 'isolation', movementPattern: 'squat',
+    options: [
+      { name: 'Wall sit', equip: 'własna_waga', level: 'baza (izometria)' },
+      { name: 'Przysiad z hantlem do ławki', equip: 'hantle', level: 'progresja (ograniczony zakres)' },
+      { name: 'Wyprosty nóg', equip: 'maszyna', level: 'wariant na siłowni (lekki)' }
+    ]
+  },
+  {
+    title: 'Plecy / postawa — ściąganie łopatek',
+    primaryMuscle: 'back', muscleHead: 'back_middle', exerciseType: 'compound', movementPattern: 'horizontal_pull',
+    options: [
+      { name: 'Wiosłowanie z gumą', equip: 'własna_waga', level: 'baza (dom)' },
+      { name: 'Wiosłowanie hantlą w podparciu', equip: 'hantle', level: 'wariant z hantlami' },
+      { name: 'Wiosłowanie na maszynie', equip: 'maszyna', level: 'wariant na siłowni' },
+      { name: 'Ściąganie drążka wyciągu górnego', equip: 'wyciąg', level: 'wariant na siłowni' }
+    ]
+  },
+  {
+    title: 'Łopatki + górny grzbiet + korekcja ustawienia głowy',
+    primaryMuscle: 'rear_shoulders', muscleHead: 'shoulder_rear', exerciseType: 'isolation', movementPattern: 'shoulder_isolation',
+    options: [
+      { name: 'Band pull-apart', equip: 'własna_waga', level: 'baza (guma)' },
+      { name: 'Wall angels', equip: 'własna_waga', level: 'korekcja głowy/łopatek' },
+      { name: 'Face pull', equip: 'wyciąg', level: 'wariant na siłowni' }
+    ]
+  }
+]
+
+// Dedykowany builder promptu dla planu Ani. Reużywa formatSessionCompact + reguł pól,
+// ale z profilem korekcyjnym, przeciwwskazaniami i progresją przez trudność (nie ciężar).
+// Eksportowane dla testów.
+export function buildAniaPrompt({ equipment, avoid, recentSessions }: BuildPromptOptions): string {
+  const allowedEq = EQUIPMENT_ACCESS[equipment] || ALL_EQUIPMENT
+  const hasHistory = recentSessions.length > 0
+  const td = TYPE_DETAILS.ania
+  const parts: string[] = []
+
+  parts.push(`Jesteś trenerem personalnym specjalizującym się w treningu korekcyjnym i pracy z osobami początkującymi ze schorzeniami kręgosłupa i stawów. Ułóż BEZPIECZNY, korekcyjno-wzmacniający plan treningowy dla konkretnej osoby (Ania), trenującej w kontekście: ${equipment}.`)
+
+  parts.push(`PROFIL:
+- Kobieta, POCZĄTKUJĄCA (brak doświadczenia z treningiem siłowym).
+- Schorzenia i ograniczenia: dyskopatia odcinka lędźwiowego, rwa kulszowa, przodopochylenie miednicy, wysunięta do przodu głowa (forward head posture), skolioza, wystająca łopatka, kolano po naderwaniu więzadła MCL.`)
+
+  parts.push(`CELE (wg priorytetu):
+1. Wzmocnienie mięśni stabilizujących kręgosłup (core głęboki + przykręgosłupowe).
+2. Wzmocnienie dolnej części ciała — pośladki, tylna taśma, dwugłowe i czworogłowe ud.
+3. Poprawa stabilizacji miednicy i kolana.
+4. Poprawa postawy — wzmacnianie grzbietu i łopatek, korekcja ustawienia głowy i barków.
+5. Górna część ciała (ramiona) tylko jako uzupełnienie — minimalny nacisk.`)
+
+  parts.push(`TWARDE PRZECIWWSKAZANIA (bezwzględnie):
+- Kręgosłup zawsze w pozycji NEUTRALNEJ, z napięciem brzucha. ZAKAZ obciążonego zginania lędźwi (brzuszki, sit-upy, skłony z ciężarem).
+- ZAKAZ osiowego obciążania kręgosłupa (przysiad ze sztangą na plecach, martwy ciąg z obciążeniem, wyciskanie sztangi nad głowę stojąc z ciężarem).
+- Kolano (MCL): bez ruchów bocznych/rotacyjnych, bez koślawienia, bez głębokiego zgięcia pod obciążeniem, bez wyskoków. Zakres kontrolowany i bezbolesny.
+- Bez ćwiczeń balistycznych i szarpanych. Przy rwie kulszowej unikaj mocnego zgięcia bioder z zaokrąglonymi plecami.`)
+
+  // Menu — filtrowane wg dostępnego sprzętu. Każdy slot = jedno ćwiczenie w planie.
+  const menuLines: string[] = []
+  ANIA_SLOTS.forEach((slot, i) => {
+    const opts = slot.options.filter(o => allowedEq.includes(o.equip))
+    const shown = opts.length ? opts : slot.options.filter(o => o.equip === 'własna_waga')
+    const optText = shown.map(o => `"${o.name}" (${EQUIPMENT_LABEL[o.equip]}, ${o.level})`).join('; ')
+    menuLines.push(`SLOT ${i + 1} — ${slot.title}\n  primaryMuscle: "${slot.primaryMuscle}", muscleHead: "${slot.muscleHead}", exerciseType: "${slot.exerciseType}", movementPattern: "${slot.movementPattern}"\n  Wybierz 1 z: ${optText}`)
+  })
+  parts.push(`MENU ĆWICZEŃ — wybierz DOKŁADNIE JEDNO ćwiczenie dla każdego z ${td.expectedCount} slotów (kolejność zachowana). Używaj nazw DOKŁADNIE jak w menu oraz podanych wartości primaryMuscle/muscleHead/exerciseType/movementPattern dla danego slotu:\n${menuLines.join('\n')}`)
+
+  if (avoid && avoid.trim()) {
+    parts.push(`DODATKOWO UNIKAJ: ${avoid.trim()}`)
+  }
+
+  if (hasHistory) {
+    parts.push(`OSTATNIE SESJE (${recentSessions.length}) — weight x reps (przy izometrii czas):
+${recentSessions.map(formatSessionCompact).join('\n\n')}`)
+
+    parts.push(`ANALIZA POSTĘPÓW — przeprowadź i ZWRÓĆ wynik w polu "analysis" w JSON:
+1. Dla każdej partii widocznej w historii (core, pośladki, hamstring, czworogłowy, plecy, barki) oceń status:
+   - "progress" — powtórzenia/czas rosną, ćwiczenia wykonywane komfortownie
+   - "stagnation" — brak postępu przez 2+ sesje
+   - "overreaching" — spadek jakości/objawy przeciążenia
+   - "weakly_covered" — partia słabo pokryta w historii
+2. PROGRESJA (BEZ zwiększania ciężaru — plan na masie ciała):
+   - progress → zwiększ trudność: więcej powtórzeń w zakresie, dłuższy czas izometrii, LUB trudniejszy wariant z menu (np. "Most biodrowy" → "Most biodrowy jednonóż", "Martwy robak" → "Martwy robak z wyprostem nogi").
+   - stagnation → zmień wariant w obrębie slotu na inny bodziec.
+   - overreaching → cofnij do łatwiejszego wariantu i zmniejsz objętość.
+   - weakly_covered → upewnij się, że slot jest solidnie pokryty.
+3. Zachowaj bezpieczeństwo i pełną strukturę ${td.expectedCount} ćwiczeń.`)
+  } else {
+    parts.push(`BRAK HISTORII — to pierwszy trening. Wybierz dla każdego slotu NAJŁATWIEJSZY, bazowy wariant. Skup się na nauce wzorca ruchowego i aktywacji właściwych mięśni.`)
+  }
+
+  const analysisField = hasHistory
+    ? `,
+  "analysis": [
+    { "muscle": "nazwa partii po polsku (np. core, pośladki)", "status": "progress|stagnation|overreaching|weakly_covered", "note": "krótkie uzasadnienie (max 80 znaków)" }
+  ]`
+    : ''
+  parts.push(`Zwróć WYŁĄCZNIE poprawny JSON (bez markdown, bez komentarzy, bez tekstu przed/po). Odpowiedź musi zaczynać się od { i kończyć }:
+{
+  "name": "Ćwiczenia wzmacniające dla Ani"${analysisField},
+  "exercises": [
+    {
+      "name": "nazwa ćwiczenia z menu",
+      "primaryMuscle": "PARTIA_ENG",
+      "muscleHead": "GŁOWA_MIĘŚNIA",
+      "exerciseType": "compound|isolation",
+      "movementPattern": "WZORZEC",
+      "sets": LICZBA,
+      "reps": "ZAKRES lub CZAS jako string",
+      "tip": "krótka wskazówka bezpieczeństwa (max 60 znaków)",
+      "suggestedWeight": null
+    }
+  ]
+}`)
+
+  parts.push(`REGUŁY PÓL (przestrzegaj dokładnie):
+- Liczba ćwiczeń: DOKŁADNIE ${td.expectedCount} (po jednym z każdego slotu, w kolejności slotów).
+- "name": dokładna nazwa z menu.
+- "primaryMuscle": użyj wartości podanej przy slocie (jedna z: ${PRIMARY_MUSCLES.map(m => `"${m}"`).join(', ')}).
+- "muscleHead": użyj wartości podanej przy slocie.
+- "exerciseType": ${EXERCISE_TYPES.map(t => `"${t}"`).join(', ')}.
+- "movementPattern": ${MOVEMENT_PATTERNS.map(p => `"${p}"`).join(', ')}.
+- "sets": liczba 2 lub 3 (początkująca — niska/umiarkowana objętość).
+- "reps": string — zakres powtórzeń ("10-15") lub czas dla izometrii ("20-30s").
+- "suggestedWeight": zawsze null (plan na masie ciała / minimalnym obciążeniu).
+- "tip": max 60 znaków, kluczowa wskazówka bezpieczeństwa/techniki (np. "Kręgosłup neutralny, napnij brzuch").
+- Ten plan to trening wzmacniająco-korekcyjny, nie terapia medyczna. Priorytetem jest bezpieczeństwo.`)
+
+  return parts.join('\n\n')
+}
+
+function buildPrompt(opts: BuildPromptOptions): string {
+  if (opts.type === 'ania') return buildAniaPrompt(opts)
+  const { type, goal, equipment, avoid, recentSessions } = opts
   const td = TYPE_DETAILS[type] || TYPE_DETAILS.push
   const goalDesc = GOAL_HINTS[goal] || GOAL_HINTS.mass
   const hasHistory = recentSessions.length > 0
@@ -591,7 +800,8 @@ export function normalizePlan(plan: Record<string, any>, { type, goal }: { type:
     }
     ex.name = translateExerciseName(ex.name)
     // Wymuszenie 3 serii dla redukcji — niezależnie od tego co AI zwróciło.
-    if (goal === 'cut') ex.sets = 3
+    // Plan Ani wyłączony: progresja idzie przez trudność/powtórzenia (2-3 serie), nie ciężar.
+    if (goal === 'cut' && type !== 'ania') ex.sets = 3
     // Ćwiczenie z bazy → baza jest źródłem prawdy: kanoniczna nazwa + metadata
     // z bazy nadpisują to co zwróciło AI (AI może się mylić, baza nie).
     const dbEx = findExerciseByName(ex.name)
