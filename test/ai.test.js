@@ -3,6 +3,7 @@ import {
   parseClaudeJSON,
   formatSessionCompact,
   normalizePlan,
+  buildExerciseCatalog,
   PRIMARY_MUSCLES,
   MUSCLE_HEADS_BY_TYPE
 } from '../src/lib/ai'
@@ -185,5 +186,69 @@ describe('normalizePlan — analysis', () => {
   it('brak analysis → pusta tablica', () => {
     const out = normalizePlan(pushPlan(), { type: 'push', goal: 'mass' })
     expect(out.analysis).toEqual([])
+  })
+})
+
+describe('buildExerciseCatalog', () => {
+  it('siłownia + push → strict, zawiera ćwiczenia z bazy pogrupowane po muscleHead', () => {
+    const cat = buildExerciseCatalog('push', 'siłownia')
+    expect(cat).not.toBeNull()
+    expect(cat.strict).toBe(true)
+    expect(cat.text).toContain('WYŁĄCZNIE')
+    expect(cat.text).toContain('[chest_middle]')
+    expect(cat.text).toContain('Wyciskanie sztangi na ławce poziomej (sztanga, compound)')
+    expect(cat.text).toContain('[triceps_long]')
+  })
+  it('dom bez sprzętu → tylko własna waga, tryb miękki (za mało ćwiczeń na strict)', () => {
+    const cat = buildExerciseCatalog('push', 'dom bez sprzętu (calisthenics)')
+    expect(cat).not.toBeNull()
+    expect(cat.strict).toBe(false)
+    expect(cat.text).toContain('Pompki klasyczne')
+    expect(cat.text).not.toContain('sztanga,')
+    expect(cat.text).not.toContain('maszyna,')
+  })
+  it('dom z hantlami → bez maszyn, wyciągów i sztangi', () => {
+    const cat = buildExerciseCatalog('pull', 'dom z hantlami')
+    expect(cat).not.toBeNull()
+    expect(cat.text).toContain('Wiosłowanie hantlą')
+    expect(cat.text).not.toContain('(sztanga')
+    expect(cat.text).not.toContain('(wyciąg')
+    expect(cat.text).not.toContain('(maszyna')
+  })
+  it('nieznany sprzęt → pełny dostęp jak siłownia', () => {
+    const cat = buildExerciseCatalog('legs', 'cokolwiek')
+    expect(cat).not.toBeNull()
+    expect(cat.strict).toBe(true)
+    expect(cat.text).toContain('Przysiad ze sztangą')
+  })
+})
+
+describe('normalizePlan — metadata z bazy ćwiczeń', () => {
+  it('ćwiczenie z bazy → metadata nadpisane wartościami z bazy', () => {
+    const plan = pushPlan()
+    plan.exercises[0].name = 'Wyciskanie sztangi na ławce poziomej'
+    plan.exercises[0].primaryMuscle = 'back'          // AI się pomyliło
+    plan.exercises[0].muscleHead = 'triceps_long'      // AI się pomyliło
+    plan.exercises[0].exerciseType = 'isolation'       // AI się pomyliło
+    const out = normalizePlan(plan, { type: 'push', goal: 'mass' })
+    expect(out.exercises[0].primaryMuscle).toBe('chest')
+    expect(out.exercises[0].muscleHead).toBe('chest_middle')
+    expect(out.exercises[0].exerciseType).toBe('compound')
+    expect(out.exercises[0].movementPattern).toBe('horizontal_push')
+  })
+  it('alias EN z bazy → kanoniczna polska nazwa + metadata', () => {
+    const plan = pushPlan()
+    plan.exercises[0].name = 'Arnold Press'
+    const out = normalizePlan(plan, { type: 'push', goal: 'mass' })
+    expect(out.exercises[0].name).toBe('Wyciskanie Arnolda')
+    expect(out.exercises[0].muscleHead).toBe('shoulder_front')
+  })
+  it('ćwiczenie spoza bazy → dotychczasowa miękka walidacja', () => {
+    const plan = pushPlan()
+    plan.exercises[0].name = 'Jakieś nieznane ćwiczenie'
+    plan.exercises[0].primaryMuscle = 'wymyslone'
+    const out = normalizePlan(plan, { type: 'push', goal: 'mass' })
+    expect(out.exercises[0].name).toBe('Jakieś nieznane ćwiczenie')
+    expect(out.exercises[0].primaryMuscle).toBeNull()
   })
 })

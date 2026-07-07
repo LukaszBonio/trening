@@ -1828,6 +1828,15 @@ export function getExercisesForMuscle(muscleHead: MuscleKey): ExerciseEntry[] {
   return ALL_EXERCISES.filter(e => e.muscleHead === muscleHead)
 }
 
+// Ćwiczenia dla zestawu głów mięśniowych (np. MUSCLE_HEADS_BY_TYPE z ai.ts),
+// opcjonalnie zawężone do dostępnego sprzętu. Kolejność wg kolejności w bazie.
+export function getExercisesForHeads(muscleHeads: string[], allowedEquipment?: Equipment[]): ExerciseEntry[] {
+  return ALL_EXERCISES.filter(e =>
+    muscleHeads.includes(e.muscleHead) &&
+    (!allowedEquipment || allowedEquipment.includes(e.equipment))
+  )
+}
+
 export function getExercisesByEquipment(equipment: Equipment): ExerciseEntry[] {
   return ALL_EXERCISES.filter(e => e.equipment === equipment)
 }

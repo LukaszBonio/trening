@@ -4,6 +4,7 @@
 import { PRIMARY_TO_GROUP } from './workoutSchema'
 import { getAuthToken } from './auth'
 import { translateExerciseName } from './substitutions'
+import { getExercisesForHeads, findExerciseByName, type Equipment, type ExerciseEntry } from './exerciseDb'
 
 // --- Interfaces ---
 
@@ -318,6 +319,62 @@ const TYPE_DETAILS: Record<string, TypeDetail> = {
   }
 }
 
+// Mapowanie ustawienia sprzętu (z AIGenerator.vue) → dostępne kategorie sprzętu w bazie ćwiczeń.
+// Nieznana wartość → pełny dostęp (zachowanie jak na siłowni).
+const EQUIPMENT_ACCESS: Record<string, Equipment[]> = {
+  'siłownia':                        ['sztanga', 'hantle', 'maszyna', 'wyciąg', 'własna_waga'],
+  'dom z hantlami':                  ['hantle', 'własna_waga'],
+  'dom bez sprzętu (calisthenics)':  ['własna_waga']
+}
+const ALL_EQUIPMENT: Equipment[] = ['sztanga', 'hantle', 'maszyna', 'wyciąg', 'własna_waga']
+
+const EQUIPMENT_LABEL: Record<Equipment, string> = {
+  'sztanga': 'sztanga',
+  'hantle': 'hantle',
+  'maszyna': 'maszyna',
+  'wyciąg': 'wyciąg',
+  'własna_waga': 'własna waga'
+}
+
+interface ExerciseCatalog {
+  text: string
+  // strict = baza pokrywa strukturę z zapasem → AI musi wybierać wyłącznie z listy.
+  // Przy małej liczbie ćwiczeń (np. trening w domu) pozwalamy AI uzupełnić braki.
+  strict: boolean
+}
+
+// Buduje sekcję promptu z listą dozwolonych ćwiczeń dla danego typu treningu i sprzętu.
+// Grupowanie po muscleHead — AI widzi które ćwiczenia pasują do których slotów struktury.
+// Eksportowane dla testów (czysta funkcja).
+export function buildExerciseCatalog(type: string, equipment: string): ExerciseCatalog | null {
+  const heads = MUSCLE_HEADS_BY_TYPE[type] || []
+  const allowed = EQUIPMENT_ACCESS[equipment] || ALL_EQUIPMENT
+  const list = getExercisesForHeads(heads, allowed)
+  if (!list.length) return null
+
+  const td = TYPE_DETAILS[type] || TYPE_DETAILS.push
+  const strict = list.length >= td.expectedCount * 2
+
+  const byHead = new Map<string, ExerciseEntry[]>()
+  for (const h of heads) byHead.set(h, [])
+  for (const ex of list) byHead.get(ex.muscleHead)?.push(ex)
+
+  const lines: string[] = []
+  for (const [head, exs] of byHead) {
+    if (!exs.length) continue
+    lines.push(`[${head}]`)
+    for (const ex of exs) {
+      lines.push(`- ${ex.name} (${EQUIPMENT_LABEL[ex.equipment]}, ${ex.exerciseType})`)
+    }
+  }
+
+  const header = strict
+    ? `BAZA ĆWICZEŃ — wybieraj WYŁĄCZNIE z poniższej listy. Przepisuj nazwy DOKŁADNIE (co do znaku). Nie wymyślaj ćwiczeń spoza listy:`
+    : `BAZA ĆWICZEŃ — preferuj ćwiczenia z poniższej listy (przepisuj nazwy DOKŁADNIE). Jeżeli dla wymaganego slotu struktury lista nie zawiera pasującego ćwiczenia, możesz dodać standardowe ćwiczenie spoza listy (polska nazwa, wykonalne przy dostępnym sprzęcie):`
+
+  return { text: `${header}\n${lines.join('\n')}`, strict }
+}
+
 const GOAL_HINTS: Record<string, string> = {
   mass:          'masa mięśniowa: 8-12 powtórzeń, 3-4 serie, tempo umiarkowane',
   strength:      'siła: 3-6 powtórzeń, 4-5 serii, ciężary submaksymalne',
@@ -357,6 +414,9 @@ function buildPrompt({ type, goal, equipment, avoid, recentSessions }: BuildProm
   parts.push(`Wygeneruj plan treningowy typu ${td.label} dla osoby trenującej w ${equipment}.`)
   parts.push(`Cel: ${goalDesc}`)
   parts.push(`Struktura:\n${td.structure}`)
+
+  const catalog = buildExerciseCatalog(type, equipment)
+  if (catalog) parts.push(catalog.text)
 
   if (hasHistory) {
     parts.push(`RÓŻNORODNOŚĆ:
@@ -432,11 +492,15 @@ ${recentSessions.map(formatSessionCompact).join('\n\n')}`)
     ? '- "sets" musi być DOKŁADNIE 3 dla KAŻDEGO ćwiczenia (cel = redukcja, dobitka jest opcjonalna i decydowana w trakcie sesji).'
     : '- "sets" musi być liczbą (3, 4, 5).'
 
+  const nameRule = catalog?.strict
+    ? '- "name" musi być DOKŁADNĄ nazwą z sekcji BAZA ĆWICZEŃ — przepisz co do znaku, bez modyfikacji.'
+    : '- Nazwy ćwiczeń wyłącznie po polsku. Preferuj dokładne nazwy z sekcji BAZA ĆWICZEŃ.'
+
   parts.push(`WAŻNE:
 - Wszystkie pola są wymagane.
 ${setsRule}
 - "reps" musi być stringiem z zakresem ('6-8', '10-12', '12-15').
-- Nazwy ćwiczeń wyłącznie po polsku, standardowe (np. "Wyciskanie sztangi na ławce poziomej", "Przysiad ze sztangą", "Martwy ciąg rumuński").
+${nameRule}
 - "primaryMuscle" musi być jedną z: ${PRIMARY_MUSCLES.map((m: string) => `"${m}"`).join(', ')}.
 - "muscleHead" musi być jedną z (dozwolone dla typu ${td.label}): ${allowedHeads.map((h: string) => `"${h}"`).join(', ')}.
 - "exerciseType" musi być jedną z: ${EXERCISE_TYPES.map((t: string) => `"${t}"`).join(', ')}.
@@ -528,11 +592,22 @@ export function normalizePlan(plan: Record<string, any>, { type, goal }: { type:
     ex.name = translateExerciseName(ex.name)
     // Wymuszenie 3 serii dla redukcji — niezależnie od tego co AI zwróciło.
     if (goal === 'cut') ex.sets = 3
-    // Miękka walidacja: spoza dozwolonych wartości → null (nie odrzucamy planu)
-    if (!PRIMARY_MUSCLES.includes(ex.primaryMuscle)) ex.primaryMuscle = null
-    if (!allowedHeadsForType.includes(ex.muscleHead)) ex.muscleHead = null
-    if (!EXERCISE_TYPES.includes(ex.exerciseType)) ex.exerciseType = null
-    if (!MOVEMENT_PATTERNS.includes(ex.movementPattern)) ex.movementPattern = null
+    // Ćwiczenie z bazy → baza jest źródłem prawdy: kanoniczna nazwa + metadata
+    // z bazy nadpisują to co zwróciło AI (AI może się mylić, baza nie).
+    const dbEx = findExerciseByName(ex.name)
+    if (dbEx) {
+      ex.name = dbEx.name
+      ex.primaryMuscle = dbEx.primaryMuscle
+      ex.muscleHead = dbEx.muscleHead
+      ex.exerciseType = dbEx.exerciseType
+      ex.movementPattern = dbEx.movementPattern
+    } else {
+      // Miękka walidacja (ćwiczenie spoza bazy): spoza dozwolonych wartości → null
+      if (!PRIMARY_MUSCLES.includes(ex.primaryMuscle)) ex.primaryMuscle = null
+      if (!allowedHeadsForType.includes(ex.muscleHead)) ex.muscleHead = null
+      if (!EXERCISE_TYPES.includes(ex.exerciseType)) ex.exerciseType = null
+      if (!MOVEMENT_PATTERNS.includes(ex.movementPattern)) ex.movementPattern = null
+    }
     // Normalizacja suggestedWeight — może przyjść jako string/null/undefined
     if (ex.suggestedWeight != null) {
       const w = Number(ex.suggestedWeight)
