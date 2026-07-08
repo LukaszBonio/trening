@@ -46,8 +46,8 @@ prowadzi Cię przez trening seria po serii i analizuje postępy. Działa offline
 **Trening Pro** to aplikacja webowa (PWA) do planowania i rejestrowania treningów siłowych.
 Plany generuje **Claude** (model `claude-sonnet-4-6`) z uwzględnieniem Twojego celu i historii.
 
-Aplikacja zbudowana jest na **Vue 3 + TypeScript + Vite + Pinia** — 20 komponentów, 5 composables, 8 stores,
-19 lib modules z 156 testami (Vitest). PWA z Service Workerem zapewnia działanie offline.
+Aplikacja zbudowana jest na **Vue 3 + TypeScript + Vite + Pinia** — 6 widoków, 21 komponentów, 6 composables,
+8 stores, 21 lib modules z **185 testami** (Vitest). PWA z Service Workerem zapewnia działanie offline.
 Klucz API jest ukryty za serwerem proxy (Cloudflare Worker z JWT auth) — **użytkownik nie potrzebuje własnego klucza API.**
 
 > **Dla kogo?** Dla osób trenujących siłowo, które chcą gotowego planu na dziś, prostego
@@ -69,12 +69,20 @@ Klucz API jest ukryty za serwerem proxy (Cloudflare Worker z JWT auth) — **uż
 ## Features
 
 ### 🎯 Plany treningowe
-- **10 typów treningu** — Push/Pull/Legs, Upper A/B, Lower A/B, FBW A/B/C
-- **48 gotowych planów offline** + **258 ćwiczeń** w bazie ze słownikiem 25 głów mięśniowych
-- **Generator AI** — Claude tworzy spersonalizowany plan z cel + sprzęt + wykluczenia
+- **10 typów treningu w 3 systemach** — Push/Pull/Legs, Upper A/B, Lower A/B, FBW A/B/C
+- **Plan korekcyjny „Ćwiczenia dla Ani”** — dedykowany, bezpieczny program dla początkujących ze schorzeniami kręgosłupa/kolana; wybór dostępnego sprzętu (masa ciała / gumy / hantle / maszyny), progresja przez trudność
+- **49 gotowych planów offline** + **kuratorowana baza 113 ćwiczeń** (Push/Pull/Legs) z pełnymi metadanymi: głowa mięśniowa, sprzęt, wzorzec ruchu, typ (compound/isolation), poziom
+- **Generator AI** — Claude dobiera ćwiczenia **z bazy** (kanoniczne nazwy, bez duplikatów) wg celu, sprzętu i wykluczeń; analizuje historię i dobiera progresję obciążeń
 - **Edytor własnych planów** — twórz, edytuj, duplikuj plany z drag-drop reorderingu ćwiczeń
+- **Zamiana ćwiczeń w locie** — podczas treningu podmień ćwiczenie na równoważny wariant (ta sama głowa mięśniowa, zachowany sprzęt)
 - **Ulubione** — gwiazdka przypina najczęściej używane plany na górze listy
 - **Powtórz ostatni trening** — jeden klik, ciężary z poprzedniej sesji pre-fillowane
+
+### 🧠 AI Coach *(osobna zakładka)*
+- **Analiza postępów** — Claude analizuje trendy **każdego ćwiczenia osobno** (najcięższa seria per sesja) i wykrywa stagnację / progres / regres, z konkretnymi liczbami z historii
+- **Typowane insighty** — karty `progres · sukces · uwaga · wskazówka` + jednozdaniowe podsumowanie
+- **Czat z trenerem** — pytania o technikę, progresję, układ tygodnia; odpowiedzi oparte na Twoim celu i ostatnich treningach, z gotowymi podpowiedziami
+- **Tygodniowy raport AI** — osobny digest ostatnich 14 dni (highlights + sugestie, cache 7 dni)
 
 ### 🏋️ Rejestrowanie treningu
 - **Tryb kart** (domyślny) — jedna partia mięśniowa na ekran, swipe między kartami
@@ -99,6 +107,8 @@ Klucz API jest ukryty za serwerem proxy (Cloudflare Worker z JWT auth) — **uż
 
 ### 🔐 Logowanie i synchronizacja w chmurze
 - **Wymagane konto** (Supabase, email + hasło) — cała aplikacja jest za bramką logowania
+- **Reset hasła** — link e-mail → dedykowany formularz „Ustaw nowe hasło” w aplikacji
+- **Pokaż / ukryj hasło** — przełącznik (ikona oka) przy polach hasła
 - **Sesja zapamiętana** — po pierwszym logowaniu online aplikacja działa też offline (token w `localStorage`, auto-refresh)
 - **Sync deltami** — workouts, settings synchronizują się automatycznie (debounce 1.5s)
 - **Offline queue** — gdy brak internetu, operacje kolejkowane → auto-flush po `online` event
@@ -174,7 +184,7 @@ npm install
 npm run dev          # → http://localhost:5173
 
 # Testy
-npm test             # 156 testów (Vitest)
+npm test             # 185 testów (Vitest)
 
 # Production build
 npm run build        # → dist/
@@ -187,7 +197,7 @@ npm run preview
 
 **Dev:** Vite + HMR, lazy-loaded routes, Pinia DevTools (przez Vue DevTools).
 
-**Testy:** `npm test` — 156 testów Vitest (composables, lib modules, stores). Env `node` (bez jsdom).
+**Testy:** `npm test` — 185 testów Vitest (composables, lib modules, stores). Env `node` (bez jsdom).
 
 **Build:** ~2.5s, **37 plików w PWA precache (~2.9 MB)** — Chart.js i jsPDF wydzielone do osobnych chunków, lazy-loaded per route.
 
@@ -233,10 +243,10 @@ Po pierwszym zalogowaniu online sesja jest zapamiętana, więc aplikacja działa
 ```mermaid
 flowchart LR
     subgraph Client["📱 Przeglądarka (Vue PWA)"]
-        UI["Vue 3 components<br/>+ Vue Router (5 widoków)"]
+        UI["Vue 3 components<br/>+ Vue Router (6 widoków)"]
         Stores["Pinia stores (8)<br/>workouts · session · cloud<br/>timer · body · settings<br/>customPlans · favorites"]
-        Composables["Composables (5)<br/>useRestTimer · useSetNavigation<br/>usePersistentRef · useDialog · useToast"]
-        Libs["Lib modules (19)<br/>muscles · plans · substitutions<br/>analytics · ai · pdf · plates<br/>workoutSchema · offlineQueue<br/>weeklyReport · notifications"]
+        Composables["Composables (6)<br/>useRestTimer · useSetNavigation<br/>usePersistentRef · useDialog<br/>useToast · useCoach"]
+        Libs["Lib modules (21)<br/>muscles · plans · exerciseDb · substitutions<br/>analytics · ai · coach · pdf · plates<br/>workoutSchema · offlineQueue<br/>weeklyReport · notifications"]
         SW["Service Worker<br/>(generated by Vite PWA)"]
         LS[("localStorage<br/>history · drafts · settings · queue")]
     end
@@ -266,7 +276,7 @@ flowchart LR
 flowchart TD
     L["🔐 Logowanie / rejestracja<br/>(wymagane)"] --> A
     A["Wybierz typ<br/>(Push/Pull/Legs/Upper/Lower/FBW)"] --> B{"Źródło planu?"}
-    B -->|Biblioteka| C1["48 gotowych planów"]
+    B -->|Biblioteka| C1["49 gotowych planów"]
     B -->|AI| C2["Claude generuje plan"]
     B -->|Custom| C3["Edytor: dodaj ćwiczenia"]
     C1 --> D["Tryb kart: partia po partii"]
@@ -291,18 +301,19 @@ trening/
 │   ├── main.ts                 # Bootstrap (Pinia + Router + App)
 │   ├── App.vue                 # Layout, tabs desktop, bottom nav mobile, onboarding
 │   ├── router/                 # Vue Router (hash mode, lazy-loaded views)
-│   ├── views/                  # 5 widoków
-│   │   ├── LoginView.vue       #   Ekran logowania / rejestracji (bramka auth)
-│   │   ├── WorkoutView.vue     #   Wybór planu + aktywna sesja
-│   │   ├── StatsView.vue       #   Statystyki, wykresy, achievements, PR
+│   ├── views/                  # 6 widoków
+│   │   ├── LoginView.vue       #   Logowanie / rejestracja / reset hasła (bramka auth)
+│   │   ├── WorkoutView.vue     #   Wybór planu (+ plan Ani) + aktywna sesja
+│   │   ├── StatsView.vue       #   Statystyki, wykresy, achievements, PR, raport tygodniowy
+│   │   ├── CoachView.vue       #   AI Coach — analiza postępów + czat
 │   │   ├── HistoryView.vue     #   Lista treningów, edycja, PDF, zapis jako plan
 │   │   └── YouView.vue         #   Konto, ustawienia, backup
-│   ├── components/             # 20 komponentów (BaseCard, WorkoutCards, RestTimer, ...)
-│   ├── composables/            # 5 composables (useRestTimer, useVoiceInput, useSetNavigation, ...)
+│   ├── components/             # 21 komponentów (BaseCard, WorkoutCards, RestTimer, AICoach, ...)
+│   ├── composables/            # 6 composables (useRestTimer, useSetNavigation, useCoach, ...)
 │   ├── stores/                 # 8 Pinia stores (workouts, session, cloud, ...)
-│   ├── lib/                    # 19 pure modules (muscles, plans, analytics, ai, ...)
+│   ├── lib/                    # 21 pure modules (muscles, plans, exerciseDb, ai, coach, ...)
 │   └── styles/global.css       # CSS variables (dark/light themes)
-├── test/                       # 13 plików testowych Vitest (156 testów)
+├── test/                       # 14 plików testowych Vitest (185 testów)
 ├── public/                     # Static assets (icons, manifest)
 ├── docs/SUPABASE_SCHEMA.sql    # SQL do wykonania w Supabase
 └── legacy/                     # Stary monolit (8270 LOC index.html) — referencja
@@ -323,8 +334,11 @@ trening/
 | **composables/useDialog** | Modale confirm/prompt przez provide/inject |
 | **composables/useToast** | Powiadomienia toast z auto-dismiss |
 | **components/BaseCard** | Slot-based karta z props title/collapsible/tag |
+| **composables/useCoach** | Stan AI Coacha (singleton): analiza postępów + czat, abort, offline |
 | **lib/muscles.ts** | Słownik 25 głów mięśniowych, detectMuscle, detectEquipment |
-| **lib/plans.ts** | 48 gotowych planów (10 typów), getRandomPlan |
+| **lib/plans.ts** | 49 gotowych planów (10 typów), getRandomPlan |
+| **lib/exerciseDb.ts** | Kuratorowana baza 113 ćwiczeń z metadanymi — źródło doboru dla AI |
+| **lib/coach.ts** | AI Coach: buildery promptów (analiza trendów per ćwiczenie + czat) + walidacja |
 | **lib/substitutions.ts** | findSubstitutes, youtubeSearchUrl |
 | **lib/workoutSchema.ts** | Grupowanie ćwiczeń po partii dla trybu kart (hybrid: muscle + index) |
 | **lib/analytics.ts** | Estimated 1RM (Epley), PR detection, streak, exerciseProgress, analiza wzorców ruchowych |
@@ -342,7 +356,7 @@ trening/
 |---|---|
 | **Framework** | [Vue 3.5](https://vuejs.org/) (Composition API + `<script setup>`) |
 | **Build / Dev** | [Vite 5.4](https://vitejs.dev/) + [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) |
-| **Testy** | [Vitest 3.2](https://vitest.dev/) — 156 testów (13 plików), env `node` |
+| **Testy** | [Vitest 3.2](https://vitest.dev/) — 185 testów (14 plików), env `node` |
 | **State** | [Pinia 2.2](https://pinia.vuejs.org/) — 8 stores, reactive, persistent |
 | **Routing** | [Vue Router 4](https://router.vuejs.org/) — hash mode, lazy-loaded views |
 | **Wykresy** | [Chart.js 4.4](https://www.chartjs.org/) — line, bar, lazy-loaded chunk |
@@ -367,7 +381,7 @@ trening/
 7. **Zakończ trening** — modal z podsumowaniem, konfetti, detekcja nowych PR.
 8. **Statystyki** automatycznie się aktualizują — wykresy, heatmap, achievements.
 
-**4 zakładki:** Trening · Statystyki · Historia · Ty (konto, ustawienia, backup).
+**5 zakładek:** Trening · Statystyki · **Coach** (AI: analiza + czat) · Historia · Ty (konto, ustawienia, backup).
 
 ### Cele AI generatora
 
@@ -425,6 +439,26 @@ Używana do PR detection, per-exercise progress, achievement "100 kg klub".
 
 </details>
 
+<details>
+<summary><b>Ćwiczenia dla Ani — plan korekcyjny (osoba początkująca)</b></summary>
+
+Dedykowany, bezpieczny program dla początkujących ze schorzeniami kręgosłupa (dyskopatia, rwa),
+miednicy i kolana (po MCL). Generowany przez AI z kuratorowanego menu bezpiecznych ćwiczeń,
+z **wyborem dostępnego sprzętu** (masa ciała / gumy / hantle / maszyny) i **progresją przez trudność**,
+nie przez ryzykowne obciążanie kręgosłupa. AI analizuje historię i stopniowo podnosi poziom.
+
+| Slot | Cel |
+|---|---|
+| 1–2 | Aktywacja i stabilizacja core (kręgosłup neutralny) |
+| 3–4 | Pośladki + stabilizacja miednicy |
+| 5 | Tylna taśma (dwugłowe uda) bez obciążania lędźwi |
+| 6 | Czworogłowy / stabilizacja kolana (kontrolowany zakres) |
+| 7–8 | Plecy + korekcja postawy i ustawienia łopatek/głowy |
+
+> Trening wzmacniająco-korekcyjny, nie porada medyczna — przy schorzeniach warto skonsultować z fizjoterapeutą.
+
+</details>
+
 ---
 
 ## FAQ
@@ -476,13 +510,13 @@ podczas treningu. Możesz przełączyć na tryb listy w **Ty → Ustawienia → 
 
 ## Roadmap
 
-### ✅ V2 — *obecna wersja (Vue migration)*
+### ✅ V2 — *Vue migration*
 
 **Architektura:**
 - [x] Vue 3 + Vite + Pinia (port z 8270-LOC monolitu vanilla JS)
-- [x] 8 Pinia stores, 20 komponentów, 5 composables, 5 widoków z lazy-loadingiem
+- [x] 8 Pinia stores, 21 komponentów, 6 composables, 6 widoków z lazy-loadingiem
 - [x] Vue Router (hash mode), page transitions
-- [x] 156 testów Vitest (13 plików) — composables, lib modules, stores
+- [x] 185 testów Vitest (14 plików) — composables, lib modules, stores
 
 **Refactoring (V2.1):**
 - [x] `db.js` (1280 LOC) → `muscles.js` + `plans.js` + `substitutions.js` (barrel re-export)
@@ -493,7 +527,7 @@ podczas treningu. Możesz przełączyć na tryb listy w **Ty → Ustawienia → 
 - [x] Supabase RLS — pełne CRUD policy na 3 tabelach
 
 **Funkcjonalność:**
-- [x] 10 typów treningu, 48 gotowych planów, 258 ćwiczeń, custom plans editor
+- [x] 10 typów treningu, 49 gotowych planów, custom plans editor
 - [x] AI Generator (Claude przez Cloudflare Worker proxy)
 - [x] Tygodniowy raport AI — analiza 14 dni historii, highlights + sugestie
 - [x] Tryb kart (partia po partii) + tryb listy
@@ -505,14 +539,19 @@ podczas treningu. Możesz przełączyć na tryb listy w **Ty → Ustawienia → 
 - [x] Dark / light theme, color accent picker, mobile bottom nav
 - [x] Push notifications, konfetti, onboarding tour, skeleton loaders
 
-### 🚧 V3 — *następne kroki*
+### ✅ V3 — *obecna wersja*
 - [x] TypeScript migration — cały `src/` (lib, stores, composables, router, main)
-- [x] Drift-corrected timer — absolutny `endTime` + `Date.now()`, re-sync na `visibilitychange`, działa z zablokowanym telefonem
+- [x] Drift-corrected timer — absolutny `endTime` + `Date.now()`, re-sync na `visibilitychange`; fallback wideo trzyma ekran gdy Wake Lock zawodzi (Android/oszczędzanie baterii)
 - [x] Timestamp-based conflict resolution — `updatedAt` per rekord, porównanie z DB `updated_at`, nowszy wygrywa
-- [ ] Internacjonalizacja (EN) i przełącznik języka
-- [ ] AI Coach — analiza postępów + czat (port z legacy)
+- [x] Kuratorowana baza 113 ćwiczeń — AI dobiera z niej ćwiczenia (kanoniczne nazwy, poprawne metadane, bez duplikatów)
+- [x] Plan korekcyjny „Ćwiczenia dla Ani” — wybór sprzętu, przeciwwskazania, progresja przez trudność
+- [x] AI Coach — analiza trendów per ćwiczenie + czat z trenerem (osobna zakładka)
+- [x] Reset hasła (e-mail → nowy formularz) + pokaż/ukryj hasło
+- [x] Fix: martwe zakładki po deployu — auto-reload przy błędzie ładowania chunku widoku
 
-### 🔮 V4
+### 🔮 V4 — *następne kroki*
+- [ ] Internacjonalizacja (EN) i przełącznik języka
+- [ ] Rozszerzenie bazy ćwiczeń na pozostałe typy (Upper/Lower/FBW) + tryb strict wszędzie
 - [ ] Pełny social (obserwowanie, leaderboardy)
 - [ ] Integracje z wearables / Health
 - [ ] Apple Watch / WearOS companion

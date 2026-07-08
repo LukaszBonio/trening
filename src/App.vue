@@ -46,6 +46,7 @@ const isAuthScreen = computed(() => route.name === 'login')
 const tabs = [
   { name: 'workout', label: 'Trening', icon: 'ti-barbell' },
   { name: 'stats',   label: 'Statystyki', icon: 'ti-chart-line' },
+  { name: 'coach',   label: 'Coach', icon: 'ti-message-chatbot' },
   { name: 'history', label: 'Historia', icon: 'ti-history' },
   { name: 'you',     label: 'Ty', icon: 'ti-user' }
 ]
@@ -193,13 +194,13 @@ const tabs = [
 
   .tabs-mobile {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     position: fixed;
     bottom: 0; left: 0; right: 0;
     background: rgba(15, 16, 20, 0.92);
     backdrop-filter: saturate(180%) blur(14px);
     border-top: 1px solid var(--border);
-    padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+    padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
     z-index: 50;
   }
   .tab-mobile {
@@ -208,15 +209,22 @@ const tabs = [
     align-items: center;
     justify-content: center;
     gap: 3px;
-    padding: 8px 4px;
+    padding: 8px 2px;
     border-radius: var(--radius-sm);
     color: var(--text-dim);
     text-decoration: none;
     font-size: 10px;
     font-weight: 500;
     transition: color var(--dur);
+    min-width: 0;
   }
-  .tab-mobile i { font-size: 22px; }
+  .tab-mobile i { font-size: 21px; }
+  .tab-mobile span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .tab-mobile.active { color: var(--accent); }
 }
 </style>

@@ -18,7 +18,6 @@ import WeeklyChart from '../components/WeeklyChart.vue'
 import ExerciseProgressChart from '../components/ExerciseProgressChart.vue'
 import AchievementsGrid from '../components/AchievementsGrid.vue'
 import CalendarHeatmap from '../components/CalendarHeatmap.vue'
-import AICoach from '../components/AICoach.vue'
 import { generateWeeklyReport, loadCachedReport, saveCachedReport, clearCachedReport } from '../lib/weeklyReport'
 import { useToast } from '../composables/useToast'
 import BaseCard from '../components/BaseCard.vue'
@@ -208,9 +207,6 @@ const hasPushPullData = computed(() => ppStats.value.ratio !== null)
         </div>
       </template>
     </BaseCard>
-
-    <!-- AI Coach — analiza trendów per ćwiczenie + czat -->
-    <AICoach />
 
     <div class="stats-grid">
       <div class="stat-card">
