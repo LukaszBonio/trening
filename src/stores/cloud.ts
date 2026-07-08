@@ -311,6 +311,39 @@ export const useCloudStore = defineStore('cloud', () => {
     user.value = null
   }
 
+  // Wysyła e-mail z linkiem do zresetowania hasła. redirectTo musi być na liście
+  // "Redirect URLs" w panelu Supabase (Auth → URL Configuration), inaczej Supabase
+  // użyje domyślnego Site URL.
+  async function resetPassword(email: string): Promise<void> {
+    lastError.value = null
+    const redirectTo = typeof window !== 'undefined'
+      ? window.location.origin + (import.meta.env?.BASE_URL || '/')
+      : undefined
+    const { error } = await client.value!.auth.resetPasswordForEmail(
+      email,
+      redirectTo ? { redirectTo } : {}
+    )
+    if (error) { lastError.value = error.message; throw error }
+  }
+
+  // Dokańcza reset: ustawia sesję z tokenów z linku e-mail, zmienia hasło, wylogowuje
+  // (żeby user zalogował się świeżo nowym hasłem).
+  async function completePasswordReset(
+    tokens: { at: string; rt: string },
+    newPassword: string
+  ): Promise<void> {
+    lastError.value = null
+    const { error: sErr } = await client.value!.auth.setSession({
+      access_token: tokens.at,
+      refresh_token: tokens.rt
+    })
+    if (sErr) { lastError.value = sErr.message; throw sErr }
+    const { error: uErr } = await client.value!.auth.updateUser({ password: newPassword })
+    if (uErr) { lastError.value = uErr.message; throw uErr }
+    await client.value!.auth.signOut()
+    user.value = null
+  }
+
   async function forceSync(): Promise<void> {
     await deltaSync()
     await settingsSync()
@@ -323,6 +356,6 @@ export const useCloudStore = defineStore('cloud', () => {
   return {
     client, user, syncStatus, lastError, lastSyncedAt, isLoggedIn,
     isOnline, queueSize, authReady,
-    init, waitForAuth, signUp, signIn, signOut, forceSync, flushQueue
+    init, waitForAuth, signUp, signIn, signOut, resetPassword, completePasswordReset, forceSync, flushQueue
   }
 })

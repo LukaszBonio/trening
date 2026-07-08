@@ -13,10 +13,72 @@ const password = ref('')
 const busy = ref(false)
 const error = ref('')
 const info = ref('')
+const showPw = ref(false)
+
+// Reset hasła — ekran ustawienia nowego hasła po kliknięciu linku z e-maila.
+const recoveryMode = ref(false)
+const newPassword = ref('')
+const showNewPw = ref(false)
+let recoveryTokens = null
 
 onMounted(() => {
   cloud.init()
+  // Tokeny recovery przechwycone w main.ts (z hasha linku e-mail) → pokaż formularz.
+  const raw = sessionStorage.getItem('tp_recovery')
+  if (raw) {
+    sessionStorage.removeItem('tp_recovery')
+    try {
+      const t = JSON.parse(raw)
+      if (t?.at && t?.rt) {
+        recoveryTokens = t
+        recoveryMode.value = true
+      }
+    } catch { /* ignore malformed */ }
+  }
 })
+
+async function forgotPassword() {
+  if (busy.value) return
+  error.value = ''
+  info.value = ''
+  if (!email.value.trim()) {
+    error.value = 'Wpisz najpierw swój e-mail, a wyślemy link do resetu.'
+    return
+  }
+  busy.value = true
+  try {
+    await cloud.resetPassword(email.value.trim())
+    info.value = 'Jeśli konto istnieje, wysłaliśmy link do zresetowania hasła na podany e-mail. Sprawdź skrzynkę (i spam).'
+  } catch (e) {
+    error.value = translateError(e?.message || String(e))
+  } finally {
+    busy.value = false
+  }
+}
+
+async function submitRecovery() {
+  if (busy.value) return
+  error.value = ''
+  info.value = ''
+  if (newPassword.value.length < 6) {
+    error.value = 'Nowe hasło musi mieć co najmniej 6 znaków.'
+    return
+  }
+  busy.value = true
+  try {
+    await cloud.completePasswordReset(recoveryTokens, newPassword.value)
+    recoveryMode.value = false
+    recoveryTokens = null
+    newPassword.value = ''
+    password.value = ''
+    mode.value = 'signin'
+    info.value = 'Hasło zmienione ✓ Zaloguj się nowym hasłem.'
+  } catch (e) {
+    error.value = translateError(e?.message || String(e))
+  } finally {
+    busy.value = false
+  }
+}
 
 function setMode(m) {
   if (busy.value) return
@@ -89,10 +151,12 @@ function translateError(msg) {
         <div class="auth-title">Trening <span>Pro</span></div>
       </div>
       <p class="auth-sub">
-        {{ mode === 'signin' ? 'Zaloguj się, aby kontynuować.' : 'Załóż konto, aby zacząć.' }}
+        {{ recoveryMode
+          ? 'Ustaw nowe hasło do swojego konta.'
+          : (mode === 'signin' ? 'Zaloguj się, aby kontynuować.' : 'Załóż konto, aby zacząć.') }}
       </p>
 
-      <div class="auth-toggle" role="tablist">
+      <div v-if="!recoveryMode" class="auth-toggle" role="tablist">
         <button
           type="button"
           class="toggle-btn"
@@ -107,7 +171,41 @@ function translateError(msg) {
         >Rejestracja</button>
       </div>
 
-      <form class="auth-form" @submit.prevent="submit">
+      <!-- Ustawienie nowego hasła (po kliknięciu linku z e-maila) -->
+      <form v-if="recoveryMode" class="auth-form" @submit.prevent="submitRecovery">
+        <label class="auth-label">
+          Nowe hasło
+          <div class="pw-field">
+            <input
+              :type="showNewPw ? 'text' : 'password'"
+              v-model="newPassword"
+              placeholder="min. 6 znaków"
+              autocomplete="new-password"
+              :disabled="busy"
+              required
+            />
+            <button
+              type="button"
+              class="pw-toggle"
+              tabindex="-1"
+              :aria-label="showNewPw ? 'Ukryj hasło' : 'Pokaż hasło'"
+              @click="showNewPw = !showNewPw"
+            >
+              <i class="ti" :class="showNewPw ? 'ti-eye-off' : 'ti-eye'"></i>
+            </button>
+          </div>
+        </label>
+
+        <p v-if="error" class="auth-msg error">{{ error }}</p>
+        <p v-if="info" class="auth-msg info">{{ info }}</p>
+
+        <button type="submit" class="btn btn-primary auth-submit" :disabled="busy">
+          <i v-if="busy" class="ti ti-loader-2 spin"></i>
+          <span>{{ busy ? 'Chwila…' : 'Ustaw nowe hasło' }}</span>
+        </button>
+      </form>
+
+      <form v-else class="auth-form" @submit.prevent="submit">
         <label class="auth-label">
           E-mail
           <input
@@ -121,15 +219,34 @@ function translateError(msg) {
         </label>
         <label class="auth-label">
           Hasło
-          <input
-            type="password"
-            v-model="password"
-            placeholder="••••••••"
-            :autocomplete="mode === 'signup' ? 'new-password' : 'current-password'"
-            :disabled="busy"
-            required
-          />
+          <div class="pw-field">
+            <input
+              :type="showPw ? 'text' : 'password'"
+              v-model="password"
+              placeholder="••••••••"
+              :autocomplete="mode === 'signup' ? 'new-password' : 'current-password'"
+              :disabled="busy"
+              required
+            />
+            <button
+              type="button"
+              class="pw-toggle"
+              tabindex="-1"
+              :aria-label="showPw ? 'Ukryj hasło' : 'Pokaż hasło'"
+              @click="showPw = !showPw"
+            >
+              <i class="ti" :class="showPw ? 'ti-eye-off' : 'ti-eye'"></i>
+            </button>
+          </div>
         </label>
+
+        <button
+          v-if="mode === 'signin'"
+          type="button"
+          class="auth-link"
+          :disabled="busy"
+          @click="forgotPassword"
+        >Nie pamiętasz hasła?</button>
 
         <p v-if="error" class="auth-msg error">{{ error }}</p>
         <p v-if="info" class="auth-msg info">{{ info }}</p>
@@ -249,6 +366,38 @@ function translateError(msg) {
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 .auth-label input:disabled { opacity: 0.6; }
+.pw-field { position: relative; display: flex; }
+.pw-field input { padding-right: 44px; }
+.pw-toggle {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+.pw-toggle:hover { color: var(--text); }
+.pw-toggle .ti { font-size: 18px; }
+.auth-link {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 13px;
+  padding: 0;
+  margin: -4px 0 2px;
+  cursor: pointer;
+}
+.auth-link:hover { text-decoration: underline; }
+.auth-link:disabled { opacity: 0.6; cursor: default; }
 .auth-msg {
   font-size: 13px;
   margin: -2px 0 2px;
