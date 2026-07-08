@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onBeforeUnmount } from 'vue'
 import { generateAIPlan } from '../lib/ai'
+import { youtubeSearchUrl } from '../lib/substitutions'
 import { useWorkoutsStore } from '../stores/workouts'
 import { useSettingsStore, GOALS, goalLabel } from '../stores/settings'
 import { recentSessionsOfType } from '../lib/analytics'
@@ -265,11 +266,22 @@ function statusIcon(s)  { return STATUS_META[s]?.icon || 'ti-info-circle' }
 
       <ol class="ai-ex-list">
         <li v-for="(ex, i) in plan.exercises" :key="i" class="ai-ex">
-          <div class="ai-ex-name">{{ ex.name }}</div>
-          <div class="ai-ex-meta">
+          <div class="ai-ex-head">
+            <span class="ai-ex-num">{{ i + 1 }}</span>
             <span class="ai-ex-vol">{{ ex.sets }} × {{ ex.reps }}</span>
-            <span v-if="ex.tip" class="dim">{{ ex.tip }}</span>
+            <span class="ai-ex-name">{{ ex.name }}</span>
+            <a
+              class="ai-ex-yt"
+              :href="youtubeSearchUrl(ex.name)"
+              target="_blank"
+              rel="noopener"
+              aria-label="Zobacz technikę na YouTube"
+              @click.stop
+            >
+              <i class="ti ti-brand-youtube"></i>
+            </a>
           </div>
+          <div v-if="ex.tip" class="ai-ex-tip dim">{{ ex.tip }}</div>
         </li>
       </ol>
 
@@ -507,7 +519,6 @@ function statusIcon(s)  { return STATUS_META[s]?.icon || 'ti-info-circle' }
 
 .ai-ex-list {
   list-style: none;
-  counter-reset: ex;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -515,32 +526,65 @@ function statusIcon(s)  { return STATUS_META[s]?.icon || 'ti-info-circle' }
   margin-bottom: var(--space-4);
 }
 .ai-ex {
-  counter-increment: ex;
-  padding: 12px 14px 12px 42px;
+  padding: 12px 14px;
   background: var(--bg-elev-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  position: relative;
 }
-.ai-ex::before {
-  content: counter(ex);
-  position: absolute;
-  left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
+.ai-ex-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ai-ex-num {
+  flex-shrink: 0;
+  min-width: 16px;
+  text-align: center;
   font-family: 'Space Grotesk', sans-serif;
   font-weight: 700;
   color: var(--accent);
-  font-size: 16px;
+  font-size: 15px;
 }
-.ai-ex-name { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
-.ai-ex-meta { display: flex; gap: 10px; align-items: baseline; font-size: 12px; }
 .ai-ex-vol {
+  flex-shrink: 0;
+  width: 86px;
+  box-sizing: border-box;
+  text-align: center;
   color: var(--accent);
   background: var(--accent-soft);
-  padding: 2px 8px;
+  padding: 3px 6px;
   border-radius: 100px;
   font-weight: 600;
+  font-size: 12px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.ai-ex-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.3;
+}
+.ai-ex-yt {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: #ff3b30;
+  background: rgba(255, 0, 0, 0.10);
+  transition: background var(--dur);
+}
+.ai-ex-yt:hover { background: rgba(255, 0, 0, 0.20); }
+.ai-ex-yt .ti { font-size: 19px; }
+.ai-ex-tip {
+  margin-top: 6px;
+  padding-left: 26px;
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .ai-actions { display: flex; gap: 8px; }
