@@ -226,7 +226,7 @@ describe('buildExerciseCatalog', () => {
   it('dom z hantlami → bez maszyn, wyciągów i sztangi', () => {
     const cat = buildExerciseCatalog('pull', 'dom z hantlami')
     expect(cat).not.toBeNull()
-    expect(cat.text).toContain('Wiosłowanie hantlą')
+    expect(cat.text).toContain('Wiosłowanie hantla jedną ręką')
     expect(cat.text).not.toContain('(sztanga')
     expect(cat.text).not.toContain('(wyciąg')
     expect(cat.text).not.toContain('(maszyna')
