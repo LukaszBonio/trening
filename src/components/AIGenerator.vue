@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onBeforeUnmount } from 'vue'
 import { generateAIPlan } from '../lib/ai'
+import { getExercisesForMuscle } from '../lib/exerciseDb'
 import { youtubeSearchUrl } from '../lib/substitutions'
 import { useWorkoutsStore } from '../stores/workouts'
 import { useSettingsStore, GOALS, goalLabel } from '../stores/settings'
@@ -110,24 +111,39 @@ function start() {
   if (plan.value) emit('select', plan.value)
 }
 
-const editingIdx = ref(-1)
-const editName = ref('')
+// Podmiana ćwiczenia na inne z tej samej partii (muscleHead).
+const swapOpenIdx = ref(-1)
 
-function startEdit(i) {
-  editingIdx.value = i
-  editName.value = plan.value.exercises[i].name
+// Alternatywy z bazy dla tej samej głowy mięśniowej, bez ćwiczeń już użytych w planie
+// (bieżące jest „użyte", więc naturalnie wypada z listy).
+function alternativesFor(ex) {
+  if (!ex || !ex.muscleHead) return []
+  const used = new Set(plan.value.exercises.map(e => e.name.toLowerCase()))
+  return getExercisesForMuscle(ex.muscleHead).filter(alt => !used.has(alt.name.toLowerCase()))
 }
 
-function confirmEdit(i) {
-  const trimmed = editName.value.trim()
-  if (trimmed && trimmed !== plan.value.exercises[i].name) {
-    plan.value.exercises[i].name = trimmed
-  }
-  editingIdx.value = -1
+function toggleSwap(i) {
+  swapOpenIdx.value = swapOpenIdx.value === i ? -1 : i
 }
 
-function cancelEdit() {
-  editingIdx.value = -1
+function chooseAlternative(i, dbEx) {
+  const ex = plan.value.exercises[i]
+  // Zachowujemy serie/powtórzenia/ciężar z planu — zmieniamy tylko ćwiczenie + metadane.
+  ex.name = dbEx.name
+  ex.primaryMuscle = dbEx.primaryMuscle
+  ex.muscleHead = dbEx.muscleHead
+  ex.exerciseType = dbEx.exerciseType
+  ex.movementPattern = dbEx.movementPattern
+  ex.tip = dbEx.tip
+  swapOpenIdx.value = -1
+}
+
+const EQUIP_LABEL = {
+  sztanga: 'sztanga',
+  hantle: 'hantle',
+  maszyna: 'maszyna',
+  wyciąg: 'wyciąg',
+  własna_waga: 'masa ciała'
 }
 
 const STATUS_META = {
@@ -288,44 +304,47 @@ function statusIcon(s)  { return STATUS_META[s]?.icon || 'ti-info-circle' }
       </div>
 
       <ol class="ai-ex-list">
-        <li v-for="(ex, i) in plan.exercises" :key="i" class="ai-ex">
+        <li v-for="(ex, i) in plan.exercises" :key="i" class="ai-ex" :class="{ 'is-swapping': swapOpenIdx === i }">
           <div class="ai-ex-head">
             <span class="ai-ex-num">{{ i + 1 }}</span>
             <span class="ai-ex-vol">{{ ex.sets }} × {{ ex.reps }}</span>
-            <template v-if="editingIdx === i">
-              <input
-                class="ai-ex-edit-input"
-                v-model="editName"
-                @keyup.enter="confirmEdit(i)"
-                @keyup.escape="cancelEdit"
-                ref="editInput"
-                autofocus
-              />
-              <button class="ai-ex-action ai-ex-action--ok" @click="confirmEdit(i)" aria-label="Zatwierdź">
-                <i class="ti ti-check"></i>
-              </button>
-              <button class="ai-ex-action ai-ex-action--cancel" @click="cancelEdit" aria-label="Anuluj">
-                <i class="ti ti-x"></i>
-              </button>
-            </template>
-            <template v-else>
-              <span class="ai-ex-name">{{ ex.name }}</span>
-              <a
-                class="ai-ex-yt"
-                :href="youtubeSearchUrl(ex.name)"
-                target="_blank"
-                rel="noopener"
-                aria-label="Zobacz technikę na YouTube"
-                @click.stop
-              >
-                <i class="ti ti-brand-youtube"></i>
-              </a>
-              <button class="ai-ex-action ai-ex-action--edit" @click="startEdit(i)" aria-label="Zmień ćwiczenie">
-                <i class="ti ti-pencil"></i>
-              </button>
-            </template>
+            <span class="ai-ex-name">{{ ex.name }}</span>
+            <a
+              class="ai-ex-yt"
+              :href="youtubeSearchUrl(ex.name)"
+              target="_blank"
+              rel="noopener"
+              aria-label="Zobacz technikę na YouTube"
+              @click.stop
+            >
+              <i class="ti ti-brand-youtube"></i>
+            </a>
+            <button
+              v-if="alternativesFor(ex).length"
+              class="ai-ex-action ai-ex-action--swap"
+              :class="{ 'is-active': swapOpenIdx === i }"
+              @click="toggleSwap(i)"
+              aria-label="Zmień ćwiczenie na inne z tej samej partii"
+            >
+              <i class="ti ti-arrows-exchange"></i>
+            </button>
           </div>
-          <div v-if="ex.tip" class="ai-ex-tip dim">{{ ex.tip }}</div>
+
+          <!-- Lista alternatyw z tej samej partii mięśniowej -->
+          <div v-if="swapOpenIdx === i" class="ai-ex-alts">
+            <div class="ai-ex-alts-label">Zamień na inne — ta sama partia</div>
+            <button
+              v-for="alt in alternativesFor(ex)"
+              :key="alt.id"
+              class="ai-ex-alt"
+              @click="chooseAlternative(i, alt)"
+            >
+              <span class="ai-ex-alt-name">{{ alt.name }}</span>
+              <span class="ai-ex-alt-equip">{{ EQUIP_LABEL[alt.equipment] || alt.equipment }}</span>
+            </button>
+          </div>
+
+          <div v-if="ex.tip && swapOpenIdx !== i" class="ai-ex-tip dim">{{ ex.tip }}</div>
         </li>
       </ol>
 
@@ -634,40 +653,69 @@ function statusIcon(s)  { return STATUS_META[s]?.icon || 'ti-info-circle' }
   border-radius: 8px;
   border: none;
   cursor: pointer;
-  transition: background var(--dur);
+  transition: background var(--dur), color var(--dur);
   padding: 0;
 }
-.ai-ex-action .ti { font-size: 17px; }
-.ai-ex-action--edit {
+.ai-ex-action .ti { font-size: 18px; }
+.ai-ex-action--swap {
   color: var(--text-muted);
   background: transparent;
 }
-.ai-ex-action--edit:hover {
+.ai-ex-action--swap:hover,
+.ai-ex-action--swap.is-active {
   color: var(--accent);
   background: var(--accent-soft);
 }
-.ai-ex-action--ok {
-  color: var(--success, #22c55e);
-  background: rgba(34, 197, 94, 0.10);
+
+/* Lista alternatyw ćwiczeń (ta sama partia) */
+.ai-ex.is-swapping {
+  border-color: var(--accent-soft-2);
+  background: var(--bg-elev-2);
 }
-.ai-ex-action--ok:hover { background: rgba(34, 197, 94, 0.20); }
-.ai-ex-action--cancel {
-  color: var(--danger, #ef4444);
-  background: rgba(239, 68, 68, 0.10);
+.ai-ex-alts {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
-.ai-ex-action--cancel:hover { background: rgba(239, 68, 68, 0.20); }
-.ai-ex-edit-input {
-  flex: 1;
-  min-width: 0;
-  padding: 6px 10px;
+.ai-ex-alts-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  font-weight: 700;
+  padding: 2px 2px 4px;
+}
+.ai-ex-alt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
   background: var(--bg);
-  border: 1px solid var(--accent);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text);
-  font-size: 14px;
-  font-weight: 600;
   font-family: inherit;
-  outline: none;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--dur), background var(--dur);
+}
+.ai-ex-alt:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.ai-ex-alt-name { font-weight: 600; }
+.ai-ex-alt-equip {
+  flex-shrink: 0;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+  background: var(--bg-elev-2);
+  padding: 2px 8px;
+  border-radius: 100px;
 }
 .ai-ex-tip {
   margin-top: 6px;
