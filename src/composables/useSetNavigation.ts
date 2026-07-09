@@ -70,6 +70,37 @@ export function useSetNavigation(exercises: Ref<NavigationExercise[]>) {
     }
   }
 
+  // Przesuwa do następnej NIEUKOŃCZONEJ serii (z zawijaniem od początku).
+  // Zwraca false, gdy wszystkie serie są już ukończone. Dzięki temu koniec treningu
+  // zależy od faktycznego ukończenia, nie od dojścia do ostatniej pozycji.
+  function advanceToNextUnchecked(): boolean {
+    const flat: { ei: number; si: number; done: boolean }[] = []
+    exercises.value.forEach((ex, ei) => ex.sets.forEach((s, si) => flat.push({ ei, si, done: !!s.done })))
+    if (!flat.length) return false
+    const cur = flat.findIndex(p => p.ei === exIdx.value && p.si === setIdx.value)
+    const start = cur < 0 ? 0 : cur
+    for (let off = 1; off <= flat.length; off++) {
+      const p = flat[(start + off) % flat.length]
+      if (!p.done) { exIdx.value = p.ei; setIdx.value = p.si; return true }
+    }
+    return false
+  }
+
+  // Czy pozostała jakakolwiek nieukończona seria (w całym treningu).
+  const hasUnchecked = computed(() =>
+    exercises.value.some(ex => ex.sets.some(s => !s.done))
+  )
+
+  function goToPrevExercise(): boolean {
+    if (exIdx.value > 0) { exIdx.value--; setIdx.value = 0; return true }
+    return false
+  }
+
+  function skipToNextExercise(): boolean {
+    if (exIdx.value < exercises.value.length - 1) { exIdx.value++; setIdx.value = 0; return true }
+    return false
+  }
+
   function jumpToFirstUnchecked(): void {
     for (let ei = 0; ei < exercises.value.length; ei++) {
       for (let si = 0; si < exercises.value[ei].sets.length; si++) {
@@ -96,7 +127,11 @@ export function useSetNavigation(exercises: Ref<NavigationExercise[]>) {
     nextSetIdx,
     nextEx,
     globalProgress,
+    hasUnchecked,
     advance,
+    advanceToNextUnchecked,
+    goToPrevExercise,
+    skipToNextExercise,
     goBackPosition,
     jumpToFirstUnchecked,
     reset

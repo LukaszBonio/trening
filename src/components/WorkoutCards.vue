@@ -27,8 +27,9 @@ const exercises = computed(() => session.active?.exercises || [])
 
 const {
   exIdx, setIdx, currentEx, currentSet,
-  nextExIdx, nextSetIdx, nextEx, globalProgress,
-  advance, goBackPosition, jumpToFirstUnchecked, reset: resetNav
+  nextExIdx, nextSetIdx, nextEx, globalProgress, hasUnchecked,
+  advanceToNextUnchecked, goToPrevExercise, skipToNextExercise,
+  goBackPosition, jumpToFirstUnchecked, reset: resetNav
 } = useSetNavigation(exercises)
 
 const {
@@ -36,10 +37,15 @@ const {
   startRest, stopRest, adjustRest, onTimerEnd
 } = useRestTimer(90)
 
-onTimerEnd(() => {
-  advance()
-  mode.value = 'setup'
+function focusWeight() {
   nextTick(() => { weightInputRef.value?.focus() })
+}
+
+onTimerEnd(() => {
+  // Po odpoczynku przejdź do następnej NIEUKOŃCZONEJ serii; jeśli nie ma — koniec.
+  if (advanceToNextUnchecked()) mode.value = 'setup'
+  else mode.value = 'done'
+  focusWeight()
 })
 
 const showSubstitutes = ref(false)
@@ -107,8 +113,8 @@ async function completeSet() {
   session.toggleSet(exIdx.value, setIdx.value)
   emit('set-done')
 
-  const hasMore = (setIdx.value < currentEx.value.sets.length - 1) || (exIdx.value < exercises.value.length - 1)
-  if (!hasMore) {
+  // Koniec treningu = WSZYSTKIE serie ukończone (nie: dojście do ostatniej pozycji).
+  if (!hasUnchecked.value) {
     mode.value = 'done'
     return
   }
@@ -118,9 +124,23 @@ async function completeSet() {
 
 function skipRest() {
   stopRest()
-  advance()
-  mode.value = 'setup'
-  nextTick(() => { weightInputRef.value?.focus() })
+  if (advanceToNextUnchecked()) mode.value = 'setup'
+  else mode.value = 'done'
+  focusWeight()
+}
+
+// Nawigacja między ćwiczeniami (pomiń / wróć do poprzedniego).
+function skipExercise() {
+  stopRest()
+  if (skipToNextExercise() || advanceToNextUnchecked()) mode.value = 'setup'
+  else mode.value = 'done'
+  focusWeight()
+}
+
+function prevExercise() {
+  stopRest()
+  if (goToPrevExercise()) mode.value = 'setup'
+  focusWeight()
 }
 
 async function swap(name) {
@@ -189,7 +209,7 @@ watch([exIdx, setIdx, () => session.active?.id], suggestWeightIfEmpty, { immedia
       </button>
       <div class="progress-info">
         <div class="progress-text">
-          Seria {{ globalProgress.currentGlobalIdx + (mode === 'rest' ? 0 : 1) }} / {{ globalProgress.total }}
+          Ukończone serie {{ globalProgress.done }} / {{ globalProgress.total }}
         </div>
         <div class="progress-bar">
           <div class="progress-fill" :style="{ width: (globalProgress.done / globalProgress.total * 100) + '%' }"></div>
@@ -309,6 +329,16 @@ watch([exIdx, setIdx, () => session.active?.id], suggestWeightIfEmpty, { immedia
         </div>
       </div>
 
+      <!-- Nawigacja między ćwiczeniami -->
+      <div class="ex-nav">
+        <button class="ex-nav-btn" :disabled="exIdx === 0" @click="prevExercise">
+          <i class="ti ti-chevron-left"></i> Poprzednie
+        </button>
+        <button class="ex-nav-btn" :disabled="exIdx >= exercises.length - 1" @click="skipExercise">
+          Pomiń ćwiczenie <i class="ti ti-chevron-right"></i>
+        </button>
+      </div>
+
       <!-- Big inputs for current set -->
       <div class="input-card card">
         <div class="big-inputs">
@@ -426,6 +456,31 @@ watch([exIdx, setIdx, () => session.active?.id], suggestWeightIfEmpty, { immedia
 </template>
 
 <style scoped>
+.ex-nav {
+  display: flex;
+  gap: 8px;
+  margin-bottom: var(--space-3);
+}
+.ex-nav-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 9px 12px;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all var(--dur) var(--ease);
+}
+.ex-nav-btn:hover:not(:disabled) { color: var(--text); border-color: var(--border-strong); }
+.ex-nav-btn:disabled { opacity: 0.4; cursor: default; }
+.ex-nav-btn .ti { font-size: 15px; }
+
 .focus-wrap {
   display: flex;
   flex-direction: column;

@@ -84,4 +84,41 @@ describe('useSetNavigation', () => {
     expect(nav.exIdx.value).toBe(0)
     expect(nav.setIdx.value).toBe(0)
   })
+
+  it('advanceToNextUnchecked pomija ukończone i zawija; false gdy wszystko zrobione', () => {
+    const exercises = makeExercises()
+    // done: A0, A1; niezrobione: B0, B2 (B1 done)
+    exercises.value[0].sets[0].done = true
+    exercises.value[0].sets[1].done = true
+    exercises.value[1].sets[1].done = true
+    const nav = useSetNavigation(exercises)
+    // z pozycji A0 → następna niezrobiona to B0
+    expect(nav.advanceToNextUnchecked()).toBe(true)
+    expect(nav.exIdx.value).toBe(1); expect(nav.setIdx.value).toBe(0)
+    // z B0 → B2 (B1 pominięte bo done)
+    expect(nav.advanceToNextUnchecked()).toBe(true)
+    expect(nav.setIdx.value).toBe(2)
+    // dokończ ostatnie → brak niezrobionych → false
+    exercises.value[1].sets[0].done = true
+    exercises.value[1].sets[2].done = true
+    expect(nav.advanceToNextUnchecked()).toBe(false)
+  })
+
+  it('hasUnchecked odzwierciedla pozostałe serie', () => {
+    const exercises = makeExercises()
+    const nav = useSetNavigation(exercises)
+    expect(nav.hasUnchecked.value).toBe(true)
+    exercises.value.forEach(ex => ex.sets.forEach(s => { s.done = true }))
+    expect(nav.hasUnchecked.value).toBe(false)
+  })
+
+  it('goToPrevExercise / skipToNextExercise przełączają ćwiczenia i zerują setIdx', () => {
+    const nav = useSetNavigation(makeExercises())
+    expect(nav.goToPrevExercise()).toBe(false) // już na pierwszym
+    expect(nav.skipToNextExercise()).toBe(true)
+    expect(nav.exIdx.value).toBe(1); expect(nav.setIdx.value).toBe(0)
+    expect(nav.skipToNextExercise()).toBe(false) // ostatnie
+    expect(nav.goToPrevExercise()).toBe(true)
+    expect(nav.exIdx.value).toBe(0)
+  })
 })
