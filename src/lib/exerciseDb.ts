@@ -681,36 +681,7 @@ export const PULL_EXERCISES: ExerciseEntry[] = [
 
   // ===================== PLECY SZEROKIE (back_lats) =====================
 
-  {
-    id: 'podciaganie-szerokim-chwytem',
-    name: 'Podciąganie szerokim chwytem',
-    aliases: ['pull up', 'pull-up', 'pull ups', 'pull-ups', 'wide grip pull up'],
-    primaryMuscle: 'back',
-    muscleHead: 'back_lats',
-    equipment: 'własna_waga',
-    exerciseType: 'compound',
-    movementPattern: 'vertical_pull',
-    difficulty: 'intermediate',
-    isUnilateral: false,
-    defaultSets: 4,
-    defaultReps: '6-10',
-    tip: 'Łopatki ściągnij na dole. Ciągnij łokcie do bioder, nie do barków.',
-  },
-  {
-    id: 'podciaganie-podchwytem',
-    name: 'Podciąganie podchwytem',
-    aliases: ['chin up', 'chin-up', 'chin ups', 'chin-ups', 'supinated pull up'],
-    primaryMuscle: 'back',
-    muscleHead: 'back_lats',
-    equipment: 'własna_waga',
-    exerciseType: 'compound',
-    movementPattern: 'vertical_pull',
-    difficulty: 'intermediate',
-    isUnilateral: false,
-    defaultSets: 4,
-    defaultReps: '6-10',
-    tip: 'Chwyt na szerokość barków, dłonie do siebie. Angażuje też biceps.',
-  },
+
   {
     id: 'sciaganie-drazka-wyciagu-gornego',
     name: 'Ściąganie drążka wyciągu górnego',
@@ -806,7 +777,7 @@ export const PULL_EXERCISES: ExerciseEntry[] = [
   },
   {
     id: 'wioslowanie-hantla',
-    name: 'Wiosłowanie hantlą',
+    name: 'Wiosłowanie hantla jedną ręką',
     aliases: ['dumbbell row', 'one arm dumbbell row', 'single arm dumbbell row'],
     primaryMuscle: 'back',
     muscleHead: 'back_middle',
