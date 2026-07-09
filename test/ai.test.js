@@ -237,6 +237,17 @@ describe('buildExerciseCatalog', () => {
     expect(cat.strict).toBe(true)
     expect(cat.text).toContain('Przysiad ze sztangą')
   })
+  it('cel siła: w grupie klatki wielostawowa sztanga przed izolacją (rozpiętki)', () => {
+    const cat = buildExerciseCatalog('push', 'siłownia', 'strength')
+    const iPress = cat.text.indexOf('Wyciskanie sztangi na ławce poziomej')
+    const iFly = cat.text.indexOf('Rozpiętki hantlami na ławce poziomej')
+    expect(iPress).toBeGreaterThan(-1)
+    expect(iFly).toBeGreaterThan(-1)
+    expect(iPress).toBeLessThan(iFly) // uszeregowane od najlepiej dopasowanego do celu
+  })
+  it('nagłówek informuje o uszeregowaniu wg celu', () => {
+    expect(buildExerciseCatalog('push', 'siłownia').text).toContain('uszeregowane od najlepiej dopasowanego')
+  })
 })
 
 describe('normalizePlan — metadata z bazy ćwiczeń', () => {

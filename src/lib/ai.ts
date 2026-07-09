@@ -5,6 +5,18 @@ import { PRIMARY_TO_GROUP } from './workoutSchema'
 import { getAuthToken } from './auth'
 import { translateExerciseName } from './substitutions'
 import { getExercisesForHeads, findExerciseByName, type Equipment, type ExerciseEntry } from './exerciseDb'
+import { scoreExercise } from './exerciseScoring'
+import { withPremium } from './exercisePremium'
+import type { TrainingGoalTag } from './exerciseModel'
+
+// Mapowanie celu treningowego (z ustawień) na tag używany przez scoreExercise.
+const GOAL_TO_TAG: Record<string, TrainingGoalTag> = {
+  mass: 'hypertrophy',
+  strength: 'strength',
+  cut: 'fat_loss',
+  endurance: 'endurance',
+  recomposition: 'general'
+}
 
 // --- Interfaces ---
 
@@ -361,7 +373,7 @@ interface ExerciseCatalog {
 // Buduje sekcję promptu z listą dozwolonych ćwiczeń dla danego typu treningu i sprzętu.
 // Grupowanie po muscleHead — AI widzi które ćwiczenia pasują do których slotów struktury.
 // Eksportowane dla testów (czysta funkcja).
-export function buildExerciseCatalog(type: string, equipment: string): ExerciseCatalog | null {
+export function buildExerciseCatalog(type: string, equipment: string, goal: string = 'mass'): ExerciseCatalog | null {
   const heads = MUSCLE_HEADS_BY_TYPE[type] || []
   const allowed = EQUIPMENT_ACCESS[equipment] || ALL_EQUIPMENT
   const list = getExercisesForHeads(heads, allowed)
@@ -370,6 +382,18 @@ export function buildExerciseCatalog(type: string, equipment: string): ExerciseC
   const td = TYPE_DETAILS[type] || TYPE_DETAILS.push
   const strict = list.length >= td.expectedCount * 2
 
+  // Ocena dopasowania do celu (premium model) — cache po id, liczona raz na ćwiczenie.
+  const tag = GOAL_TO_TAG[goal] || 'general'
+  const scoreCache = new Map<string, number>()
+  const fit = (ex: ExerciseEntry): number => {
+    let s = scoreCache.get(ex.id)
+    if (s === undefined) {
+      s = scoreExercise(withPremium(ex), { goal: tag, level: 'intermediate' }).total
+      scoreCache.set(ex.id, s)
+    }
+    return s
+  }
+
   const byHead = new Map<string, ExerciseEntry[]>()
   for (const h of heads) byHead.set(h, [])
   for (const ex of list) byHead.get(ex.muscleHead)?.push(ex)
@@ -377,15 +401,18 @@ export function buildExerciseCatalog(type: string, equipment: string): ExerciseC
   const lines: string[] = []
   for (const [head, exs] of byHead) {
     if (!exs.length) continue
+    // W obrębie grupy: najlepiej dopasowane do celu jako pierwsze (nudge dla AI).
+    exs.sort((a, b) => fit(b) - fit(a))
     lines.push(`[${head}]`)
     for (const ex of exs) {
       lines.push(`- ${ex.name} (${EQUIPMENT_LABEL[ex.equipment]}, ${ex.exerciseType})`)
     }
   }
 
+  const orderNote = ' W każdej grupie ćwiczenia są uszeregowane od najlepiej dopasowanego do celu — przy równorzędnych wyborach preferuj wyżej na liście.'
   const header = strict
-    ? `BAZA ĆWICZEŃ — wybieraj WYŁĄCZNIE z poniższej listy. Przepisuj nazwy DOKŁADNIE (co do znaku). Nie wymyślaj ćwiczeń spoza listy:`
-    : `BAZA ĆWICZEŃ — preferuj ćwiczenia z poniższej listy (przepisuj nazwy DOKŁADNIE). Jeżeli dla wymaganego slotu struktury lista nie zawiera pasującego ćwiczenia, możesz dodać standardowe ćwiczenie spoza listy (polska nazwa, wykonalne przy dostępnym sprzęcie):`
+    ? `BAZA ĆWICZEŃ — wybieraj WYŁĄCZNIE z poniższej listy. Przepisuj nazwy DOKŁADNIE (co do znaku). Nie wymyślaj ćwiczeń spoza listy.${orderNote}`
+    : `BAZA ĆWICZEŃ — preferuj ćwiczenia z poniższej listy (przepisuj nazwy DOKŁADNIE). Jeżeli dla wymaganego slotu struktury lista nie zawiera pasującego ćwiczenia, możesz dodać standardowe ćwiczenie spoza listy (polska nazwa, wykonalne przy dostępnym sprzęcie).${orderNote}`
 
   return { text: `${header}\n${lines.join('\n')}`, strict }
 }
@@ -651,7 +678,7 @@ function buildPrompt(opts: BuildPromptOptions): string {
   parts.push(`Cel: ${goalDesc}`)
   parts.push(`Struktura:\n${td.structure}`)
 
-  const catalog = buildExerciseCatalog(type, equipment)
+  const catalog = buildExerciseCatalog(type, equipment, goal)
   if (catalog) parts.push(catalog.text)
 
   if (hasHistory) {
