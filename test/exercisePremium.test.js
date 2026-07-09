@@ -10,8 +10,8 @@ describe('EXERCISE_PREMIUM — integralność', () => {
       expect(findExerciseById(id), `nieznane id: ${id}`).toBeTruthy()
     }
   })
-  it('pokrywa pełny Push (41 wpisów)', () => {
-    expect(Object.keys(EXERCISE_PREMIUM).length).toBe(41)
+  it('pokrywa pełną bazę (110 wpisów: Push+Pull+Legs)', () => {
+    expect(Object.keys(EXERCISE_PREMIUM).length).toBe(110)
   })
 })
 
@@ -31,8 +31,14 @@ describe('withPremium + derive', () => {
   })
 
   it('ćwiczenie bez wpisu premium → withPremium nie dokłada pól', () => {
-    const legExt = findExerciseById('wyprosty-nog') // Legs, brak premium
-    const merged = withPremium(legExt)
+    // Cała baza jest już pokryta, więc używamy syntetycznego id spoza mapy.
+    const fake = {
+      id: 'nieistniejace-cwiczenie', name: 'X', aliases: [], primaryMuscle: 'chest',
+      muscleHead: 'chest_middle', equipment: 'hantle', exerciseType: 'isolation',
+      movementPattern: 'horizontal_push', difficulty: 'beginner', isUnilateral: false,
+      defaultSets: 3, defaultReps: '10-12', tip: ''
+    }
+    const merged = withPremium(fake)
     expect(merged.mechanics).toBeUndefined()
     expect(merged.safety).toBeUndefined()
   })
