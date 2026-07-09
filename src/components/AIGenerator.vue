@@ -110,6 +110,26 @@ function start() {
   if (plan.value) emit('select', plan.value)
 }
 
+const editingIdx = ref(-1)
+const editName = ref('')
+
+function startEdit(i) {
+  editingIdx.value = i
+  editName.value = plan.value.exercises[i].name
+}
+
+function confirmEdit(i) {
+  const trimmed = editName.value.trim()
+  if (trimmed && trimmed !== plan.value.exercises[i].name) {
+    plan.value.exercises[i].name = trimmed
+  }
+  editingIdx.value = -1
+}
+
+function cancelEdit() {
+  editingIdx.value = -1
+}
+
 const STATUS_META = {
   progress:        { label: 'progres',         icon: 'ti-trending-up' },
   stagnation:      { label: 'stagnacja',       icon: 'ti-arrow-bar-to-right' },
@@ -272,17 +292,38 @@ function statusIcon(s)  { return STATUS_META[s]?.icon || 'ti-info-circle' }
           <div class="ai-ex-head">
             <span class="ai-ex-num">{{ i + 1 }}</span>
             <span class="ai-ex-vol">{{ ex.sets }} × {{ ex.reps }}</span>
-            <span class="ai-ex-name">{{ ex.name }}</span>
-            <a
-              class="ai-ex-yt"
-              :href="youtubeSearchUrl(ex.name)"
-              target="_blank"
-              rel="noopener"
-              aria-label="Zobacz technikę na YouTube"
-              @click.stop
-            >
-              <i class="ti ti-brand-youtube"></i>
-            </a>
+            <template v-if="editingIdx === i">
+              <input
+                class="ai-ex-edit-input"
+                v-model="editName"
+                @keyup.enter="confirmEdit(i)"
+                @keyup.escape="cancelEdit"
+                ref="editInput"
+                autofocus
+              />
+              <button class="ai-ex-action ai-ex-action--ok" @click="confirmEdit(i)" aria-label="Zatwierdź">
+                <i class="ti ti-check"></i>
+              </button>
+              <button class="ai-ex-action ai-ex-action--cancel" @click="cancelEdit" aria-label="Anuluj">
+                <i class="ti ti-x"></i>
+              </button>
+            </template>
+            <template v-else>
+              <span class="ai-ex-name">{{ ex.name }}</span>
+              <a
+                class="ai-ex-yt"
+                :href="youtubeSearchUrl(ex.name)"
+                target="_blank"
+                rel="noopener"
+                aria-label="Zobacz technikę na YouTube"
+                @click.stop
+              >
+                <i class="ti ti-brand-youtube"></i>
+              </a>
+              <button class="ai-ex-action ai-ex-action--edit" @click="startEdit(i)" aria-label="Zmień ćwiczenie">
+                <i class="ti ti-pencil"></i>
+              </button>
+            </template>
           </div>
           <div v-if="ex.tip" class="ai-ex-tip dim">{{ ex.tip }}</div>
         </li>
@@ -583,6 +624,51 @@ function statusIcon(s)  { return STATUS_META[s]?.icon || 'ti-info-circle' }
 }
 .ai-ex-yt:hover { background: rgba(255, 0, 0, 0.20); }
 .ai-ex-yt .ti { font-size: 19px; }
+.ai-ex-action {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background var(--dur);
+  padding: 0;
+}
+.ai-ex-action .ti { font-size: 17px; }
+.ai-ex-action--edit {
+  color: var(--text-muted);
+  background: transparent;
+}
+.ai-ex-action--edit:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.ai-ex-action--ok {
+  color: var(--success, #22c55e);
+  background: rgba(34, 197, 94, 0.10);
+}
+.ai-ex-action--ok:hover { background: rgba(34, 197, 94, 0.20); }
+.ai-ex-action--cancel {
+  color: var(--danger, #ef4444);
+  background: rgba(239, 68, 68, 0.10);
+}
+.ai-ex-action--cancel:hover { background: rgba(239, 68, 68, 0.20); }
+.ai-ex-edit-input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  outline: none;
+}
 .ai-ex-tip {
   margin-top: 6px;
   padding-left: 26px;
