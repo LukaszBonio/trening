@@ -88,6 +88,9 @@ async function generate() {
       avoid: avoid.value,
       recentSessions: recentSessionsOfType(workouts.history, props.type, 3),
       equipmentTags: isAnia.value ? aniaEquipTags.value : undefined,
+      // Profil użytkownika (poziom + kontuzje) — plan Ani ma własne przeciwwskazania.
+      level: isAnia.value ? undefined : settings.settings.trainingLevel,
+      injuries: isAnia.value ? undefined : settings.settings.injuries,
       signal: abortCtrl.signal
     })
   } catch (e) {

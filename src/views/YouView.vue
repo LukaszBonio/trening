@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useCloudStore } from '../stores/cloud'
 import { REQUIRE_AUTH } from '../lib/authConfig'
 import { useWorkoutsStore } from '../stores/workouts'
-import { useSettingsStore } from '../stores/settings'
+import { useSettingsStore, TRAINING_LEVELS, INJURY_OPTIONS } from '../stores/settings'
 import { permission as notifPermission, requestPermission as requestNotifPermission, isSupported as notifSupported } from '../lib/notifications'
 import { transformLegacyEntry } from '../lib/migration'
 import { useDialog } from '../composables/useDialog'
@@ -251,6 +251,31 @@ function onFileChange(e) {
       </div>
     </BaseCard>
 
+    <!-- Profil treningowy — wpływa na dobór ćwiczeń przez AI -->
+    <BaseCard collapsible title="Profil treningowy">
+      <p class="muted" style="margin-bottom: var(--space-3)">
+        AI dobiera i szereguje ćwiczenia pod Twój poziom, a ćwiczenia przeciwwskazane przy zaznaczonych dolegliwościach są pomijane.
+      </p>
+      <div class="settings-grid">
+        <label class="setting">
+          <span>Poziom zaawansowania</span>
+          <select v-model="settingsStore.settings.trainingLevel">
+            <option v-for="l in TRAINING_LEVELS" :key="l.key" :value="l.key">{{ l.label }}</option>
+          </select>
+        </label>
+
+        <div class="setting profile-injuries">
+          <span>Kontuzje / ograniczenia</span>
+          <div class="injury-list">
+            <label v-for="opt in INJURY_OPTIONS" :key="opt.key" class="injury-item">
+              <input type="checkbox" :value="opt.key" v-model="settingsStore.settings.injuries" />
+              <span>{{ opt.label }}</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </BaseCard>
+
     <!-- Settings -->
     <BaseCard collapsible title="Ustawienia">
       <div class="settings-grid">
@@ -444,6 +469,26 @@ function onFileChange(e) {
 .btn-tiny-icon:hover { color: var(--danger); border-color: var(--danger); }
 
 .settings-grid { display: flex; flex-direction: column; gap: 14px; }
+.profile-injuries { flex-direction: column; align-items: stretch; gap: 10px; }
+.injury-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+.injury-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+}
+.injury-item input { width: 16px; height: 16px; accent-color: var(--accent); flex-shrink: 0; }
+@media (min-width: 520px) { .injury-list { grid-template-columns: 1fr 1fr; } }
 .setting {
   display: flex;
   justify-content: space-between;

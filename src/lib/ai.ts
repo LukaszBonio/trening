@@ -97,6 +97,8 @@ interface GenerateAIPlanOptions {
   avoid?: string
   recentSessions?: RecentSession[]
   equipmentTags?: string[]
+  level?: string
+  injuries?: string[]
   signal?: AbortSignal
 }
 
@@ -373,22 +375,39 @@ interface ExerciseCatalog {
 // Buduje sekcję promptu z listą dozwolonych ćwiczeń dla danego typu treningu i sprzętu.
 // Grupowanie po muscleHead — AI widzi które ćwiczenia pasują do których slotów struktury.
 // Eksportowane dla testów (czysta funkcja).
-export function buildExerciseCatalog(type: string, equipment: string, goal: string = 'mass'): ExerciseCatalog | null {
+export function buildExerciseCatalog(
+  type: string,
+  equipment: string,
+  goal: string = 'mass',
+  level: string = 'intermediate',
+  injuries: string[] = []
+): ExerciseCatalog | null {
   const heads = MUSCLE_HEADS_BY_TYPE[type] || []
   const allowed = EQUIPMENT_ACCESS[equipment] || ALL_EQUIPMENT
-  const list = getExercisesForHeads(heads, allowed)
+  const all = getExercisesForHeads(heads, allowed)
+  if (!all.length) return null
+
+  // Filtr bezpieczeństwa: usuń ćwiczenia przeciwwskazane przy zaznaczonych kontuzjach.
+  const list = injuries.length
+    ? all.filter(ex => {
+        const contra = withPremium(ex).safety?.contraindications ?? []
+        return !injuries.some(i => contra.includes(i))
+      })
+    : all
+  const filteredOut = all.length - list.length
   if (!list.length) return null
 
   const td = TYPE_DETAILS[type] || TYPE_DETAILS.push
   const strict = list.length >= td.expectedCount * 2
 
-  // Ocena dopasowania do celu (premium model) — cache po id, liczona raz na ćwiczenie.
+  // Ocena dopasowania do celu i poziomu (premium model) — cache po id.
   const tag = GOAL_TO_TAG[goal] || 'general'
+  const lvl = level as import('./exerciseModel').TrainingLevel
   const scoreCache = new Map<string, number>()
   const fit = (ex: ExerciseEntry): number => {
     let s = scoreCache.get(ex.id)
     if (s === undefined) {
-      s = scoreExercise(withPremium(ex), { goal: tag, level: 'intermediate' }).total
+      s = scoreExercise(withPremium(ex), { goal: tag, level: lvl, injuries }).total
       scoreCache.set(ex.id, s)
     }
     return s
@@ -410,9 +429,12 @@ export function buildExerciseCatalog(type: string, equipment: string, goal: stri
   }
 
   const orderNote = ' W każdej grupie ćwiczenia są uszeregowane od najlepiej dopasowanego do celu — przy równorzędnych wyborach preferuj wyżej na liście.'
+  const safetyNote = filteredOut > 0
+    ? ' Ćwiczenia przeciwwskazane przy zgłoszonych dolegliwościach zostały pominięte — NIE dodawaj ich spoza listy.'
+    : ''
   const header = strict
-    ? `BAZA ĆWICZEŃ — wybieraj WYŁĄCZNIE z poniższej listy. Przepisuj nazwy DOKŁADNIE (co do znaku). Nie wymyślaj ćwiczeń spoza listy.${orderNote}`
-    : `BAZA ĆWICZEŃ — preferuj ćwiczenia z poniższej listy (przepisuj nazwy DOKŁADNIE). Jeżeli dla wymaganego slotu struktury lista nie zawiera pasującego ćwiczenia, możesz dodać standardowe ćwiczenie spoza listy (polska nazwa, wykonalne przy dostępnym sprzęcie).${orderNote}`
+    ? `BAZA ĆWICZEŃ — wybieraj WYŁĄCZNIE z poniższej listy. Przepisuj nazwy DOKŁADNIE (co do znaku). Nie wymyślaj ćwiczeń spoza listy.${orderNote}${safetyNote}`
+    : `BAZA ĆWICZEŃ — preferuj ćwiczenia z poniższej listy (przepisuj nazwy DOKŁADNIE). Jeżeli dla wymaganego slotu struktury lista nie zawiera pasującego ćwiczenia, możesz dodać standardowe ćwiczenie spoza listy (polska nazwa, wykonalne przy dostępnym sprzęcie).${orderNote}${safetyNote}`
 
   return { text: `${header}\n${lines.join('\n')}`, strict }
 }
@@ -446,6 +468,9 @@ interface BuildPromptOptions {
   recentSessions: RecentSession[]
   // Kategorie sprzętu dla planu Ani (checkboxy). Ignorowane przez pozostałe typy.
   equipmentTags?: string[]
+  // Profil użytkownika — wpływa na dobór/filtr ćwiczeń w katalogu.
+  level?: string
+  injuries?: string[]
 }
 
 // === Plan korekcyjny "Ćwiczenia dla Ani" ===
@@ -678,7 +703,7 @@ function buildPrompt(opts: BuildPromptOptions): string {
   parts.push(`Cel: ${goalDesc}`)
   parts.push(`Struktura:\n${td.structure}`)
 
-  const catalog = buildExerciseCatalog(type, equipment, goal)
+  const catalog = buildExerciseCatalog(type, equipment, goal, opts.level, opts.injuries)
   if (catalog) parts.push(catalog.text)
 
   if (hasHistory) {
@@ -796,11 +821,12 @@ const MAX_AVOID_LENGTH = 200
 const _planCache = new Map<string, CacheEntry>()
 const PLAN_CACHE_TTL_MS = 5 * 60 * 1000
 
-function planCacheKey({ type, goal, equipment, avoid, recentSessions, equipmentTags }: BuildPromptOptions): string {
+function planCacheKey({ type, goal, equipment, avoid, recentSessions, equipmentTags, level, injuries }: BuildPromptOptions): string {
   // Klucz zawiera tylko stabilne wejście — historia identyfikowana po id ostatnich sesji.
   const sessionsKey = recentSessions.map((s: RecentSession) => s.id || String(s.date)).join(',')
   const tagsKey = (equipmentTags || []).slice().sort().join('+')
-  return `${type}|${goal}|${equipment}|${avoid}|${tagsKey}|${sessionsKey}`
+  const injKey = (injuries || []).slice().sort().join('+')
+  return `${type}|${goal}|${equipment}|${avoid}|${tagsKey}|${level || ''}|${injKey}|${sessionsKey}`
 }
 
 function getCachedPlan(key: string): AIPlan | null {
@@ -891,6 +917,8 @@ export async function generateAIPlan({
   avoid = '',
   recentSessions = [],
   equipmentTags,
+  level,
+  injuries,
   signal
 }: GenerateAIPlanOptions): Promise<AIPlan> {
   // Sanityzacja: ucinamy do MAX_AVOID_LENGTH, usuwamy znaki nowej linii (które mogłyby
@@ -898,11 +926,11 @@ export async function generateAIPlan({
   const safeAvoid = String(avoid || '').replace(/[\r\n]+/g, ' ').slice(0, MAX_AVOID_LENGTH).trim()
 
   // Cache hit dla identycznego wejścia (chroni przed double-click). TTL 5 min.
-  const cacheKey = planCacheKey({ type, goal, equipment, avoid: safeAvoid, recentSessions, equipmentTags })
+  const cacheKey = planCacheKey({ type, goal, equipment, avoid: safeAvoid, recentSessions, equipmentTags, level, injuries })
   const cached = getCachedPlan(cacheKey)
   if (cached) return cached
 
-  const prompt = buildPrompt({ type, goal, equipment, avoid: safeAvoid, recentSessions, equipmentTags })
+  const prompt = buildPrompt({ type, goal, equipment, avoid: safeAvoid, recentSessions, equipmentTags, level, injuries })
 
   // 1 silent retry przy błędzie parse — czasem Claude zwraca tekst zaczynający się od ```json
   // lub pełen JSON z jednym brakiem; ponowna próba w 90% przypadków wystarcza.

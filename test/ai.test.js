@@ -248,6 +248,18 @@ describe('buildExerciseCatalog', () => {
   it('nagłówek informuje o uszeregowaniu wg celu', () => {
     expect(buildExerciseCatalog('push', 'siłownia').text).toContain('uszeregowane od najlepiej dopasowanego')
   })
+  it('kontuzja lumbar_disc: OHP (przeciwwskazany) usunięty z katalogu', () => {
+    const zdrowy = buildExerciseCatalog('push', 'siłownia', 'mass', 'intermediate', [])
+    const kontuzja = buildExerciseCatalog('push', 'siłownia', 'mass', 'intermediate', ['lumbar_disc'])
+    expect(zdrowy.text).toContain('Wyciskanie sztangi nad głowę')
+    expect(kontuzja.text).not.toContain('Wyciskanie sztangi nad głowę')
+    expect(kontuzja.text).toContain('pominięte')
+  })
+  it('kontuzja knee_pain w Legs: przysiad ze sztangą usunięty, most biodrowy zostaje', () => {
+    const cat = buildExerciseCatalog('legs', 'siłownia', 'mass', 'intermediate', ['knee_pain'])
+    expect(cat.text).not.toContain('Przysiad ze sztangą')
+    expect(cat.text).toContain('Most biodrowy')
+  })
 })
 
 describe('normalizePlan — metadata z bazy ćwiczeń', () => {
