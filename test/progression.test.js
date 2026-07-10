@@ -111,6 +111,13 @@ describe('suggestNextWeight', () => {
     // 30 + 1 = 31
     expect(r.weight).toBe(31)
   })
+  it('ciężar 45kg progresuje (nie zeruje się przez zaokrąglenie 2.5kg)', () => {
+    // Regresja: dawniej +1kg na 45kg → round(46/2.5) → z powrotem 45kg (zero progresji).
+    // Teraz przyrost dla ≥40kg = 2.5kg, zgodny z krokiem zaokrąglenia.
+    const r = suggestNextWeight(hist(45, 12, 7), 'Bench', '10-12')
+    expect(r.weight).toBe(47.5)
+    expect(r.weight).toBeGreaterThan(45)
+  })
   it('basedOn zawiera oryginalne dane ostatniej serii', () => {
     const r = suggestNextWeight(hist(60, 12, 7), 'Bench', '10-12')
     expect(r.basedOn).toMatchObject({ weight: 60, reps: 12, rpe: 7 })

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import {
   estimated1RM,
   uniqueExercises,
@@ -90,8 +90,30 @@ describe('recentSessionsOfType', () => {
 })
 
 describe('currentStreak', () => {
+  afterEach(() => { vi.useRealTimers() })
+
+  const w = (date) => ({ date, exercises: [{ name: 'X', sets: [{ weight: 10, reps: 10 }] }] })
+
   it('zwraca 0 dla pustej historii', () => {
     expect(currentStreak([])).toBe(0)
+  })
+
+  it('liczy kolejne tygodnie gdy bieżący ma trening', () => {
+    vi.useFakeTimers(); vi.setSystemTime(new Date('2026-07-08T12:00:00Z'))
+    // dziś, −7 dni (poprzedni tydzień) → 2 kolejne tygodnie
+    expect(currentStreak([w('2026-07-08'), w('2026-07-01')])).toBe(2)
+  })
+
+  it('bieżący niedokończony tydzień (bez treningu) NIE zeruje passy', () => {
+    vi.useFakeTimers(); vi.setSystemTime(new Date('2026-07-08T12:00:00Z'))
+    // brak treningu w tym tygodniu, ale −7 i −14 dni → passa 2, nie 0
+    expect(currentStreak([w('2026-07-01'), w('2026-06-24')])).toBe(2)
+  })
+
+  it('passa spada do 0 gdy cały miniony tydzień był pusty', () => {
+    vi.useFakeTimers(); vi.setSystemTime(new Date('2026-07-08T12:00:00Z'))
+    // ostatni trening 2 tygodnie temu, bieżący i poprzedni tydzień puste
+    expect(currentStreak([w('2026-06-24')])).toBe(0)
   })
 })
 

@@ -80,9 +80,11 @@ export function roundToPlateStep(weight: number): number {
 
 /**
  * Krok progresji w górę dla danej wagi (mała progresja przy osiągnięciu max reps).
+ * Progi MUSZĄ być zgodne z `roundToPlateStep` — inaczej przyrost mniejszy niż krok
+ * zaokrąglenia zostałby wyzerowany (np. +1kg na 45kg → round do 2.5kg → z powrotem 45kg).
  */
 function smallProgressionIncrement(weight: number): number {
-  if (weight >= 50) return 2.5
+  if (weight >= 40) return 2.5
   if (weight >= 20) return 1
   return 0.5
 }

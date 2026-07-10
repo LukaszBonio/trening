@@ -1,11 +1,17 @@
 const CLAUDE_API = 'https://api.anthropic.com/v1/messages'
 
+// Twarde limity — Worker to proxy płacące naszym kluczem, a rejestracja jest otwarta.
+// Bez tego dowolny zalogowany user mógłby podać własny model / max_tokens / prompt.
+const ALLOWED_MODELS = new Set(['claude-sonnet-4-6'])
+const MAX_TOKENS_CAP = 4096
+const MAX_PROMPT_CHARS = 100000  // ~25k tokenów wejścia — z zapasem na katalog ćwiczeń
+
 let _jwksCache = null
 let _jwksCacheTime = 0
 const JWKS_TTL = 3600000
 
-async function fetchJWKS(supabaseUrl) {
-  if (_jwksCache && Date.now() - _jwksCacheTime < JWKS_TTL) return _jwksCache
+async function fetchJWKS(supabaseUrl, force = false) {
+  if (!force && _jwksCache && Date.now() - _jwksCacheTime < JWKS_TTL) return _jwksCache
   const resp = await fetch(`${supabaseUrl}/auth/v1/.well-known/jwks.json`)
   if (!resp.ok) throw new Error('JWKS fetch failed')
   _jwksCache = await resp.json()
@@ -19,9 +25,15 @@ async function verifyJWT(token, supabaseUrl) {
     if (parts.length !== 3) return null
 
     const header = JSON.parse(b64Decode(parts[0]))
-    const jwks = await fetchJWKS(supabaseUrl)
-    const jwk = jwks.keys.find(k => k.kid === header.kid)
-    if (!jwk) return null
+    let jwks = await fetchJWKS(supabaseUrl)
+    let jwk = jwks.keys.find(k => k.kid === header.kid)
+    if (!jwk) {
+      // Nietrafiony kid — prawdopodobnie rotacja kluczy Supabase. Odśwież JWKS raz
+      // (pomijając cache), zanim odrzucimy ważny token.
+      jwks = await fetchJWKS(supabaseUrl, true)
+      jwk = jwks.keys.find(k => k.kid === header.kid)
+      if (!jwk) return null
+    }
 
     const key = await crypto.subtle.importKey(
       'jwk', jwk,
@@ -94,6 +106,26 @@ export default {
       return jsonResponse({ error: 'Invalid JSON body' }, 400)
     }
 
+    // Walidacja + sanityzacja: przepuszczamy tylko whitelistowane pola i limity,
+    // żeby nie dało się nadużyć naszego klucza (dowolny model/rozmiar/prompt).
+    if (!ALLOWED_MODELS.has(body?.model)) {
+      return jsonResponse({ error: 'Model not allowed' }, 400)
+    }
+    if (!Array.isArray(body?.messages) || body.messages.length === 0) {
+      return jsonResponse({ error: 'Invalid messages' }, 400)
+    }
+    const promptChars = JSON.stringify(body.messages).length + (body.system ? String(body.system).length : 0)
+    if (promptChars > MAX_PROMPT_CHARS) {
+      return jsonResponse({ error: 'Prompt too large' }, 413)
+    }
+    const maxTokens = Math.min(Number(body.max_tokens) || 1024, MAX_TOKENS_CAP)
+    const safeBody = {
+      model: body.model,
+      max_tokens: maxTokens,
+      messages: body.messages,
+      ...(typeof body.system === 'string' ? { system: body.system } : {})
+    }
+
     const resp = await fetch(CLAUDE_API, {
       method: 'POST',
       headers: {
@@ -101,7 +133,7 @@ export default {
         'x-api-key': env.ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01'
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(safeBody)
     })
 
     const data = await resp.text()

@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, computed, onScopeDispose, getCurrentScope } from 'vue'
 import { formatClock } from '../lib/format'
 import { notifyTimerEnd } from '../lib/notifications'
 
@@ -97,6 +97,19 @@ export function useRestTimer(defaultSeconds = 90) {
   }
   if (typeof document !== 'undefined') {
     document.addEventListener('visibilitychange', handleVisibilityChange)
+  }
+
+  // Sprzątanie przy odmontowaniu komponentu: bez tego każde wejście w trening
+  // dokłada trwały listener (i przy powrocie karty odpala kolejny wake lock / wideo).
+  // getCurrentScope() — rejestrujemy tylko gdy jest scope (jest w setupie komponentu;
+  // brak np. w testach jednostkowych wołających composable bezpośrednio).
+  if (getCurrentScope()) {
+    onScopeDispose(() => {
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityChange)
+      }
+      stopRest()
+    })
   }
 
   const restDisplay = computed(() => formatClock(restRemaining.value))

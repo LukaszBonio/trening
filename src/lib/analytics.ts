@@ -178,6 +178,12 @@ export function currentStreak(history: Workout[]): number {
   const thisMonday = new Date(today)
   thisMonday.setDate(today.getDate() - ((today.getDay() + 6) % 7))
   const cursor = new Date(thisMonday)
+  // Bieżący (jeszcze niedokończony) tydzień bez treningu NIE zeruje passy —
+  // zaczynamy liczyć od poprzedniego tygodnia. Passa spada dopiero gdy cały
+  // miniony tydzień był pusty.
+  if (!weeks.has(cursor.toISOString().slice(0, 10))) {
+    cursor.setDate(cursor.getDate() - 7)
+  }
   while (weeks.has(cursor.toISOString().slice(0, 10))) {
     streak++
     cursor.setDate(cursor.getDate() - 7)

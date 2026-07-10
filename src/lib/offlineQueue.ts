@@ -93,11 +93,12 @@ class OfflineQueue {
       const op = this.queue[0]
       const handler = this.handlers.get(op.type)
       if (!handler) {
-        // Brak handlera = drop, log warning
-        console.warn('[offlineQueue] no handler for type:', op.type)
-        this.queue.shift()
-        save(this.queue)
-        continue
+        // Handler jeszcze niezarejestrowany (np. event 'online' przyszedł zanim
+        // cloud.init() podpiął handlery). NIE kasujemy operacji — przerywamy flush;
+        // ponowi się po rejestracji handlerów / kolejnym flushu. Wcześniej shift()
+        // tutaj kasował niezsynchronizowane zmiany na trwałe.
+        console.warn('[offlineQueue] no handler yet for type:', op.type, '— flush odłożony')
+        break
       }
       try {
         await handler(op.payload)

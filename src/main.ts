@@ -16,7 +16,9 @@ if (typeof window !== 'undefined' && window.location.hash.includes('type=recover
   if (at && rt) {
     sessionStorage.setItem('tp_recovery', JSON.stringify({ at, rt }))
   }
-  window.location.hash = '#/login'
+  // replaceState (nie przypisanie do hash) — nadpisuje bieżący wpis historii, więc
+  // URL z access/refresh tokenem nie zostaje w historii karty do cofnięcia.
+  history.replaceState(null, '', '#/login')
 }
 
 const migration = migrateFromLegacy()

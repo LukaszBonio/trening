@@ -132,6 +132,9 @@ export async function callClaude({ prompt, maxTokens = 2500, signal, timeoutMs =
   if (!navigator.onLine) {
     throw new Error('Brak połączenia z internetem')
   }
+  // Sygnał już anulowany przed wejściem (np. szybki re-generate z tym samym signal) —
+  // listener 'abort' by się nie odpalił, więc przerywamy od razu.
+  if (signal?.aborted) throw new DOMException('Przerwano', 'AbortError')
   // Default 60s timeout — wcześniej request mógł wisieć indefinitely jeśli user nie podał signal.
   const timeoutCtrl = new AbortController()
   const timer = setTimeout(() => timeoutCtrl.abort(), timeoutMs)
@@ -450,7 +453,10 @@ const GOAL_HINTS: Record<string, string> = {
 // Kompaktowy zapis sesji do prompta — bez RPE, bez notatek.
 // Format: "- <nazwa>: 60x10, 60x10, 60x8"
 export function formatSessionCompact(session: RecentSession): string {
-  const date = new Date(session.date).toISOString().slice(0, 10)
+  // Guard na niepoprawną datę — jedna uszkodzona sesja nie może wywalić całego
+  // generowania planu (toISOString() rzuca RangeError przy Invalid Date).
+  const parsed = new Date(session.date)
+  const date = Number.isNaN(parsed.getTime()) ? 'bez daty' : parsed.toISOString().slice(0, 10)
   const lines = session.exercises.map((ex: SessionExercise) => {
     const sets = ex.sets
       .map((s: SessionSet) => `${s.weight || 0}x${s.reps || 0}`)
@@ -836,11 +842,15 @@ function getCachedPlan(key: string): AIPlan | null {
     _planCache.delete(key)
     return null
   }
-  return entry.plan
+  // Klon — UI mutuje plan (podmiana ćwiczeń w podglądzie), więc nie wolno oddać
+  // referencji trzymanej w cache, bo mutacje wyciekłyby do kolejnych trafień.
+  return structuredClone(entry.plan)
 }
 
 function setCachedPlan(key: string, plan: AIPlan): void {
-  _planCache.set(key, { plan, expiresAt: Date.now() + PLAN_CACHE_TTL_MS })
+  // Klon przy zapisie — pierwszy wywołujący dostaje własny obiekt (normalized),
+  // a cache trzyma niezależną kopię odporną na późniejsze mutacje w UI.
+  _planCache.set(key, { plan: structuredClone(plan), expiresAt: Date.now() + PLAN_CACHE_TTL_MS })
 }
 
 // Dozwolone statusy analizy per partia (zwracane przez AI gdy była historia).
