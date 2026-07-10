@@ -84,10 +84,6 @@ export async function requestPermission(): Promise<NotificationPermissionState> 
   }
 }
 
-export function wasAsked(): boolean {
-  try { return !!localStorage.getItem(PERMISSION_KEY) } catch { return false }
-}
-
 export function notifyTimerEnd(title: string = 'Koniec przerwy', message: string = 'Wracaj do ćwiczeń'): Notification | null {
   try {
     if (navigator.vibrate) navigator.vibrate([400, 100, 400, 100, 400])

@@ -1808,14 +1808,3 @@ export function getExercisesForHeads(muscleHeads: string[], allowedEquipment?: E
   )
 }
 
-export function getExercisesByEquipment(equipment: Equipment): ExerciseEntry[] {
-  return ALL_EXERCISES.filter(e => e.equipment === equipment)
-}
-
-export function getCompoundExercises(): ExerciseEntry[] {
-  return ALL_EXERCISES.filter(e => e.exerciseType === 'compound')
-}
-
-export function getIsolationExercises(): ExerciseEntry[] {
-  return ALL_EXERCISES.filter(e => e.exerciseType === 'isolation')
-}

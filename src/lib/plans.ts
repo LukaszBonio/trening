@@ -639,9 +639,3 @@ export const PLANS: PlansMap = {
     }
   ]
 };
-
-export function getRandomPlan(type: PlanType): Plan | null {
-  const list = PLANS[type];
-  if (!list || !list.length) return null;
-  return list[Math.floor(Math.random() * list.length)];
-}

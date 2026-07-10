@@ -336,7 +336,7 @@ trening/
 | **components/BaseCard** | Slot-based karta z props title/collapsible/tag |
 | **composables/useCoach** | Stan AI Coacha (singleton): analiza postępów + czat, abort, offline |
 | **lib/muscles.ts** | Słownik 25 głów mięśniowych, detectMuscle, detectEquipment |
-| **lib/plans.ts** | 49 gotowych planów (10 typów), getRandomPlan |
+| **lib/plans.ts** | 49 gotowych planów (10 typów) |
 | **lib/exerciseDb.ts** | Kuratorowana baza 113 ćwiczeń z metadanymi — źródło doboru dla AI |
 | **lib/coach.ts** | AI Coach: buildery promptów (analiza trendów per ćwiczenie + czat) + walidacja |
 | **lib/substitutions.ts** | findSubstitutes, youtubeSearchUrl |
