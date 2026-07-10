@@ -115,12 +115,17 @@ function start() {
 const swapOpenIdx = ref(-1)
 
 // Alternatywy z bazy dla tej samej głowy mięśniowej, bez ćwiczeń już użytych w planie
-// (bieżące jest „użyte", więc naturalnie wypada z listy).
-function alternativesFor(ex) {
-  if (!ex || !ex.muscleHead) return []
+// (bieżące jest „użyte", więc naturalnie wypada z listy). Computed — liczone raz na
+// zmianę planu, a nie przy każdym renderze osobno dla v-if i v-for każdego ćwiczenia.
+const alternativesByIndex = computed(() => {
+  if (!plan.value) return []
   const used = new Set(plan.value.exercises.map(e => e.name.toLowerCase()))
-  return getExercisesForMuscle(ex.muscleHead).filter(alt => !used.has(alt.name.toLowerCase()))
-}
+  return plan.value.exercises.map(ex =>
+    ex.muscleHead
+      ? getExercisesForMuscle(ex.muscleHead).filter(alt => !used.has(alt.name.toLowerCase()))
+      : []
+  )
+})
 
 function toggleSwap(i) {
   swapOpenIdx.value = swapOpenIdx.value === i ? -1 : i
@@ -320,7 +325,7 @@ function statusIcon(s)  { return STATUS_META[s]?.icon || 'ti-info-circle' }
               <i class="ti ti-brand-youtube"></i>
             </a>
             <button
-              v-if="alternativesFor(ex).length"
+              v-if="alternativesByIndex[i] && alternativesByIndex[i].length"
               class="ai-ex-action ai-ex-action--swap"
               :class="{ 'is-active': swapOpenIdx === i }"
               @click="toggleSwap(i)"
@@ -334,7 +339,7 @@ function statusIcon(s)  { return STATUS_META[s]?.icon || 'ti-info-circle' }
           <div v-if="swapOpenIdx === i" class="ai-ex-alts">
             <div class="ai-ex-alts-label">Zamień na inne — ta sama partia</div>
             <button
-              v-for="alt in alternativesFor(ex)"
+              v-for="alt in alternativesByIndex[i]"
               :key="alt.id"
               class="ai-ex-alt"
               @click="chooseAlternative(i, alt)"

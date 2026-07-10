@@ -6,6 +6,7 @@ import { useBodyStore } from './body'
 import { useSettingsStore } from './settings'
 import { offlineQueue } from '../lib/offlineQueue'
 import { setAuthToken } from '../lib/auth'
+import { useToast } from '../composables/useToast'
 
 const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL || 'https://envscdgmonrlczfleoib.supabase.co'
 const SUPABASE_KEY = import.meta.env?.VITE_SUPABASE_KEY || 'sb_publishable_Nob9dd2IzFjYQsqPGwb4qg_4Mf5giRz'
@@ -70,6 +71,16 @@ export const useCloudStore = defineStore('cloud', () => {
 
     offlineQueue.on('change', () => { queueSize.value = offlineQueue.size() })
     offlineQueue.on('flush-end', () => { queueSize.value = offlineQueue.size() })
+
+    // Operacja porzucona po wyczerpaniu prób — wcześniej cichy błąd. Informujemy usera:
+    // dane są bezpieczne lokalnie i scalą się przy następnym starcie (initialSync).
+    offlineQueue.on('failed', () => {
+      lastError.value = 'Część zmian nie zsynchronizowała się z chmurą'
+      useToast().error(
+        'Synchronizacja z chmurą nie powiodła się. Dane są zapisane na urządzeniu i zsynchronizują się później.',
+        { duration: 8000 }
+      )
+    })
 
     client.value.auth.getSession().then(({ data }) => {
       const u = data.session?.user || null

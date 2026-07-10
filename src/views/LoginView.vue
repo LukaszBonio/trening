@@ -60,8 +60,8 @@ async function submitRecovery() {
   if (busy.value) return
   error.value = ''
   info.value = ''
-  if (newPassword.value.length < 6) {
-    error.value = 'Nowe hasło musi mieć co najmniej 6 znaków.'
+  if (newPassword.value.length < 8) {
+    error.value = 'Nowe hasło musi mieć co najmniej 8 znaków.'
     return
   }
   busy.value = true
@@ -96,8 +96,8 @@ async function submit() {
     error.value = 'Podaj e-mail i hasło.'
     return
   }
-  if (mode.value === 'signup' && password.value.length < 6) {
-    error.value = 'Hasło musi mieć co najmniej 6 znaków.'
+  if (mode.value === 'signup' && password.value.length < 8) {
+    error.value = 'Hasło musi mieć co najmniej 8 znaków.'
     return
   }
 
@@ -179,7 +179,7 @@ function translateError(msg) {
             <input
               :type="showNewPw ? 'text' : 'password'"
               v-model="newPassword"
-              placeholder="min. 6 znaków"
+              placeholder="min. 8 znaków"
               autocomplete="new-password"
               :disabled="busy"
               required

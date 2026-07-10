@@ -7,3 +7,11 @@ SUPABASE_URL = "https://envscdgmonrlczfleoib.supabase.co"
 
 # Secrets (set via `wrangler secret put` lub w dashboardzie Variables and Secrets):
 # ANTHROPIC_API_KEY — klucz do Claude API (pewnie juz jest w starym Workerze)
+
+# Rate-limit per user (KV). Aktywuje się dopiero po odkomentowaniu + wpisaniu id.
+# Krok 1: wrangler kv namespace create RATE_LIMIT   (zwróci id)
+# Krok 2: wklej id poniżej i odkomentuj blok, potem wrangler deploy
+# Bez tego bindingu Worker działa normalnie, ale bez limitu (kod robi no-op).
+# [[kv_namespaces]]
+# binding = "RATE_LIMIT"
+# id = "WKLEJ_ID_NAMESPACE"

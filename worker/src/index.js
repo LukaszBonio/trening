@@ -6,6 +6,26 @@ const ALLOWED_MODELS = new Set(['claude-sonnet-4-6'])
 const MAX_TOKENS_CAP = 4096
 const MAX_PROMPT_CHARS = 100000  // ~25k tokenów wejścia — z zapasem na katalog ćwiczeń
 
+// Rate-limit per użytkownik (fixed window w KV). Chroni przed nadużyciem naszego
+// klucza przy otwartej rejestracji. Wymaga bindingu KV `RATE_LIMIT` (patrz wrangler.toml);
+// bez bindingu limit jest nieaktywny (bezpieczny no-op), więc deploy działa przed konfiguracją.
+const RATE_LIMIT_MAX = 40         // żądań na okno
+const RATE_LIMIT_WINDOW = 3600    // sekund (1h)
+
+async function checkRateLimit(env, userId) {
+  if (!env.RATE_LIMIT || !userId) return { ok: true }
+  const nowSec = Math.floor(Date.now() / 1000)
+  const window = Math.floor(nowSec / RATE_LIMIT_WINDOW)
+  const key = `rl:${userId}:${window}`
+  const current = parseInt(await env.RATE_LIMIT.get(key), 10) || 0
+  if (current >= RATE_LIMIT_MAX) {
+    return { ok: false, retryAfter: RATE_LIMIT_WINDOW - (nowSec % RATE_LIMIT_WINDOW) }
+  }
+  // TTL czyści licznik po zamknięciu okna (bez ręcznego sprzątania).
+  await env.RATE_LIMIT.put(key, String(current + 1), { expirationTtl: RATE_LIMIT_WINDOW })
+  return { ok: true }
+}
+
 let _jwksCache = null
 let _jwksCacheTime = 0
 const JWKS_TTL = 3600000
@@ -97,6 +117,14 @@ export default {
     const payload = await verifyJWT(authHeader.slice(7), env.SUPABASE_URL)
     if (!payload) {
       return jsonResponse({ error: 'Invalid or expired token' }, 401)
+    }
+
+    const rl = await checkRateLimit(env, payload.sub)
+    if (!rl.ok) {
+      return new Response(
+        JSON.stringify({ error: 'Przekroczono limit zapytań — spróbuj za chwilę' }),
+        { status: 429, headers: { ...corsHeaders(), 'Content-Type': 'application/json', 'Retry-After': String(rl.retryAfter) } }
+      )
     }
 
     let body
