@@ -31,7 +31,7 @@ export interface ExerciseEntry {
 //  PUSH — klatka piersiowa, barki przednie/boczne, triceps
 // ---------------------------------------------------------------------------
 
-export const PUSH_EXERCISES: ExerciseEntry[] = [
+const PUSH_EXERCISES: ExerciseEntry[] = [
 
   // ===================== KLATKA GÓRNA (chest_upper) =====================
 
@@ -677,7 +677,7 @@ export const PUSH_EXERCISES: ExerciseEntry[] = [
 //  PULL — plecy, barki tylne, biceps, przedramiona
 // ---------------------------------------------------------------------------
 
-export const PULL_EXERCISES: ExerciseEntry[] = [
+const PULL_EXERCISES: ExerciseEntry[] = [
 
   // ===================== PLECY SZEROKIE (back_lats) =====================
 
@@ -1237,7 +1237,7 @@ export const PULL_EXERCISES: ExerciseEntry[] = [
 //  LEGS — czworogłowy uda, dwugłowy uda, pośladki, przywodziciele, łydki, core
 // ---------------------------------------------------------------------------
 
-export const LEGS_EXERCISES: ExerciseEntry[] = [
+const LEGS_EXERCISES: ExerciseEntry[] = [
 
   // ===================== CZWOROGŁOWY UDA (quads) =====================
 

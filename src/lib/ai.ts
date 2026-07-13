@@ -120,7 +120,7 @@ interface CacheEntry {
 const DEFAULT_PROXY: string = import.meta.env?.VITE_AI_PROXY_URL || 'https://trening-pro-api.lukasz-mateusz-bonio.workers.dev'
 const MODEL = 'claude-sonnet-4-6'
 
-export function getProxyUrl(): string {
+function getProxyUrl(): string {
   try {
     return localStorage.getItem('tp_proxy_url') || DEFAULT_PROXY
   } catch {
@@ -185,8 +185,8 @@ export function parseClaudeJSON(rawText: string): Record<string, unknown> {
 // Dozwolone wartości dla pól w odpowiedzi AI.
 // PRIMARY_MUSCLES wyprowadzone z PRIMARY_TO_GROUP — jedno źródło prawdy.
 export const PRIMARY_MUSCLES: string[] = Object.keys(PRIMARY_TO_GROUP)
-export const EXERCISE_TYPES: string[] = ['compound', 'isolation']
-export const MOVEMENT_PATTERNS: string[] = [
+const EXERCISE_TYPES: string[] = ['compound', 'isolation']
+const MOVEMENT_PATTERNS: string[] = [
   'horizontal_push', 'vertical_push',
   'horizontal_pull', 'vertical_pull',
   'squat', 'hinge', 'lunge', 'calf', 'core',

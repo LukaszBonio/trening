@@ -8,6 +8,7 @@ import {
   recentSessionsOfType,
   compoundIsolationRatio,
   movementPatternBalance,
+  missingMovementPatterns,
   pushPullRatio
 } from '../src/lib/analytics'
 
@@ -223,5 +224,45 @@ describe('pushPullRatio', () => {
     expect(r.pushSets).toBe(0)
     expect(r.pullSets).toBe(0)
     expect(r.ratio).toBe(null)
+  })
+})
+
+describe('missingMovementPatterns', () => {
+  afterEach(() => { vi.useRealTimers() })
+
+  const wp = (date, patterns) => ({
+    date,
+    exercises: patterns.map(p => ({ name: p, sets: [{ weight: 10, reps: 10 }], movementPattern: p }))
+  })
+
+  it('zwraca [] gdy brak ćwiczeń z metadanymi w oknie (nie zgłasza "wszystko brakuje")', () => {
+    vi.useFakeTimers(); vi.setSystemTime(new Date('2026-07-08T12:00:00Z'))
+    const history = [{ date: '2026-07-07', exercises: [{ name: 'x', sets: [{ weight: 10, reps: 10 }] }] }]
+    expect(missingMovementPatterns(history, 7)).toEqual([])
+  })
+
+  it('wskazuje brakujące fundamentalne wzorce', () => {
+    vi.useFakeTimers(); vi.setSystemTime(new Date('2026-07-08T12:00:00Z'))
+    const history = [wp('2026-07-07', ['horizontal_push'])]
+    const missing = missingMovementPatterns(history, 7).map(m => m.key)
+    expect(missing).toContain('squat')
+    expect(missing).toContain('hinge')
+    expect(missing).toContain('vertical_pull')
+    expect(missing).not.toContain('horizontal_push')
+    expect(missing.length).toBe(5)
+  })
+
+  it('zwraca [] gdy wszystkie 6 fundamentalnych wzorców trenowane', () => {
+    vi.useFakeTimers(); vi.setSystemTime(new Date('2026-07-08T12:00:00Z'))
+    const history = [wp('2026-07-07', [
+      'horizontal_push', 'vertical_push', 'horizontal_pull', 'vertical_pull', 'squat', 'hinge'
+    ])]
+    expect(missingMovementPatterns(history, 7)).toEqual([])
+  })
+
+  it('ignoruje treningi spoza okna', () => {
+    vi.useFakeTimers(); vi.setSystemTime(new Date('2026-07-08T12:00:00Z'))
+    const history = [wp('2026-06-01', ['squat'])]  // > 7 dni temu
+    expect(missingMovementPatterns(history, 7)).toEqual([])
   })
 })

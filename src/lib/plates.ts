@@ -57,4 +57,4 @@ export function calculatePlates(
   }
 }
 
-export { DEFAULT_PLATES, DEFAULT_BAR, PLATE_COLORS }
+export { DEFAULT_BAR }

@@ -19,7 +19,7 @@ interface EquipmentKeyword {
   icon: string;
 }
 
-export const MUSCLE_NAMES: Record<MuscleKey, string> = {
+const MUSCLE_NAMES: Record<MuscleKey, string> = {
   'chest_upper':    'Klatka górna',
   'chest_middle':   'Klatka środkowa',
   'chest_lower':    'Klatka dolna',

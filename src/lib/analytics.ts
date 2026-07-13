@@ -219,7 +219,7 @@ export function compoundIsolationRatio(history: Workout[]): CompoundIsolationSta
   }
 }
 
-export const MOVEMENT_PATTERN_LABELS: Record<string, string> = {
+const MOVEMENT_PATTERN_LABELS: Record<string, string> = {
   horizontal_push: 'Wyciskanie poziome',
   vertical_push: 'Wyciskanie pionowe',
   horizontal_pull: 'Przyciąganie poziome',
@@ -280,4 +280,32 @@ export function pushPullRatio(history: Workout[]): PushPullStats {
     pullSets,
     ratio: pullSets > 0 ? Math.round(pushSets / pullSets * 100) / 100 : null
   }
+}
+
+// Fundamentalne wzorce, których brak w danym oknie warto zasygnalizować (bez akcesoriów
+// typu core/łydki/izolacje — tam luki są normalne).
+const FUNDAMENTAL_PATTERNS = [
+  'horizontal_push', 'vertical_push',
+  'horizontal_pull', 'vertical_pull',
+  'squat', 'hinge'
+]
+
+// Wzorce fundamentalne nietrenowane w ostatnich `days` dniach. Zwraca [] gdy w oknie
+// nie ma ŻADNYCH ćwiczeń z metadanymi (plany lokalne/custom) — żeby nie zgłaszać
+// „wszystko brakuje", gdy po prostu nie ma danych do analizy.
+export function missingMovementPatterns(history: Workout[], days: number = 7): PatternEntry[] {
+  const cutoff = Date.now() - days * 86400000
+  const trained = new Set<string>()
+  let anyMeta = false
+  for (const w of history) {
+    if (new Date(w.date).getTime() < cutoff) continue
+    for (const ex of w.exercises) {
+      const p = (ex as Exercise).movementPattern
+      if (p) { trained.add(p); anyMeta = true }
+    }
+  }
+  if (!anyMeta) return []
+  return FUNDAMENTAL_PATTERNS
+    .filter(p => !trained.has(p))
+    .map(key => ({ key, label: MOVEMENT_PATTERN_LABELS[key] || key, sets: 0 }))
 }

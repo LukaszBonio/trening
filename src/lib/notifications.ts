@@ -33,7 +33,7 @@ function singleBeep(ctx: AudioContext, startAt: number, freq: number, duration: 
   osc.stop(startAt + duration + 0.02)
 }
 
-export function playTimerEndSound(): void {
+function playTimerEndSound(): void {
   const ctx = getAudioCtx()
   if (!ctx) return
   try {
@@ -48,7 +48,7 @@ export function playTimerEndSound(): void {
   }
 }
 
-export function speak(text: string, opts: SpeakOptions = {}): void {
+function speak(text: string, opts: SpeakOptions = {}): void {
   try {
     if (!('speechSynthesis' in window)) return
     const utter = new SpeechSynthesisUtterance(text)
@@ -93,7 +93,7 @@ export function notifyTimerEnd(title: string = 'Koniec przerwy', message: string
   return notify(title, { body: message, tag: 'rest-timer' })
 }
 
-export function notify(title: string, options: NotificationOptions = {}): Notification | null {
+function notify(title: string, options: NotificationOptions = {}): Notification | null {
   try {
     if (navigator.vibrate) navigator.vibrate([300, 100, 300])
   } catch {}
