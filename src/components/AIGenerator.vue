@@ -2,7 +2,9 @@
 import { ref, computed, onBeforeUnmount } from 'vue'
 import { generateAIPlan } from '../lib/ai'
 import { getExercisesForMuscle } from '../lib/exerciseDb'
+import { getExerciseDetailsByName } from '../lib/exerciseDetails'
 import { youtubeSearchUrl } from '../lib/substitutions'
+import ExerciseInfoModal from './ExerciseInfoModal.vue'
 import { useWorkoutsStore } from '../stores/workouts'
 import { useSettingsStore, GOALS, goalLabel } from '../stores/settings'
 import { recentSessionsOfType } from '../lib/analytics'
@@ -111,6 +113,12 @@ function start() {
   if (plan.value) emit('select', plan.value)
 }
 
+// Modal "?" ze szczegółami techniki. Dostępność liczona raz na zmianę planu.
+const infoName = ref(null)
+const infoByIndex = computed(() =>
+  plan.value ? plan.value.exercises.map(ex => !!getExerciseDetailsByName(ex.name)) : []
+)
+
 // Podmiana ćwiczenia na inne z tej samej partii (muscleHead).
 const swapOpenIdx = ref(-1)
 
@@ -163,6 +171,7 @@ function statusIcon(s)  { return STATUS_META[s]?.icon || 'ti-info-circle' }
 
 <template>
   <div class="ai-gen">
+    <ExerciseInfoModal :name="infoName" @close="infoName = null" />
     <!-- Loading state: full panel placeholder -->
     <div v-if="generating" class="ai-loading">
       <div class="ai-loading-header">
@@ -314,6 +323,14 @@ function statusIcon(s)  { return STATUS_META[s]?.icon || 'ti-info-circle' }
             <span class="ai-ex-num">{{ i + 1 }}</span>
             <span class="ai-ex-vol">{{ ex.sets }} × {{ ex.reps }}</span>
             <span class="ai-ex-name">{{ ex.name }}</span>
+            <button
+              v-if="infoByIndex[i]"
+              class="ai-ex-action ai-ex-action--info"
+              @click="infoName = ex.name"
+              aria-label="Pokaż technikę ćwiczenia"
+            >
+              <i class="ti ti-help"></i>
+            </button>
             <a
               class="ai-ex-yt"
               :href="youtubeSearchUrl(ex.name)"
@@ -668,6 +685,14 @@ function statusIcon(s)  { return STATUS_META[s]?.icon || 'ti-info-circle' }
 }
 .ai-ex-action--swap:hover,
 .ai-ex-action--swap.is-active {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.ai-ex-action--info {
+  color: var(--text-muted);
+  background: transparent;
+}
+.ai-ex-action--info:hover {
   color: var(--accent);
   background: var(--accent-soft);
 }

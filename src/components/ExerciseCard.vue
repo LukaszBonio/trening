@@ -2,6 +2,8 @@
 import { ref, computed } from 'vue'
 import { useSessionStore } from '../stores/session'
 import { useSettingsStore } from '../stores/settings'
+import { getExerciseDetailsByName } from '../lib/exerciseDetails'
+import ExerciseInfoModal from './ExerciseInfoModal.vue'
 
 const props = defineProps({
   exIdx: { type: Number, required: true }
@@ -15,6 +17,10 @@ const noteEditIdx = ref(null)
 
 const exercise = computed(() => session.active?.exercises[props.exIdx])
 
+// Modal "?" ze szczegółami techniki — tylko gdy ćwiczenie jest w bazie.
+const infoName = ref(null)
+const hasInfo = computed(() => !!exercise.value && !!getExerciseDetailsByName(exercise.value.name))
+
 function toggle(setIdx) {
   const wasDone = exercise.value.sets[setIdx].done
   session.toggleSet(props.exIdx, setIdx)
@@ -24,9 +30,18 @@ function toggle(setIdx) {
 
 <template>
   <div class="ex-card" v-if="exercise">
+    <ExerciseInfoModal :name="infoName" @close="infoName = null" />
     <div class="ex-header">
       <div>
-        <div class="ex-name">{{ exercise.name }}</div>
+        <div class="ex-name">
+          {{ exercise.name }}
+          <button
+            v-if="hasInfo"
+            class="ex-info-btn"
+            @click="infoName = exercise.name"
+            aria-label="Pokaż technikę ćwiczenia"
+          >?</button>
+        </div>
         <div class="ex-tip" v-if="exercise.tip">{{ exercise.tip }}</div>
       </div>
       <div class="ex-target">{{ exercise.sets.length }} × {{ exercise.reps }}</div>
@@ -125,6 +140,24 @@ function toggle(setIdx) {
   margin-bottom: var(--space-3);
 }
 .ex-name { font-weight: 600; font-size: 15px; }
+.ex-info-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-left: 4px;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elev-2);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  vertical-align: middle;
+  transition: color var(--dur), border-color var(--dur);
+}
+.ex-info-btn:hover { color: var(--accent); border-color: var(--accent); }
 .ex-tip { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 .ex-target {
   font-size: 12px;

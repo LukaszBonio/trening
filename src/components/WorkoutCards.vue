@@ -5,6 +5,8 @@ import { useSettingsStore } from '../stores/settings'
 import { useWorkoutsStore } from '../stores/workouts'
 import { detectMuscle, getMuscleName, detectEquipment } from '../lib/muscles'
 import { findSubstitutes, youtubeSearchUrl } from '../lib/substitutions'
+import { getExerciseDetailsByName } from '../lib/exerciseDetails'
+import ExerciseInfoModal from './ExerciseInfoModal.vue'
 import { lastSetFor } from '../lib/analytics'
 import { suggestNextWeight } from '../lib/progression'
 import { useDialog } from '../composables/useDialog'
@@ -50,6 +52,10 @@ onTimerEnd(() => {
 
 const showSubstitutes = ref(false)
 const showRpeHelp = ref(false)
+
+// Modal "?" ze szczegółami techniki — tylko dla ćwiczeń z bazy (spoza bazy brak danych).
+const infoName = ref(null)
+const hasInfo = computed(() => !!currentEx.value && !!getExerciseDetailsByName(currentEx.value.name))
 
 const muscleName = computed(() => {
   if (!currentEx.value) return ''
@@ -201,6 +207,8 @@ watch([exIdx, setIdx, () => session.active?.id], suggestWeightIfEmpty, { immedia
     </div>
   </div>
 
+  <ExerciseInfoModal :name="infoName" @close="infoName = null" />
+
   <div v-if="currentEx" class="focus-wrap">
     <!-- Top bar: progress + nav -->
     <div class="top-bar">
@@ -300,6 +308,15 @@ watch([exIdx, setIdx, () => session.active?.id], suggestWeightIfEmpty, { immedia
         <div class="ex-tip" v-if="currentEx.tip">{{ currentEx.tip }}</div>
 
         <div class="ex-actions">
+          <button
+            v-if="hasInfo"
+            class="ex-action-btn"
+            @click="infoName = currentEx.name"
+            aria-label="Pokaż technikę ćwiczenia"
+          >
+            <i class="ti ti-help"></i>
+            <span>Technika</span>
+          </button>
           <a :href="ytUrl" target="_blank" rel="noopener" class="ex-action-btn yt-btn">
             <i class="ti ti-brand-youtube"></i>
             <span>YT</span>

@@ -21,12 +21,13 @@ describe('MUSCLE_TO_GROUP', () => {
 })
 
 describe('PRIMARY_TO_GROUP', () => {
-  it('zawiera 12 angielskich kluczy AI', () => {
+  it('zawiera 13 angielskich kluczy AI', () => {
     const keys = Object.keys(PRIMARY_TO_GROUP)
     expect(keys).toContain('chest')
     expect(keys).toContain('rear_shoulders')
     expect(keys).toContain('core')
-    expect(keys.length).toBe(12)
+    expect(keys).toContain('adductors')
+    expect(keys.length).toBe(13)
   })
   it('każdy klucz mapuje na klucz obecny w GROUP_LABELS', () => {
     for (const group of Object.values(PRIMARY_TO_GROUP)) {

@@ -49,7 +49,6 @@ export const EXERCISE_PREMIUM: Record<string, PremiumExerciseFields> = {
   // ── BARKI PRZEDNIE ──
   'wyciskanie-sztangi-nad-glowe':         p('mid',        4, { shoulder: 6, elbow: 4, wrist: 4, lowerBack: 6 }, 'medium',   ['shoulder_impingement', 'lumbar_disc']),
   'wyciskanie-hantli-nad-glowe':          p('mid',        4, { shoulder: 5, elbow: 4, wrist: 3, lowerBack: 5 }, 'medium',   ['shoulder_impingement']),
-  'wyciskanie-hantli-siedzac':            p('mid',        4, { shoulder: 5, elbow: 4, wrist: 3, lowerBack: 3 }, 'low',      ['shoulder_impingement']),
   'wyciskanie-arnolda':                   p('mid',        5, { shoulder: 6, elbow: 3, wrist: 3, lowerBack: 3 }, 'medium',   ['shoulder_impingement']),
   'wyciskanie-nad-glowa-na-maszynie':     p('mid',        4, { shoulder: 4, elbow: 3, wrist: 2, lowerBack: 2 }, 'low'),
   'wznosy-hantli-przodem':                p('contraction', 3, { shoulder: 5, elbow: 1, wrist: 2, lowerBack: 2 }, 'low',      ['shoulder_impingement']),
@@ -86,7 +85,6 @@ export const EXERCISE_PREMIUM: Record<string, PremiumExerciseFields> = {
   'sciaganie-drazka-podchwytem':          p('contraction', 5, { shoulder: 3, elbow: 4, lowerBack: 2 }, 'low'),
   'sciaganie-drazka-na-prostych-ramionach': p('contraction', 6, { shoulder: 4, lowerBack: 2 }, 'low'),
   'pullover-z-hantla':                    p('stretch',    8, { shoulder: 5, elbow: 2, lowerBack: 2 }, 'medium',   ['shoulder_impingement']),
-  'pullover-na-wyciagu':                  p('stretch',    7, { shoulder: 4, lowerBack: 2 }, 'low',      ['shoulder_impingement']),
 
   // ── PLECY ŚRODKOWE ── (wiosłowania w opadzie mocno obciążają L-kręgosłup)
   'wioslowanie-sztanga-w-opadzie':        p('contraction', 5, { lowerBack: 7, shoulder: 4, elbow: 4 }, 'medium',   ['lumbar_disc']),

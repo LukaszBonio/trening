@@ -117,7 +117,7 @@ const EN_TO_PL: Record<string, string> = {
   'military press': 'Wyciskanie żołnierskie',
   'shoulder press': 'Wyciskanie hantli nad głowę',
   'dumbbell shoulder press': 'Wyciskanie hantli nad głowę',
-  'seated dumbbell press': 'Wyciskanie hantli siedząc',
+  'seated dumbbell press': 'Wyciskanie hantli nad głowę',
   'arnold press': 'Wyciskanie arnolda',
   'front raise': 'Wznosy hantli przodem',
   'dumbbell front raise': 'Wznosy hantli przodem',

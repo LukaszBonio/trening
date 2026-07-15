@@ -274,7 +274,7 @@ const PUSH_EXERCISES: ExerciseEntry[] = [
     muscleHead: 'chest_lower',
     equipment: 'własna_waga',
     exerciseType: 'compound',
-    movementPattern: 'horizontal_push',
+    movementPattern: 'vertical_push',
     difficulty: 'intermediate',
     isUnilateral: false,
     defaultSets: 3,
@@ -317,7 +317,7 @@ const PUSH_EXERCISES: ExerciseEntry[] = [
   {
     id: 'wyciskanie-hantli-nad-glowe',
     name: 'Wyciskanie hantli nad głowę',
-    aliases: ['dumbbell shoulder press', 'dumbbell overhead press', 'shoulder press'],
+    aliases: ['dumbbell shoulder press', 'dumbbell overhead press', 'shoulder press', 'seated dumbbell press', 'seated shoulder press', 'seated dumbbell shoulder press', 'wyciskanie hantli siedząc'],
     primaryMuscle: 'shoulders',
     muscleHead: 'shoulder_front',
     equipment: 'hantle',
@@ -327,22 +327,7 @@ const PUSH_EXERCISES: ExerciseEntry[] = [
     isUnilateral: false,
     defaultSets: 4,
     defaultReps: '8-12',
-    tip: 'Można stojąc lub siedząc. Wyciskaj hantle po łuku ku środkowi.',
-  },
-  {
-    id: 'wyciskanie-hantli-siedzac',
-    name: 'Wyciskanie hantli siedząc',
-    aliases: ['seated dumbbell press', 'seated shoulder press', 'seated dumbbell shoulder press'],
-    primaryMuscle: 'shoulders',
-    muscleHead: 'shoulder_front',
-    equipment: 'hantle',
-    exerciseType: 'compound',
-    movementPattern: 'vertical_push',
-    difficulty: 'intermediate',
-    isUnilateral: false,
-    defaultSets: 4,
-    defaultReps: '8-12',
-    tip: 'Oparcie ławki 85-90°. Łokcie pod hantlami przez cały ruch.',
+    tip: 'Można stojąc lub siedząc (oparcie 85-90°). Wyciskaj hantle po łuku ku środkowi, łokcie pod hantlami.',
   },
   {
     id: 'wyciskanie-arnolda',
@@ -475,7 +460,7 @@ const PUSH_EXERCISES: ExerciseEntry[] = [
     muscleHead: 'shoulder_side',
     equipment: 'sztanga',
     exerciseType: 'compound',
-    movementPattern: 'vertical_push',
+    movementPattern: 'vertical_pull',
     difficulty: 'intermediate',
     isUnilateral: false,
     defaultSets: 3,
@@ -715,7 +700,7 @@ const PULL_EXERCISES: ExerciseEntry[] = [
   {
     id: 'sciaganie-drazka-na-prostych-ramionach',
     name: 'Ściąganie drążka na prostych ramionach',
-    aliases: ['straight arm pulldown', 'straight arm lat pulldown'],
+    aliases: ['straight arm pulldown', 'straight arm lat pulldown', 'cable pullover', 'cable straight arm pullover', 'pullover na wyciągu'],
     primaryMuscle: 'back',
     muscleHead: 'back_lats',
     equipment: 'wyciąg',
@@ -725,7 +710,7 @@ const PULL_EXERCISES: ExerciseEntry[] = [
     isUnilateral: false,
     defaultSets: 3,
     defaultReps: '12-15',
-    tip: 'Ramiona proste przez cały ruch. Ciągnij drążek do ud łukiem.',
+    tip: 'Ramiona proste przez cały ruch. Ciągnij drążek do ud łukiem, czuj rozciągnięcie latsów.',
   },
   {
     id: 'pullover-z-hantla',
@@ -741,21 +726,6 @@ const PULL_EXERCISES: ExerciseEntry[] = [
     defaultSets: 3,
     defaultReps: '12-15',
     tip: 'Leż w poprzek ławki. Opuszczaj hantlę za głowę z łukiem w łokciach.',
-  },
-  {
-    id: 'pullover-na-wyciagu',
-    name: 'Pullover na wyciągu',
-    aliases: ['cable pullover', 'cable straight arm pullover'],
-    primaryMuscle: 'back',
-    muscleHead: 'back_lats',
-    equipment: 'wyciąg',
-    exerciseType: 'isolation',
-    movementPattern: 'vertical_pull',
-    difficulty: 'intermediate',
-    isUnilateral: false,
-    defaultSets: 3,
-    defaultReps: '12-15',
-    tip: 'Stały opór wyciągu przez cały zakres. Czuj rozciągnięcie latsów.',
   },
 
   // ===================== PLECY ŚRODKOWE (back_middle) =====================
@@ -1047,7 +1017,7 @@ const PULL_EXERCISES: ExerciseEntry[] = [
     name: 'Uginanie na modlitewniku',
     aliases: ['preacher curl', 'scott curl', 'ez preacher curl'],
     primaryMuscle: 'biceps',
-    muscleHead: 'biceps_long',
+    muscleHead: 'biceps_short',
     equipment: 'sztanga',
     exerciseType: 'isolation',
     movementPattern: 'elbow_flexion',
@@ -1092,7 +1062,7 @@ const PULL_EXERCISES: ExerciseEntry[] = [
     name: 'Spider curl',
     aliases: ['spider curl', 'prone incline curl'],
     primaryMuscle: 'biceps',
-    muscleHead: 'biceps_long',
+    muscleHead: 'biceps_short',
     equipment: 'hantle',
     exerciseType: 'isolation',
     movementPattern: 'elbow_flexion',
@@ -1569,7 +1539,7 @@ const LEGS_EXERCISES: ExerciseEntry[] = [
     id: 'przywodzenie-nog-na-maszynie',
     name: 'Przywodzenie nóg na maszynie',
     aliases: ['hip adduction', 'hip adduction machine', 'adductor machine'],
-    primaryMuscle: 'quads',
+    primaryMuscle: 'adductors',
     muscleHead: 'adductors',
     equipment: 'maszyna',
     exerciseType: 'isolation',
@@ -1772,7 +1742,8 @@ const LEGS_EXERCISES: ExerciseEntry[] = [
 //  Helpers
 // ---------------------------------------------------------------------------
 
-const ALL_EXERCISES = [...PUSH_EXERCISES, ...PULL_EXERCISES, ...LEGS_EXERCISES]
+// Eksport pełnej listy — używany przez testy spójności (pokrycie exerciseDetails).
+export const ALL_EXERCISES = [...PUSH_EXERCISES, ...PULL_EXERCISES, ...LEGS_EXERCISES]
 
 const _byId = new Map<string, ExerciseEntry>()
 const _byName = new Map<string, ExerciseEntry>()

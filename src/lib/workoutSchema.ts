@@ -145,6 +145,7 @@ export const PRIMARY_TO_GROUP: Record<string, GroupId> = {
   quads: 'czworogłowy',
   hamstrings: 'hamstring',
   glutes: 'pośladki',
+  adductors: 'pośladki',
   calves: 'łydki',
   core: 'core'
 }
