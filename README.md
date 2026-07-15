@@ -47,7 +47,7 @@ prowadzi Cię przez trening seria po serii i analizuje postępy. Działa offline
 Plany generuje **Claude** (model `claude-sonnet-4-6`) z uwzględnieniem Twojego celu i historii.
 
 Aplikacja zbudowana jest na **Vue 3 + TypeScript + Vite + Pinia** — 6 widoków, 21 komponentów, 6 composables,
-8 stores, 27 lib modules z **223 testami** (Vitest). PWA z Service Workerem zapewnia działanie offline.
+7 stores, 27 lib modules z **223 testami** (Vitest). PWA z Service Workerem zapewnia działanie offline.
 Klucz API jest ukryty za serwerem proxy (Cloudflare Worker z JWT auth) — **użytkownik nie potrzebuje własnego klucza API.**
 
 > **Dla kogo?** Dla osób trenujących siłowo, które chcą gotowego planu na dziś, prostego
@@ -104,7 +104,7 @@ Klucz API jest ukryty za serwerem proxy (Cloudflare Worker z JWT auth) — **uż
 - **Top 10 PR** — ranking rekordów osobistych ze wzorem Epley (1RM ≈ weight × (1 + reps/30))
 - **Wolumen wg partii mięśniowej** — paski z rankingiem najbardziej trenowanych grup
 - **Analiza wzorców ruchowych** — compound/isolation ratio, push/pull balance, rozkład wzorców ruchowych (horizontal push/pull, vertical push/pull, squat, hinge, itd.)
-- **11 osiągnięć** — milestones (1/10/25/50/100/250 treningów, streak 2/4/8/12 tyg., PPL ×10, 100 kg club)
+- **14 osiągnięć** — milestones (1/10/25/50/100/250 treningów, streak 2/4/8/12 tyg., Push/Pull/Legs ×10, 100 kg klub) + 3 za dziennik wagi (1/10/30 pomiarów), gdy go prowadzisz
 
 ### 🔐 Logowanie i synchronizacja w chmurze
 - **Wymagane konto** (Supabase, email + hasło) — cała aplikacja jest za bramką logowania
@@ -311,7 +311,7 @@ trening/
 │   │   └── YouView.vue         #   Konto, ustawienia, backup
 │   ├── components/             # 21 komponentów (BaseCard, WorkoutCards, RestTimer, AICoach, ...)
 │   ├── composables/            # 6 composables (useRestTimer, useSetNavigation, useCoach, ...)
-│   ├── stores/                 # 8 Pinia stores (workouts, session, cloud, ...)
+│   ├── stores/                 # 7 Pinia stores (workouts, session, cloud, ...)
 │   ├── lib/                    # 21 pure modules (muscles, plans, exerciseDb, ai, coach, ...)
 │   └── styles/global.css       # CSS variables (dark/light themes)
 ├── test/                       # 17 plików testowych Vitest (223 testów)
@@ -359,7 +359,7 @@ trening/
 | **Framework** | [Vue 3.5](https://vuejs.org/) (Composition API + `<script setup>`) |
 | **Build / Dev** | [Vite 5.4](https://vitejs.dev/) + [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) |
 | **Testy** | [Vitest 3.2](https://vitest.dev/) — 223 testów (17 plików), env `node` |
-| **State** | [Pinia 2.2](https://pinia.vuejs.org/) — 8 stores, reactive, persistent |
+| **State** | [Pinia 2.2](https://pinia.vuejs.org/) — 7 stores, reactive, persistent |
 | **Routing** | [Vue Router 4](https://router.vuejs.org/) — hash mode, lazy-loaded views |
 | **Wykresy** | [Chart.js 4.4](https://www.chartjs.org/) — line, bar, lazy-loaded chunk |
 | **PDF** | [jsPDF 2.5](https://github.com/parallax/jsPDF) — eksport treningu |
@@ -516,7 +516,7 @@ podczas treningu. Możesz przełączyć na tryb listy w **Ty → Ustawienia → 
 
 **Architektura:**
 - [x] Vue 3 + Vite + Pinia (port z 8270-LOC monolitu vanilla JS)
-- [x] 8 Pinia stores, 21 komponentów, 6 composables, 6 widoków z lazy-loadingiem
+- [x] 7 Pinia stores, 21 komponentów, 6 composables, 6 widoków z lazy-loadingiem
 - [x] Vue Router (hash mode), page transitions
 - [x] 223 testów Vitest (17 plików) — composables, lib modules, stores
 
