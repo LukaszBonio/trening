@@ -27,27 +27,41 @@ interface CallClaudeOptions {
   timeoutMs?: number
 }
 
-interface ClaudeMessage {
-  role: string
-  content: string
-}
-
-interface ClaudeRequestBody {
-  model: string
-  max_tokens: number
-  messages: ClaudeMessage[]
-}
-
 interface ClaudeContentBlock {
   text?: string
 }
 
-interface ClaudeResponse {
-  content: ClaudeContentBlock[]
-}
-
 interface ClaudeErrorResponse {
   error?: { message?: string }
+}
+
+// Definicja narzędzia (tool use) przekazywana do modelu.
+export interface ClaudeTool {
+  name: string
+  description: string
+  input_schema: Record<string, unknown>
+}
+
+// Wiadomość w formacie messages API — content może być tekstem albo tablicą bloków
+// (text / tool_use / tool_result) w pętli narzędziowej.
+export interface ClaudeRawMessage {
+  role: 'user' | 'assistant'
+  content: string | Array<Record<string, unknown>>
+}
+
+export interface ClaudeRawResponse {
+  content: Array<Record<string, any>>
+  stop_reason: string
+}
+
+interface CallClaudeRawOptions {
+  messages: ClaudeRawMessage[]
+  system?: string
+  tools?: ClaudeTool[]
+  toolChoice?: Record<string, unknown>
+  maxTokens?: number
+  signal?: AbortSignal
+  timeoutMs?: number
 }
 
 export interface AIExercise {
@@ -118,7 +132,7 @@ interface CacheEntry {
 
 // Worker proxy URL — można nadpisać przez `.env` (VITE_AI_PROXY_URL) lub localStorage 'tp_proxy_url'.
 const DEFAULT_PROXY: string = import.meta.env?.VITE_AI_PROXY_URL || 'https://trening-pro-api.lukasz-mateusz-bonio.workers.dev'
-const MODEL = 'claude-sonnet-4-6'
+const MODEL = 'claude-sonnet-5'
 
 function getProxyUrl(): string {
   try {
@@ -128,7 +142,14 @@ function getProxyUrl(): string {
   }
 }
 
-export async function callClaude({ prompt, maxTokens = 2500, signal, timeoutMs = 60000 }: CallClaudeOptions): Promise<string> {
+// Wspólny POST do proxy z obsługą timeoutu + abortu. Zwraca sparsowany JSON odpowiedzi.
+// thinking: disabled — sonnet-5 domyślnie włącza adaptive thinking, co zjadałoby budżet
+// max_tokens (ryzyko ucięcia planu JSON) i dokładałoby koszt/latencję; wyłączamy świadomie.
+async function _postToProxy(
+  body: Record<string, unknown>,
+  signal?: AbortSignal,
+  timeoutMs = 60000
+): Promise<Record<string, any>> {
   if (!navigator.onLine) {
     throw new Error('Brak połączenia z internetem')
   }
@@ -138,7 +159,6 @@ export async function callClaude({ prompt, maxTokens = 2500, signal, timeoutMs =
   // Default 60s timeout — wcześniej request mógł wisieć indefinitely jeśli user nie podał signal.
   const timeoutCtrl = new AbortController()
   const timer = setTimeout(() => timeoutCtrl.abort(), timeoutMs)
-  // Połącz user signal z timeout signal.
   const onUserAbort = (): void => timeoutCtrl.abort()
   if (signal) signal.addEventListener('abort', onUserAbort)
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
@@ -151,11 +171,7 @@ export async function callClaude({ prompt, maxTokens = 2500, signal, timeoutMs =
       method: 'POST',
       signal: timeoutCtrl.signal,
       headers,
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: maxTokens,
-        messages: [{ role: 'user', content: prompt }]
-      } satisfies ClaudeRequestBody)
+      body: JSON.stringify({ model: MODEL, thinking: { type: 'disabled' }, ...body })
     })
   } finally {
     clearTimeout(timer)
@@ -166,10 +182,33 @@ export async function callClaude({ prompt, maxTokens = 2500, signal, timeoutMs =
     const err: ClaudeErrorResponse = await resp.json().catch(() => ({}))
     throw new Error(err.error?.message || `HTTP ${resp.status}`)
   }
-  const data: ClaudeResponse = await resp.json()
+  return await resp.json()
+}
+
+export async function callClaude({ prompt, maxTokens = 2500, signal, timeoutMs = 60000 }: CallClaudeOptions): Promise<string> {
+  const data = await _postToProxy(
+    { max_tokens: maxTokens, messages: [{ role: 'user', content: prompt }] },
+    signal,
+    timeoutMs
+  )
   if (!Array.isArray(data.content)) throw new Error('Pusta odpowiedź API')
   const text = data.content.map((c: ClaudeContentBlock) => c.text || '').join('')
   return text.replace(/```json|```/g, '').trim()
+}
+
+// Wywołanie w formacie messages API z obsługą narzędzi (tool use). Zwraca surową
+// odpowiedź (bloki content + stop_reason), by wywołujący mógł prowadzić pętlę narzędziową.
+export async function callClaudeRaw(opts: CallClaudeRawOptions): Promise<ClaudeRawResponse> {
+  const body: Record<string, unknown> = {
+    max_tokens: opts.maxTokens ?? 1024,
+    messages: opts.messages
+  }
+  if (opts.system) body.system = opts.system
+  if (opts.tools && opts.tools.length) body.tools = opts.tools
+  if (opts.toolChoice) body.tool_choice = opts.toolChoice
+  const data = await _postToProxy(body, opts.signal, opts.timeoutMs ?? 60000)
+  if (!Array.isArray(data.content)) throw new Error('Pusta odpowiedź API')
+  return { content: data.content, stop_reason: data.stop_reason || 'end_turn' }
 }
 
 export function parseClaudeJSON(rawText: string): Record<string, unknown> {

@@ -2,7 +2,9 @@ import { describe, it, expect } from 'vitest'
 import {
   buildCoachAnalysisPrompt,
   normalizeCoachAnalysis,
-  buildCoachChatPrompt,
+  buildCoachChatSystem,
+  executeCoachTool,
+  COACH_TOOLS,
   COACH_MIN_WORKOUTS
 } from '../src/lib/coach'
 
@@ -78,26 +80,46 @@ describe('normalizeCoachAnalysis', () => {
   })
 })
 
-describe('buildCoachChatPrompt', () => {
-  it('zawiera cel, historię i rozmowę', () => {
-    const p = buildCoachChatPrompt({
-      goalLabel: 'Redukcja',
-      history,
-      messages: [
-        { role: 'user', text: 'Mam stagnację?' },
-        { role: 'assistant', text: 'Sprawdźmy dane.' },
-        { role: 'user', text: 'No i co?' }
-      ]
-    })
+describe('buildCoachChatSystem', () => {
+  it('zawiera cel, historię, wskazówkę o narzędziach i "bez markdown"', () => {
+    const p = buildCoachChatSystem({ goalLabel: 'Redukcja', history })
     expect(p).toContain('CEL UŻYTKOWNIKA: Redukcja')
-    expect(p).toContain('Użytkownik: Mam stagnację?')
-    expect(p).toContain('Coach: Sprawdźmy dane.')
     expect(p).toContain('Wyciskanie sztangi na ławce poziomej')
     expect(p).toContain('bez markdown')
+    expect(p).toContain('narzędzia')
   })
   it('brak historii → "brak danych"', () => {
-    const p = buildCoachChatPrompt({ goalLabel: 'Masa', history: [], messages: [{ role: 'user', text: 'hej' }] })
+    const p = buildCoachChatSystem({ goalLabel: 'Masa', history: [] })
     expect(p).toContain('brak danych')
+  })
+})
+
+describe('executeCoachTool', () => {
+  it('lista_cwiczen zwraca nazwy z liczbą sesji', () => {
+    const out = executeCoachTool('lista_cwiczen', {}, history)
+    expect(out).toContain('Wyciskanie sztangi na ławce poziomej')
+    expect(out).toContain('3×')
+  })
+  it('progres_cwiczenia zwraca chronologię i rekord', () => {
+    const out = executeCoachTool('progres_cwiczenia', { nazwa: 'Wyciskanie sztangi na ławce poziomej' }, history)
+    expect(out).toContain('2026-07-05')
+    expect(out).toContain('1RM')
+    expect(out).toContain('Rekord')
+  })
+  it('progres_cwiczenia dla nieznanego ćwiczenia → komunikat', () => {
+    const out = executeCoachTool('progres_cwiczenia', { nazwa: 'Nie istnieje' }, history)
+    expect(out).toContain('Brak danych')
+  })
+  it('analiza_wzorcow zwraca sekcje balansu', () => {
+    const out = executeCoachTool('analiza_wzorcow', {}, history)
+    expect(out).toContain('Compound/Isolation')
+    expect(out).toContain('Push/Pull')
+  })
+  it('nieznane narzędzie → komunikat', () => {
+    expect(executeCoachTool('xyz', {}, history)).toContain('Nieznane narzędzie')
+  })
+  it('COACH_TOOLS ma 3 narzędzia z poprawnymi nazwami', () => {
+    expect(COACH_TOOLS.map(t => t.name)).toEqual(['lista_cwiczen', 'progres_cwiczenia', 'analiza_wzorcow'])
   })
 })
 

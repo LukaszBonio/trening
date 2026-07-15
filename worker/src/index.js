@@ -2,7 +2,9 @@ const CLAUDE_API = 'https://api.anthropic.com/v1/messages'
 
 // Twarde limity — Worker to proxy płacące naszym kluczem, a rejestracja jest otwarta.
 // Bez tego dowolny zalogowany user mógłby podać własny model / max_tokens / prompt.
-const ALLOWED_MODELS = new Set(['claude-sonnet-4-6'])
+// sonnet-4-6 zostaje na whiteliście przejściowo, żeby redeploy Workera był niezależny
+// od kolejności wdrożenia frontendu (stary front nadal działa po redeployu).
+const ALLOWED_MODELS = new Set(['claude-sonnet-5', 'claude-sonnet-4-6'])
 const MAX_TOKENS_CAP = 4096
 const MAX_PROMPT_CHARS = 100000  // ~25k tokenów wejścia — z zapasem na katalog ćwiczeń
 
@@ -151,7 +153,10 @@ export default {
       model: body.model,
       max_tokens: maxTokens,
       messages: body.messages,
-      ...(typeof body.system === 'string' ? { system: body.system } : {})
+      ...(typeof body.system === 'string' ? { system: body.system } : {}),
+      ...(Array.isArray(body.tools) ? { tools: body.tools } : {}),
+      ...(body.tool_choice ? { tool_choice: body.tool_choice } : {}),
+      ...(body.thinking ? { thinking: body.thinking } : {})
     }
 
     const resp = await fetch(CLAUDE_API, {

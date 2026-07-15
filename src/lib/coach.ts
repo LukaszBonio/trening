@@ -4,8 +4,12 @@
 // Uzupełnia (nie dubluje) weeklyReport: tygodniowy raport = digest 14 dni,
 // Coach = trendy per ćwiczenie (stagnacja/progres/regres) + interaktywne Q&A.
 
-import { callClaude, parseClaudeJSON } from './ai'
-import type { Workout } from './analytics'
+import { callClaude, callClaudeRaw, parseClaudeJSON, type ClaudeTool, type ClaudeRawMessage } from './ai'
+import {
+  uniqueExercises, exerciseProgress, personalRecords,
+  compoundIsolationRatio, pushPullRatio, movementPatternBalance, missingMovementPatterns,
+  type Workout
+} from './analytics'
 
 export const COACH_MIN_WORKOUTS = 3
 const ANALYSIS_MAX_HISTORY = 30        // ile ostatnich treningów bierzemy pod uwagę
@@ -159,24 +163,120 @@ function chatHistorySnapshot(history: Workout[]): string {
   }).join('\n')
 }
 
-export function buildCoachChatPrompt(opts: { goalLabel: string; history: Workout[]; messages: CoachMessage[] }): string {
-  const convo = opts.messages.map(m => (m.role === 'user' ? 'Użytkownik: ' : 'Coach: ') + m.text).join('\n')
-  return `Jesteś doświadczonym trenerem siłowym. Odpowiadasz po polsku, rzeczowo i krótko (max 4–5 zdań), konkretnie i praktycznie. Opierasz się na danych użytkownika, nie zmyślasz.
+// System prompt czatu — persona + cel + skrót historii + wskazówka o narzędziach.
+// Rozmowa idzie osobno w tablicy messages (format tool use), nie w tym stringu.
+export function buildCoachChatSystem(opts: { goalLabel: string; history: Workout[] }): string {
+  return `Jesteś doświadczonym trenerem siłowym. Odpowiadasz po polsku, rzeczowo i krótko (max 4–5 zdań), konkretnie i praktycznie. Opierasz się na danych użytkownika, nie zmyślasz. Zwykły tekst, bez markdown.
 
 CEL UŻYTKOWNIKA: ${opts.goalLabel || '—'}
 OSTATNIE TRENINGI (najcięższa seria per ćwiczenie):
 ${chatHistorySnapshot(opts.history)}
 
-ROZMOWA:
-${convo}
-
-Odpowiedz na ostatnią wiadomość użytkownika jako Coach. Zwykły tekst, bez markdown.`
+Masz narzędzia do odpytania danych treningowych użytkownika — użyj ich, gdy pytanie wymaga liczb spoza powyższego skrótu (progres konkretnego ćwiczenia, balans wzorców, pełna lista ćwiczeń). Nie zgaduj wartości, których nie masz — najpierw sięgnij po narzędzie. Gdy dane wystarczają, odpowiedz od razu.`
 }
+
+// Narzędzia Coacha — wykonywane po stronie klienta na historii treningów (Pinia).
+export const COACH_TOOLS: ClaudeTool[] = [
+  {
+    name: 'lista_cwiczen',
+    description: 'Lista wszystkich ćwiczeń wykonanych przez użytkownika wraz z liczbą sesji. Użyj, by poznać dokładne nazwy przed odpytaniem o progres.',
+    input_schema: { type: 'object', properties: {}, additionalProperties: false }
+  },
+  {
+    name: 'progres_cwiczenia',
+    description: 'Chronologiczny progres jednego ćwiczenia (data, najlepszy ciężar × powt., szac. 1RM, tonaż) + rekord osobisty. Użyj przy pytaniach o postęp/stagnację danego ćwiczenia.',
+    input_schema: {
+      type: 'object',
+      properties: { nazwa: { type: 'string', description: 'Dokładna nazwa ćwiczenia (jak w lista_cwiczen)' } },
+      required: ['nazwa'],
+      additionalProperties: false
+    }
+  },
+  {
+    name: 'analiza_wzorcow',
+    description: 'Balans treningu: udział compound/isolation, stosunek push/pull, rozkład serii wg wzorca ruchowego i fundamentalne wzorce nietrenowane ostatnio. Opcjonalnie zawęź do ostatnich N dni.',
+    input_schema: {
+      type: 'object',
+      properties: { dni: { type: 'integer', description: 'Okno w dniach (np. 30). Pomiń, by objąć całą historię.' } },
+      additionalProperties: false
+    }
+  }
+]
+
+// Wykonanie narzędzia — czysta funkcja nad historią (testowalna, bez sieci).
+export function executeCoachTool(name: string, input: Record<string, any>, history: Workout[]): string {
+  switch (name) {
+    case 'lista_cwiczen': {
+      const list = uniqueExercises(history).sort((a, b) => b.count - a.count).slice(0, 40)
+      return list.length ? list.map(e => `${e.name} — ${e.count}×`).join('\n') : 'Brak zarejestrowanych ćwiczeń.'
+    }
+    case 'progres_cwiczenia': {
+      const nazwa = String(input?.nazwa || '').trim()
+      if (!nazwa) return 'Podaj nazwę ćwiczenia.'
+      const points = exerciseProgress(history, nazwa)
+      if (!points.length) return `Brak danych dla "${nazwa}". Sprawdź dokładną nazwę przez lista_cwiczen.`
+      const pr = personalRecords(history).find(p => p.name.toLowerCase() === nazwa.toLowerCase())
+      const head = pr ? `Rekord: ${pr.weight}kg×${pr.reps} (1RM≈${pr.best1RM}kg)\n` : ''
+      const lines = points.map(p => `${p.date}: ${p.bestWeight}kg×${p.bestReps} (1RM≈${p.best1RM}kg, tonaż ${p.totalVolume}kg)`)
+      return head + lines.join('\n')
+    }
+    case 'analiza_wzorcow': {
+      const dni = Number(input?.dni)
+      const windowed = Number.isFinite(dni) && dni > 0
+      const scoped = windowed
+        ? history.filter(w => new Date(w.date).getTime() >= Date.now() - dni * 86400000)
+        : history
+      const ci = compoundIsolationRatio(scoped)
+      const pp = pushPullRatio(scoped)
+      const patterns = movementPatternBalance(scoped)
+      const missing = missingMovementPatterns(scoped, windowed ? dni : 7)
+      const parts: string[] = []
+      parts.push(`Compound/Isolation: ${ci.compoundRatio}% compound (${ci.compound} vs ${ci.isolation} ćwiczeń)`)
+      parts.push(pp.ratio != null ? `Push/Pull: ${pp.ratio} (${pp.pushSets} push / ${pp.pullSets} pull serii)` : 'Push/Pull: za mało danych')
+      if (patterns.length) parts.push('Wzorce (serie): ' + patterns.map(p => `${p.label} ${p.sets}`).join(', '))
+      if (missing.length) parts.push('Brakujące fundamentalne wzorce: ' + missing.map(m => m.label).join(', '))
+      return parts.join('\n')
+    }
+    default:
+      return `Nieznane narzędzie: ${name}`
+  }
+}
+
+// Ile rund narzędziowych zanim wymusimy finalną odpowiedź (zabezpieczenie przed pętlą).
+const COACH_MAX_TOOL_STEPS = 4
 
 export async function runCoachChat(
   opts: { goalLabel: string; history: Workout[]; messages: CoachMessage[]; signal?: AbortSignal }
 ): Promise<string> {
-  const prompt = buildCoachChatPrompt(opts)
-  const reply = await callClaude({ prompt, maxTokens: 600, signal: opts.signal })
-  return (reply || '').trim()
+  const system = buildCoachChatSystem({ goalLabel: opts.goalLabel, history: opts.history })
+  const messages: ClaudeRawMessage[] = opts.messages.map(m => ({ role: m.role, content: m.text }))
+
+  let lastText = ''
+  for (let step = 0; step < COACH_MAX_TOOL_STEPS; step++) {
+    const res = await callClaudeRaw({ system, messages, tools: COACH_TOOLS, maxTokens: 800, signal: opts.signal })
+    const text = res.content.filter(b => b.type === 'text').map(b => b.text || '').join('').trim()
+    if (text) lastText = text
+
+    if (res.stop_reason !== 'tool_use') {
+      return text || lastText || 'Nie mam na to dobrej odpowiedzi.'
+    }
+
+    const toolUses = res.content.filter(b => b.type === 'tool_use')
+    if (!toolUses.length) return text || lastText || 'Nie mam na to dobrej odpowiedzi.'
+
+    // Odłóż turę asystenta (z blokami tool_use), potem wyniki narzędzi jako turę użytkownika.
+    messages.push({ role: 'assistant', content: res.content })
+    const results = toolUses.map(tu => {
+      let out: string
+      try { out = executeCoachTool(String(tu.name), tu.input || {}, opts.history) }
+      catch { out = 'Błąd narzędzia.' }
+      return { type: 'tool_result', tool_use_id: tu.id, content: out }
+    })
+    messages.push({ role: 'user', content: results })
+  }
+
+  // Limit rund wyczerpany — wymuś finalną odpowiedź bez narzędzi.
+  const res = await callClaudeRaw({ system, messages, maxTokens: 800, signal: opts.signal })
+  const text = res.content.filter(b => b.type === 'text').map(b => b.text || '').join('').trim()
+  return text || lastText || 'Nie udało się dokończyć odpowiedzi.'
 }
