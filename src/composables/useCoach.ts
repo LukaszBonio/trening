@@ -44,13 +44,22 @@ export function useCoach() {
     }
   }
 
-  async function ask(text: string, ctx: { goalLabel: string; history: Workout[] }): Promise<void> {
+  async function ask(
+    text: string,
+    ctx: { goalLabel: string; history: Workout[]; body?: { date: string; weight: number }[]; style?: string }
+  ): Promise<void> {
     const clean = String(text || '').trim()
     if (!clean || chatBusy.value) return
     messages.value.push({ role: 'user', text: clean })
     chatBusy.value = true
     try {
-      const reply = await runCoachChat({ goalLabel: ctx.goalLabel, history: ctx.history, messages: messages.value })
+      const reply = await runCoachChat({
+        goalLabel: ctx.goalLabel,
+        history: ctx.history,
+        body: ctx.body,
+        style: ctx.style,
+        messages: messages.value
+      })
       messages.value.push({ role: 'assistant', text: reply || 'Nie mam na to dobrej odpowiedzi.' })
     } catch (e: any) {
       messages.value.push({

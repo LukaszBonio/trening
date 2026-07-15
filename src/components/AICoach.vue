@@ -1,12 +1,14 @@
 <script setup>
 import { ref, computed, nextTick, watch } from 'vue'
 import { useWorkoutsStore } from '../stores/workouts'
+import { useBodyStore } from '../stores/body'
 import { useSettingsStore, GOALS } from '../stores/settings'
 import { useCoach } from '../composables/useCoach'
 import { COACH_MIN_WORKOUTS, COACH_CHAT_SUGGESTIONS } from '../lib/coach'
 import BaseCard from './BaseCard.vue'
 
 const workouts = useWorkoutsStore()
+const body = useBodyStore()
 const settings = useSettingsStore()
 const {
   analysis, analyzedAt, analyzing, analyzeError,
@@ -43,7 +45,12 @@ async function send(preset) {
   if (!text || chatBusy.value) return
   chatInput.value = ''
   await scrollChatDown()
-  await ask(text, { goalLabel: currentGoal.value.label, history: workouts.history })
+  await ask(text, {
+    goalLabel: currentGoal.value.label,
+    history: workouts.history,
+    body: body.entries,
+    style: settings.settings.coachStyle
+  })
   await scrollChatDown()
 }
 

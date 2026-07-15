@@ -5,6 +5,7 @@ import { useCloudStore } from '../stores/cloud'
 import { REQUIRE_AUTH } from '../lib/authConfig'
 import { useWorkoutsStore } from '../stores/workouts'
 import { useSettingsStore, TRAINING_LEVELS, INJURY_OPTIONS } from '../stores/settings'
+import { COACH_STYLES } from '../lib/coach'
 import { permission as notifPermission, requestPermission as requestNotifPermission, isSupported as notifSupported } from '../lib/notifications'
 import { transformLegacyEntry } from '../lib/migration'
 import { useDialog } from '../composables/useDialog'
@@ -318,6 +319,13 @@ function onFileChange(e) {
           <select v-model="settingsStore.settings.workoutMode">
             <option value="cards">Karty (po partiach)</option>
             <option value="list">Pełna lista</option>
+          </select>
+        </label>
+
+        <label class="setting">
+          <span>Styl odpowiedzi AI Coacha</span>
+          <select v-model="settingsStore.settings.coachStyle">
+            <option v-for="s in COACH_STYLES" :key="s.key" :value="s.key">{{ s.label }}</option>
           </select>
         </label>
 

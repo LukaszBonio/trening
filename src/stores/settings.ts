@@ -15,6 +15,8 @@ export interface Settings {
   // Profil treningowy — wpływa na dobór ćwiczeń przez AI (poziom + kontuzje).
   trainingLevel: string
   injuries: string[]
+  // Styl odpowiedzi AI Coacha (czat): zwiezly | szczegolowy | motywujacy.
+  coachStyle: string
   [key: string]: unknown
 }
 
@@ -29,7 +31,8 @@ const DEFAULTS: Settings = {
   workoutMode: 'cards',
   goal: 'mass',
   trainingLevel: 'intermediate',
-  injuries: []
+  injuries: [],
+  coachStyle: 'zwiezly'
 }
 
 export interface LevelOption { key: string; label: string }

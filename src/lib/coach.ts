@@ -6,10 +6,19 @@
 
 import { callClaude, callClaudeRaw, parseClaudeJSON, type ClaudeTool, type ClaudeRawMessage } from './ai'
 import {
-  uniqueExercises, exerciseProgress, personalRecords,
+  uniqueExercises, exerciseProgress, personalRecords, currentStreak,
   compoundIsolationRatio, pushPullRatio, movementPatternBalance, missingMovementPatterns,
   type Workout
 } from './analytics'
+import { suggestNextWeight } from './progression'
+import { getExerciseDetailsByName } from './exerciseDetails'
+import { workoutVolume, totalSets } from './workoutMath'
+import { detectMuscle } from './muscles'
+import { MUSCLE_TO_GROUP, PRIMARY_TO_GROUP, GROUP_LABELS } from './workoutSchema'
+
+// Wpis masy ciała przekazywany do narzędzia dziennik_wagi (bez importu store'a do lib/).
+interface CoachBodyEntry { date: string; weight: number }
+interface CoachToolCtx { history: Workout[]; body?: CoachBodyEntry[] }
 
 export const COACH_MIN_WORKOUTS = 3
 const ANALYSIS_MAX_HISTORY = 30        // ile ostatnich treningów bierzemy pod uwagę
@@ -163,16 +172,30 @@ function chatHistorySnapshot(history: Workout[]): string {
   }).join('\n')
 }
 
-// System prompt czatu — persona + cel + skrót historii + wskazówka o narzędziach.
+// Style odpowiedzi czatu Coacha (wybierane w zakładce „Ty").
+export const COACH_STYLES = [
+  { key: 'zwiezly',     label: 'Zwięzły' },
+  { key: 'szczegolowy', label: 'Szczegółowy' },
+  { key: 'motywujacy',  label: 'Motywujący' }
+] as const
+
+const STYLE_PROMPT: Record<string, string> = {
+  zwiezly: 'Odpowiadasz rzeczowo i krótko (max 4–5 zdań), konkretnie i praktycznie. Zwykły tekst, bez markdown.',
+  szczegolowy: 'Odpowiadasz wyczerpująco: wyjaśniasz DLACZEGO, podajesz uzasadnienie i kontekst. Możesz użyć krótkich list punktowanych. Bez lania wody.',
+  motywujacy: 'Ton wspierający i motywujący — zacznij od docenienia postępu lub wysiłku, potem konkretna rada. Energicznie, bez pustych frazesów. Zwykły tekst, bez markdown.'
+}
+
+// System prompt czatu — persona + styl + cel + skrót historii + wskazówka o narzędziach.
 // Rozmowa idzie osobno w tablicy messages (format tool use), nie w tym stringu.
-export function buildCoachChatSystem(opts: { goalLabel: string; history: Workout[] }): string {
-  return `Jesteś doświadczonym trenerem siłowym. Odpowiadasz po polsku, rzeczowo i krótko (max 4–5 zdań), konkretnie i praktycznie. Opierasz się na danych użytkownika, nie zmyślasz. Zwykły tekst, bez markdown.
+export function buildCoachChatSystem(opts: { goalLabel: string; history: Workout[]; style?: string }): string {
+  const style = STYLE_PROMPT[opts.style || 'zwiezly'] || STYLE_PROMPT.zwiezly
+  return `Jesteś doświadczonym trenerem siłowym. Odpowiadasz po polsku. ${style} Opierasz się na danych użytkownika, nie zmyślasz.
 
 CEL UŻYTKOWNIKA: ${opts.goalLabel || '—'}
 OSTATNIE TRENINGI (najcięższa seria per ćwiczenie):
 ${chatHistorySnapshot(opts.history)}
 
-Masz narzędzia do odpytania danych treningowych użytkownika — użyj ich, gdy pytanie wymaga liczb spoza powyższego skrótu (progres konkretnego ćwiczenia, balans wzorców, pełna lista ćwiczeń). Nie zgaduj wartości, których nie masz — najpierw sięgnij po narzędzie. Gdy dane wystarczają, odpowiedz od razu.`
+Masz narzędzia do odpytania danych treningowych użytkownika — użyj ich, gdy pytanie wymaga liczb/faktów spoza powyższego skrótu (progres i sugestia ciężaru dla ćwiczenia, rekordy, technika, waga ciała, wolumen partii, balans wzorców, podsumowanie). Nie zgaduj wartości, których nie masz — najpierw sięgnij po narzędzie. Gdy dane wystarczają, odpowiedz od razu.`
 }
 
 // Narzędzia Coacha — wykonywane po stronie klienta na historii treningów (Pinia).
@@ -200,11 +223,63 @@ export const COACH_TOOLS: ClaudeTool[] = [
       properties: { dni: { type: 'integer', description: 'Okno w dniach (np. 30). Pomiń, by objąć całą historię.' } },
       additionalProperties: false
     }
+  },
+  {
+    name: 'sugestia_ciezaru',
+    description: 'Sugerowany ciężar na następną sesję danego ćwiczenia (na bazie ostatniej serii, RPE i powtórzeń). Użyj przy pytaniach „ile dołożyć / jaki ciężar następnym razem".',
+    input_schema: {
+      type: 'object',
+      properties: {
+        nazwa: { type: 'string', description: 'Dokładna nazwa ćwiczenia' },
+        zakres_powt: { type: 'string', description: 'Docelowy zakres powtórzeń, np. "8-12" (opcjonalnie)' }
+      },
+      required: ['nazwa'],
+      additionalProperties: false
+    }
+  },
+  {
+    name: 'rekordy_osobiste',
+    description: 'Rekordy osobiste (najlepszy szacowany 1RM per ćwiczenie), top 10. Użyj przy pytaniach o rekordy/PR/najlepsze wyniki.',
+    input_schema: { type: 'object', properties: {}, additionalProperties: false }
+  },
+  {
+    name: 'podsumowanie',
+    description: 'Zbiorcze statystyki: liczba treningów, passa tygodni, łączne serie i tonaż. Opcjonalnie za ostatnie N dni. Użyj przy pytaniach ogólnych o aktywność/objętość.',
+    input_schema: {
+      type: 'object',
+      properties: { dni: { type: 'integer', description: 'Okno w dniach (opcjonalnie)' } },
+      additionalProperties: false
+    }
+  },
+  {
+    name: 'technika_cwiczenia',
+    description: 'Arkusz techniczny ćwiczenia: sprzęt, pozycja startowa, wykonanie, najczęstsze błędy, wskazówki. Użyj przy pytaniach o technikę/formę/błędy.',
+    input_schema: {
+      type: 'object',
+      properties: { nazwa: { type: 'string', description: 'Dokładna nazwa ćwiczenia' } },
+      required: ['nazwa'],
+      additionalProperties: false
+    }
+  },
+  {
+    name: 'dziennik_wagi',
+    description: 'Historia masy ciała użytkownika (ostatnie pomiary + trend w kg). Użyj przy pytaniach o wagę/redukcję/przyrost masy.',
+    input_schema: { type: 'object', properties: {}, additionalProperties: false }
+  },
+  {
+    name: 'wolumen_partii',
+    description: 'Rozkład tonażu na partie mięśniowe (która partia trenowana najwięcej/najmniej). Opcjonalnie za ostatnie N dni. Użyj przy pytaniach o balans/zaniedbane partie.',
+    input_schema: {
+      type: 'object',
+      properties: { dni: { type: 'integer', description: 'Okno w dniach (opcjonalnie)' } },
+      additionalProperties: false
+    }
   }
 ]
 
 // Wykonanie narzędzia — czysta funkcja nad historią (testowalna, bez sieci).
-export function executeCoachTool(name: string, input: Record<string, any>, history: Workout[]): string {
+export function executeCoachTool(name: string, input: Record<string, any>, ctx: CoachToolCtx): string {
+  const history = ctx.history
   switch (name) {
     case 'lista_cwiczen': {
       const list = uniqueExercises(history).sort((a, b) => b.count - a.count).slice(0, 40)
@@ -237,18 +312,94 @@ export function executeCoachTool(name: string, input: Record<string, any>, histo
       if (missing.length) parts.push('Brakujące fundamentalne wzorce: ' + missing.map(m => m.label).join(', '))
       return parts.join('\n')
     }
+    case 'sugestia_ciezaru': {
+      const nazwa = String(input?.nazwa || '').trim()
+      if (!nazwa) return 'Podaj nazwę ćwiczenia.'
+      const s = suggestNextWeight(history, nazwa, String(input?.zakres_powt || '8-12'))
+      if (!s) return `Brak danych do sugestii dla "${nazwa}".`
+      const rpe = s.basedOn?.rpe ? ` @RPE ${s.basedOn.rpe}` : ''
+      return `Sugerowany ciężar: ${s.weight}kg (${s.reason}). Ostatnio: ${s.basedOn?.weight}kg×${s.basedOn?.reps}${rpe}.`
+    }
+    case 'rekordy_osobiste': {
+      const prs = personalRecords(history).slice(0, 10)
+      if (!prs.length) return 'Brak rekordów.'
+      return prs.map((p, i) => `${i + 1}. ${p.name}: ${p.weight}kg×${p.reps} (1RM≈${p.best1RM}kg)`).join('\n')
+    }
+    case 'podsumowanie': {
+      const dni = Number(input?.dni)
+      const windowed = Number.isFinite(dni) && dni > 0
+      const scoped = windowed ? history.filter(w => new Date(w.date).getTime() >= Date.now() - dni * 86400000) : history
+      const vol = scoped.reduce((s, w) => s + workoutVolume(w), 0)
+      const sets = scoped.reduce((s, w) => s + totalSets(w), 0)
+      return `Okno: ${windowed ? `ostatnie ${dni} dni` : 'cała historia'}
+Treningi: ${scoped.length}
+Passa: ${currentStreak(history)} tyg.
+Serie łącznie: ${sets}
+Tonaż: ${Math.round(vol).toLocaleString('pl-PL')} kg`
+    }
+    case 'technika_cwiczenia': {
+      const nazwa = String(input?.nazwa || '').trim()
+      if (!nazwa) return 'Podaj nazwę ćwiczenia.'
+      const d = getExerciseDetailsByName(nazwa)
+      if (!d) return `Brak arkusza technicznego dla "${nazwa}" (ćwiczenie spoza bazy lub inna nazwa).`
+      return [
+        `Sprzęt: ${d.equipmentDetail}${d.attachment ? ` (${d.attachment})` : ''}`,
+        `Pozycja startowa: ${d.startPosition}`,
+        `Wykonanie: ${d.execution.join(' ')}`,
+        `Najczęstsze błędy: ${d.commonMistakes.join('; ')}`,
+        `Wskazówki: ${d.tips.join('; ')}`
+      ].join('\n')
+    }
+    case 'dziennik_wagi': {
+      const body = (ctx.body || []).slice().sort((a, b) => a.date.localeCompare(b.date))
+      if (!body.length) return 'Brak wpisów masy ciała.'
+      const recent = body.slice(-8).map(e => `${e.date}: ${e.weight}kg`).join('\n')
+      const delta = body.length >= 2 ? Math.round((body[body.length - 1].weight - body[0].weight) * 10) / 10 : 0
+      return `${recent}\nTrend (od pierwszego wpisu): ${delta > 0 ? '+' : ''}${delta}kg`
+    }
+    case 'wolumen_partii': {
+      const dni = Number(input?.dni)
+      const windowed = Number.isFinite(dni) && dni > 0
+      const scoped = windowed ? history.filter(w => new Date(w.date).getTime() >= Date.now() - dni * 86400000) : history
+      const groups = volumeByGroup(scoped)
+      if (!groups.length) return 'Brak danych o wolumenie.'
+      return groups.map(g => `${g.name}: ${g.vol.toLocaleString('pl-PL')} kg`).join('\n')
+    }
     default:
       return `Nieznane narzędzie: ${name}`
   }
+}
+
+// Tonaż wg grupy mięśniowej (priorytet: primaryMuscle z planu AI → detectMuscle z nazwy).
+function volumeByGroup(history: Workout[]): { name: string; vol: number }[] {
+  const map: Record<string, number> = {}
+  for (const w of history) {
+    for (const ex of w.exercises || []) {
+      let group = 'inne'
+      const pm = (ex as any).primaryMuscle
+      if (pm && PRIMARY_TO_GROUP[pm]) group = PRIMARY_TO_GROUP[pm]
+      else {
+        const m = detectMuscle(ex.name)
+        if (m) group = MUSCLE_TO_GROUP[m] || 'inne'
+      }
+      let v = 0
+      for (const s of ex.sets || []) v += (Number(s.weight) || 0) * (Number(s.reps) || 0)
+      map[group] = (map[group] || 0) + v
+    }
+  }
+  return Object.entries(map)
+    .map(([key, vol]) => ({ name: GROUP_LABELS[key]?.name || key, vol: Math.round(vol) }))
+    .sort((a, b) => b.vol - a.vol)
 }
 
 // Ile rund narzędziowych zanim wymusimy finalną odpowiedź (zabezpieczenie przed pętlą).
 const COACH_MAX_TOOL_STEPS = 4
 
 export async function runCoachChat(
-  opts: { goalLabel: string; history: Workout[]; messages: CoachMessage[]; signal?: AbortSignal }
+  opts: { goalLabel: string; history: Workout[]; messages: CoachMessage[]; body?: CoachBodyEntry[]; style?: string; signal?: AbortSignal }
 ): Promise<string> {
-  const system = buildCoachChatSystem({ goalLabel: opts.goalLabel, history: opts.history })
+  const system = buildCoachChatSystem({ goalLabel: opts.goalLabel, history: opts.history, style: opts.style })
+  const ctx: CoachToolCtx = { history: opts.history, body: opts.body }
   const messages: ClaudeRawMessage[] = opts.messages.map(m => ({ role: m.role, content: m.text }))
 
   let lastText = ''
@@ -268,7 +419,7 @@ export async function runCoachChat(
     messages.push({ role: 'assistant', content: res.content })
     const results = toolUses.map(tu => {
       let out: string
-      try { out = executeCoachTool(String(tu.name), tu.input || {}, opts.history) }
+      try { out = executeCoachTool(String(tu.name), tu.input || {}, ctx) }
       catch { out = 'Błąd narzędzia.' }
       return { type: 'tool_result', tool_use_id: tu.id, content: out }
     })
