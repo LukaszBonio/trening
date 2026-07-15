@@ -17,7 +17,6 @@ import {
 import VolumeChart from '../components/VolumeChart.vue'
 import WeeklyChart from '../components/WeeklyChart.vue'
 import ExerciseProgressChart from '../components/ExerciseProgressChart.vue'
-import AchievementsGrid from '../components/AchievementsGrid.vue'
 import CalendarHeatmap from '../components/CalendarHeatmap.vue'
 import BaseCard from '../components/BaseCard.vue'
 
@@ -122,12 +121,72 @@ const hasPushPullData = computed(() => ppStats.value.ratio !== null)
       </div>
     </div>
 
-    <BaseCard v-if="totalWorkouts" title="Kalendarz treningowy">
+    <template v-if="totalWorkouts">
+    <!-- Aktywność / częstotliwość -->
+    <BaseCard collapsible open title="Kalendarz treningowy">
       <CalendarHeatmap :workouts="workouts.history" />
     </BaseCard>
 
+    <BaseCard collapsible title="Treningi w tygodniach">
+      <WeeklyChart :workouts="workouts.history" />
+    </BaseCard>
+
+    <!-- Wolumen -->
+    <BaseCard collapsible open title="Wolumen w czasie">
+      <VolumeChart :workouts="workouts.history" />
+    </BaseCard>
+
+    <BaseCard v-if="volumeByMuscle.length" collapsible title="Wolumen wg partii mięśniowej">
+      <p class="muted" style="font-size: 12px; margin-bottom: var(--space-2)">
+        Kliknij w partię, aby zobaczyć listę ćwiczeń.
+      </p>
+      <div class="muscle-bars">
+        <div v-for="m in volumeByMuscle" :key="m.key" class="muscle-block">
+          <button class="muscle-row" :class="{ open: expandedMuscle === m.key }" @click="toggleMuscle(m.key)">
+            <div class="muscle-name">
+              <i class="ti ti-chevron-right chev" :class="{ rot: expandedMuscle === m.key }"></i>
+              {{ m.name }}
+            </div>
+            <div class="muscle-bar">
+              <div class="muscle-fill" :style="{ width: (m.vol / maxVol * 100) + '%' }"></div>
+            </div>
+            <div class="muscle-val">{{ m.vol.toLocaleString('pl-PL') }}</div>
+          </button>
+          <ul v-if="expandedMuscle === m.key" class="muscle-ex-list">
+            <li v-for="ex in m.exercises" :key="ex.name">
+              <span class="muscle-ex-name">{{ ex.name }}</span>
+              <span class="muscle-ex-vol">{{ ex.vol.toLocaleString('pl-PL') }} kg</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </BaseCard>
+
+    <!-- Progres pojedynczego ćwiczenia -->
+    <BaseCard v-if="exercises.length" collapsible title="Progres ćwiczenia">
+      <div class="ex-picker">
+        <select v-model="selectedExercise" class="select">
+          <option :value="null">— wybierz ćwiczenie —</option>
+          <option v-for="ex in exercises" :key="ex.name" :value="ex.name">
+            {{ ex.name }} ({{ ex.count }}×)
+          </option>
+        </select>
+        <div class="metric-tabs" v-if="selectedExercise">
+          <button :class="{ active: metric === 'best1RM' }" @click="metric = 'best1RM'">1RM</button>
+          <button :class="{ active: metric === 'bestWeight' }" @click="metric = 'bestWeight'">Top ciężar</button>
+          <button :class="{ active: metric === 'totalVolume' }" @click="metric = 'totalVolume'">Wolumen</button>
+        </div>
+      </div>
+      <div v-if="selectedExercise && progressPoints.length >= 2">
+        <ExerciseProgressChart :points="progressPoints" :metric="metric" />
+      </div>
+      <p v-else-if="selectedExercise" class="muted" style="margin-top: var(--space-3)">
+        Potrzeba co najmniej 2 treningów z tym ćwiczeniem.
+      </p>
+    </BaseCard>
+
     <!-- Analiza wzorców ruchowych -->
-    <BaseCard v-if="hasTypeData || hasPatternData" title="Analiza wzorców">
+    <BaseCard v-if="hasTypeData || hasPatternData" collapsible title="Analiza wzorców">
       <!-- Compound vs Isolation -->
       <div v-if="hasTypeData" class="pattern-section">
         <div class="pattern-section-title">
@@ -226,44 +285,8 @@ const hasPushPullData = computed(() => ppStats.value.ratio !== null)
       </p>
     </BaseCard>
 
-    <BaseCard v-if="totalWorkouts" title="Wolumen w czasie">
-      <VolumeChart :workouts="workouts.history" />
-    </BaseCard>
-
-    <BaseCard v-if="totalWorkouts" title="Treningi w tygodniach">
-      <WeeklyChart :workouts="workouts.history" />
-    </BaseCard>
-
-    <!-- Per-exercise progress -->
-    <BaseCard v-if="exercises.length" title="Progres ćwiczenia">
-      <div class="ex-picker">
-        <select v-model="selectedExercise" class="select">
-          <option :value="null">— wybierz ćwiczenie —</option>
-          <option v-for="ex in exercises" :key="ex.name" :value="ex.name">
-            {{ ex.name }} ({{ ex.count }}×)
-          </option>
-        </select>
-        <div class="metric-tabs" v-if="selectedExercise">
-          <button :class="{ active: metric === 'best1RM' }" @click="metric = 'best1RM'">1RM</button>
-          <button :class="{ active: metric === 'bestWeight' }" @click="metric = 'bestWeight'">Top ciężar</button>
-          <button :class="{ active: metric === 'totalVolume' }" @click="metric = 'totalVolume'">Wolumen</button>
-        </div>
-      </div>
-      <div v-if="selectedExercise && progressPoints.length >= 2">
-        <ExerciseProgressChart :points="progressPoints" :metric="metric" />
-      </div>
-      <p v-else-if="selectedExercise" class="muted" style="margin-top: var(--space-3)">
-        Potrzeba co najmniej 2 treningów z tym ćwiczeniem.
-      </p>
-    </BaseCard>
-
-    <!-- Achievements -->
-    <BaseCard>
-      <AchievementsGrid />
-    </BaseCard>
-
-    <!-- Personal records -->
-    <BaseCard v-if="records.length" title="Rekordy osobiste (top 10)">
+    <!-- Rekordy osobiste -->
+    <BaseCard v-if="records.length" collapsible title="Rekordy osobiste (top 10)">
       <ul class="pr-list">
         <li v-for="(pr, i) in records.slice(0, 10)" :key="i" class="pr-row">
           <span class="pr-rank">#{{ i + 1 }}</span>
@@ -277,32 +300,7 @@ const hasPushPullData = computed(() => ppStats.value.ratio !== null)
         </li>
       </ul>
     </BaseCard>
-
-    <BaseCard v-if="volumeByMuscle.length" title="Wolumen wg partii mięśniowej">
-      <p class="muted" style="font-size: 12px; margin-bottom: var(--space-2)">
-        Kliknij w partię, aby zobaczyć listę ćwiczeń.
-      </p>
-      <div class="muscle-bars">
-        <div v-for="m in volumeByMuscle" :key="m.key" class="muscle-block">
-          <button class="muscle-row" :class="{ open: expandedMuscle === m.key }" @click="toggleMuscle(m.key)">
-            <div class="muscle-name">
-              <i class="ti ti-chevron-right chev" :class="{ rot: expandedMuscle === m.key }"></i>
-              {{ m.name }}
-            </div>
-            <div class="muscle-bar">
-              <div class="muscle-fill" :style="{ width: (m.vol / maxVol * 100) + '%' }"></div>
-            </div>
-            <div class="muscle-val">{{ m.vol.toLocaleString('pl-PL') }}</div>
-          </button>
-          <ul v-if="expandedMuscle === m.key" class="muscle-ex-list">
-            <li v-for="ex in m.exercises" :key="ex.name">
-              <span class="muscle-ex-name">{{ ex.name }}</span>
-              <span class="muscle-ex-vol">{{ ex.vol.toLocaleString('pl-PL') }} kg</span>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </BaseCard>
+    </template>
 
     <BaseCard v-if="!totalWorkouts">
       <p class="muted">Brak danych. Wykonaj pierwszy trening żeby zobaczyć statystyki.</p>

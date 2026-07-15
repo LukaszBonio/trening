@@ -10,6 +10,7 @@ import { transformLegacyEntry } from '../lib/migration'
 import { useDialog } from '../composables/useDialog'
 import { useToast } from '../composables/useToast'
 import BaseCard from '../components/BaseCard.vue'
+import AchievementsGrid from '../components/AchievementsGrid.vue'
 
 const dialog = useDialog()
 const toast = useToast()
@@ -249,6 +250,11 @@ function onFileChange(e) {
         </form>
         <p v-if="message" class="auth-msg">{{ message }}</p>
       </div>
+    </BaseCard>
+
+    <!-- Osiągnięcia -->
+    <BaseCard collapsible open title="Osiągnięcia">
+      <AchievementsGrid />
     </BaseCard>
 
     <!-- Profil treningowy — wpływa na dobór ćwiczeń przez AI -->

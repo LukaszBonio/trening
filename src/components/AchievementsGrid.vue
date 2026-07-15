@@ -25,8 +25,7 @@ const sorted = computed(() => {
 <template>
   <div class="achievements">
     <div class="achievements-header">
-      <h3 class="card-title" style="margin: 0">Osiągnięcia</h3>
-      <span class="ach-count">{{ unlocked }} / {{ achievements.length }}</span>
+      <span class="ach-count">{{ unlocked }} / {{ achievements.length }} odblokowanych</span>
     </div>
 
     <div class="ach-grid">
