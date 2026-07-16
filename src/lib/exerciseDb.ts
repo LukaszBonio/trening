@@ -97,8 +97,8 @@ const PUSH_EXERCISES: ExerciseEntry[] = [
   },
   {
     id: 'krzyzowanie-linek-dolne',
-    name: 'Krzyżowanie linek dolne',
-    aliases: ['low cable crossover', 'low to high cable fly', 'cable crossover dolny'],
+    name: 'Low cable crossover',
+    aliases: ['krzyżowanie linek dolne', 'low cable crossover', 'low to high cable fly', 'cable crossover dolny'],
     primaryMuscle: 'chest',
     muscleHead: 'chest_upper',
     equipment: 'wyciąg',
@@ -220,8 +220,8 @@ const PUSH_EXERCISES: ExerciseEntry[] = [
   },
   {
     id: 'krzyzowanie-linek',
-    name: 'Krzyżowanie linek',
-    aliases: ['cable crossover', 'cable fly', 'cable flyes', 'cable chest fly'],
+    name: 'Cable crossover',
+    aliases: ['krzyżowanie linek', 'cable crossover', 'cable fly', 'cable flyes', 'cable chest fly'],
     primaryMuscle: 'chest',
     muscleHead: 'chest_middle',
     equipment: 'wyciąg',
@@ -268,8 +268,8 @@ const PUSH_EXERCISES: ExerciseEntry[] = [
   },
   {
     id: 'pompki-na-poreczach',
-    name: 'Pompki na poręczach',
-    aliases: ['dips', 'chest dips', 'parallel bar dips'],
+    name: 'Dips',
+    aliases: ['pompki na poręczach', 'dips', 'chest dips', 'parallel bar dips'],
     primaryMuscle: 'chest',
     muscleHead: 'chest_lower',
     equipment: 'własna_waga',
@@ -283,8 +283,8 @@ const PUSH_EXERCISES: ExerciseEntry[] = [
   },
   {
     id: 'krzyzowanie-linek-gorne',
-    name: 'Krzyżowanie linek górne',
-    aliases: ['high cable crossover', 'high to low cable fly', 'cable crossover górny'],
+    name: 'High cable crossover',
+    aliases: ['krzyżowanie linek górne', 'high cable crossover', 'high to low cable fly', 'cable crossover górny'],
     primaryMuscle: 'chest',
     muscleHead: 'chest_lower',
     equipment: 'wyciąg',
@@ -1140,8 +1140,8 @@ const PULL_EXERCISES: ExerciseEntry[] = [
 
   {
     id: 'uginanie-hantli-mlotkowo',
-    name: 'Uginanie hantli młotkowo',
-    aliases: ['hammer curl', 'hammer curls', 'dumbbell hammer curl'],
+    name: 'Hammer curl',
+    aliases: ['uginanie hantli młotkowo', 'hammer curl', 'hammer curls', 'dumbbell hammer curl'],
     primaryMuscle: 'biceps',
     muscleHead: 'biceps_brach',
     equipment: 'hantle',
@@ -1288,8 +1288,8 @@ const LEGS_EXERCISES: ExerciseEntry[] = [
   },
   {
     id: 'wyciskanie-nogami',
-    name: 'Wyciskanie nogami',
-    aliases: ['leg press', 'machine leg press', '45 degree leg press'],
+    name: 'Leg press',
+    aliases: ['wyciskanie nogami', 'leg press', 'machine leg press', '45 degree leg press'],
     primaryMuscle: 'quads',
     muscleHead: 'quads',
     equipment: 'maszyna',

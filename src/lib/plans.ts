@@ -143,7 +143,7 @@ export const PLANS: PlansMap = {
       exercises: [
         { name: 'Wyciskanie hantli na ławce skośnej', sets: 3, reps: '8-10', tip: 'Klatka górna — skos 30°' },
         { name: 'Wyciskanie na suwnicy', sets: 3, reps: '10-12', tip: 'Stabilna trajektoria' },
-        { name: 'Krzyżowanie linek dolne', sets: 3, reps: '12-15', tip: 'Klatka dolna — wyciąg dolny' },
+        { name: 'Low cable crossover', sets: 3, reps: '12-15', tip: 'Klatka dolna — wyciąg dolny' },
         { name: 'Wznosy hantli bokiem', sets: 3, reps: '12-15', tip: 'Barki boczne do poziomu' },
         { name: 'Wznosy hantli przodem', sets: 3, reps: '12-15', tip: 'Barki przednie' },
         { name: 'Overhead triceps extension hantlem', sets: 3, reps: '10-12', tip: 'Oburącz za głowę' },
@@ -162,8 +162,8 @@ export const PLANS: PlansMap = {
         { name: 'Wiosłowanie hantlem jednoręcz', sets: 3, reps: '10-12', tip: 'Jednostronnie, pełen zakres' },
         { name: 'Face pull', sets: 3, reps: '15-20', tip: 'Łokcie wysoko, ciągnij do twarzy' },
         { name: 'Uginanie ze sztangą EZ', sets: 3, reps: '10-12', tip: 'Bez bujania, kontroluj' },
-        { name: 'Uginanie hantli młotkowo', sets: 3, reps: '10-12', tip: 'Brachialis — objętość ramion' },
-        { name: 'Uginanie hantli młotkowo', sets: 3, reps: '10-12', tip: 'Brachialis i przedramię' }
+        { name: 'Hammer curl', sets: 3, reps: '10-12', tip: 'Brachialis — objętość ramion' },
+        { name: 'Hammer curl', sets: 3, reps: '10-12', tip: 'Brachialis i przedramię' }
       ]
     },
     {
@@ -175,7 +175,7 @@ export const PLANS: PlansMap = {
         { name: 'Wiosłowanie hantlem jednoręcz', sets: 3, reps: '10-12', tip: 'Jednostronnie, kolano na ławce' },
         { name: 'Cable face pull', sets: 3, reps: '15-20', tip: 'Tylne barki i rotatory' },
         { name: 'Uginanie hantli', sets: 3, reps: '10-12', tip: 'Naprzemiennie, supinacja' },
-        { name: 'Uginanie hantli młotkowo', sets: 3, reps: '10-12', tip: 'Brachialis' },
+        { name: 'Hammer curl', sets: 3, reps: '10-12', tip: 'Brachialis' },
         { name: 'Uginanie zottmana', sets: 3, reps: '10-12', tip: 'Supinacja i pronacja — pełne przedramię' }
       ]
     },
@@ -188,8 +188,8 @@ export const PLANS: PlansMap = {
         { name: 'Ściąganie drążka wyciągu górnego', sets: 3, reps: '10-12', tip: 'Wertykalnie — szerokość pleców' },
         { name: 'Face pull', sets: 3, reps: '15-20', tip: 'Łokcie na poziomie barków' },
         { name: 'Uginanie ramion ze sztangą', sets: 3, reps: '8-10', tip: 'Cięższe ciężary' },
-        { name: 'Uginanie hantli młotkowo', sets: 3, reps: '10-12', tip: 'Brachialis' },
-        { name: 'Uginanie hantli młotkowo', sets: 3, reps: '12-15', tip: 'Neutralny chwyt — brachialis' }
+        { name: 'Hammer curl', sets: 3, reps: '10-12', tip: 'Brachialis' },
+        { name: 'Hammer curl', sets: 3, reps: '12-15', tip: 'Neutralny chwyt — brachialis' }
       ]
     },
     {
@@ -200,7 +200,7 @@ export const PLANS: PlansMap = {
         { name: 'Wyciąg górny podchwytem', sets: 3, reps: '10-12', tip: 'Podchwyt — więcej dołu pleców' },
         { name: 'Wiosłowanie na wyciągu siedząc', sets: 3, reps: '10-12', tip: 'Horyzontalnie — grubość pleców' },
         { name: 'Cable face pull', sets: 3, reps: '15-20', tip: 'Zdrowe barki tylne' },
-        { name: 'Uginanie hantli młotkowo', sets: 3, reps: '10-12', tip: 'Brachialis' },
+        { name: 'Hammer curl', sets: 3, reps: '10-12', tip: 'Brachialis' },
         { name: 'Uginanie ze sztangą EZ', sets: 3, reps: '10-12', tip: 'Klasyczne' },
         { name: 'Uginanie zottmana', sets: 3, reps: '10-12', tip: 'Rotacja nadgarstka na górze' }
       ]
@@ -215,7 +215,7 @@ export const PLANS: PlansMap = {
         { name: 'Face pull', sets: 3, reps: '15-20', tip: 'Tylne barki i rotatory' },
         { name: 'Uginanie ramion ze sztangą stojąc', sets: 4, reps: '8-10', tip: 'Klasyczne, bez bujania' },
         { name: 'Uginanie hantli na modlitewniku', sets: 3, reps: '10-12', tip: 'Izolacja bicepsa' },
-        { name: 'Uginanie hantli młotkowo', sets: 3, reps: '10-12', tip: 'Przedramię i brachialis' }
+        { name: 'Hammer curl', sets: 3, reps: '10-12', tip: 'Przedramię i brachialis' }
       ]
     },
     {
@@ -227,7 +227,7 @@ export const PLANS: PlansMap = {
         { name: 'Wiosłowanie hantlem jednoręcz', sets: 3, reps: '8-10', tip: 'Jednostronnie, dociążenie pleców' },
         { name: 'Face pull', sets: 3, reps: '15-20', tip: 'Rotatory — zdrowie barków' },
         { name: 'Uginanie ramion ze sztangą', sets: 3, reps: '6-8', tip: 'Cięższe ciężary' },
-        { name: 'Uginanie hantli młotkowo', sets: 3, reps: '8-10', tip: 'Siłowo' },
+        { name: 'Hammer curl', sets: 3, reps: '8-10', tip: 'Siłowo' },
         { name: 'Uginanie zottmana', sets: 3, reps: '10-12', tip: 'Pełna rotacja przedramienia' }
       ]
     },
@@ -240,8 +240,8 @@ export const PLANS: PlansMap = {
         { name: 'Wiosłowanie hantlem jednoręcz', sets: 3, reps: '10-12', tip: 'Jednostronnie — uzupełnienie wyciągów' },
         { name: 'Cable face pull', sets: 3, reps: '15-20', tip: 'Zdrowe barki' },
         { name: 'Uginanie z liną', sets: 3, reps: '12-15', tip: 'Biceps przez wyciąg' },
-        { name: 'Uginanie hantli młotkowo', sets: 3, reps: '10-12', tip: 'Wykończenie brachialis' },
-        { name: 'Uginanie hantli młotkowo', sets: 3, reps: '12-15', tip: 'Neutralny chwyt, stojąc' }
+        { name: 'Hammer curl', sets: 3, reps: '10-12', tip: 'Wykończenie brachialis' },
+        { name: 'Hammer curl', sets: 3, reps: '12-15', tip: 'Neutralny chwyt, stojąc' }
       ]
     },
     {
@@ -267,7 +267,7 @@ export const PLANS: PlansMap = {
         { name: 'Cable face pull', sets: 3, reps: '15-20', tip: 'Tylne barki i zdrowie rotatorów' },
         { name: 'Concentration curl hantlem', sets: 3, reps: '10-12', tip: 'Łokieć na udzie' },
         { name: 'Uginanie hantli na modlitewniku', sets: 3, reps: '10-12', tip: 'Długa głowa bicepsa' },
-        { name: 'Uginanie hantli młotkowo', sets: 3, reps: '10-12', tip: 'Brachialis — objętość ramion' }
+        { name: 'Hammer curl', sets: 3, reps: '10-12', tip: 'Brachialis — objętość ramion' }
       ]
     },
     {
@@ -456,7 +456,7 @@ export const PLANS: PlansMap = {
         { name: 'Wiosłowanie na maszynie siedzące', sets: 3, reps: '8-12', tip: 'Seated row — łokcie blisko ciała' },
         { name: 'Wyciskanie hantli siedząc nad głowę', sets: 3, reps: '8-12', tip: 'Barki — pełen zakres' },
         { name: 'Wznosy hantli bokiem', sets: 3, reps: '12-20', tip: 'Do poziomu barków, łokcie ugięte' },
-        { name: 'Uginanie hantli młotkowo', sets: 3, reps: '10-15', tip: 'Brachialis i przedramię' },
+        { name: 'Hammer curl', sets: 3, reps: '10-15', tip: 'Brachialis i przedramię' },
         { name: 'Pushdown z liną', sets: 3, reps: '10-15', tip: 'Rozszerz linę na końcu ruchu' }
       ]
     },
@@ -579,7 +579,7 @@ export const PLANS: PlansMap = {
         { name: 'Wiosłowanie sztangą w opadzie', sets: 4, reps: '5-8', tip: 'Ciężko, kontrola' },
         { name: 'Wyciskanie żołnierskie', sets: 3, reps: '5-8', tip: 'Press siłowy' },
         { name: 'Martwy ciąg rumuński', sets: 3, reps: '6-8', tip: 'Hamstring i dolne plecy' },
-        { name: 'Uginanie hantli młotkowo', sets: 2, reps: '10-12', tip: 'Brachialis' },
+        { name: 'Hammer curl', sets: 2, reps: '10-12', tip: 'Brachialis' },
         { name: 'Ab wheel', sets: 3, reps: '8-12', tip: 'Rollout — core' }
       ]
     }

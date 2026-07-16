@@ -167,7 +167,7 @@ describe('normalizePlan — tłumaczenie EN→PL', () => {
     const out = normalizePlan(plan, { type: 'push', goal: 'mass' })
     expect(out.exercises[0].name).toBe('Wyciskanie sztangi na ławce poziomej')
     expect(out.exercises[1].name).toBe('Wyciskanie hantli na ławce skośnej')
-    expect(out.exercises[2].name).toBe('Krzyżowanie linek')
+    expect(out.exercises[2].name).toBe('Cable crossover')
   })
   it('nie zmienia polskich nazw', () => {
     const plan = pushPlan()
