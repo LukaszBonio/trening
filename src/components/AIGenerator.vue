@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onBeforeUnmount } from 'vue'
 import { generateAIPlan } from '../lib/ai'
-import { getExercisesForMuscle } from '../lib/exerciseDb'
+import { getExercisesForMuscle, findExerciseByName } from '../lib/exerciseDb'
 import { getExerciseDetailsByName } from '../lib/exerciseDetails'
 import { youtubeSearchUrl } from '../lib/substitutions'
 import ExerciseInfoModal from './ExerciseInfoModal.vue'
@@ -127,10 +127,15 @@ const swapOpenIdx = ref(-1)
 // zmianę planu, a nie przy każdym renderze osobno dla v-if i v-for każdego ćwiczenia.
 const alternativesByIndex = computed(() => {
   if (!plan.value) return []
-  const used = new Set(plan.value.exercises.map(e => e.name.toLowerCase()))
+  // Wykluczenie po id z bazy (rozwiązuje aliasy PL/EN), fallback: lowercase nazwy.
+  const used = new Set()
+  for (const e of plan.value.exercises) {
+    const entry = findExerciseByName(e.name)
+    used.add(entry ? entry.id : e.name.toLowerCase())
+  }
   return plan.value.exercises.map(ex =>
     ex.muscleHead
-      ? getExercisesForMuscle(ex.muscleHead).filter(alt => !used.has(alt.name.toLowerCase()))
+      ? getExercisesForMuscle(ex.muscleHead).filter(alt => !used.has(alt.id) && !used.has(alt.name.toLowerCase()))
       : []
   )
 })

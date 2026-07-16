@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { detectMuscle, detectEquipment } from '../src/lib/muscles'
 import { findSubstitutes, translateExerciseName } from '../src/lib/substitutions'
+import { findExerciseByName } from '../src/lib/exerciseDb'
 
 describe('detectMuscle', () => {
   it('rozpoznaje klatkę po keyword', () => {
@@ -54,6 +55,34 @@ describe('findSubstitutes', () => {
   })
   it('zwraca [] gdy nie wykryto partii', () => {
     expect(findSubstitutes('Pies-jaszczurka turbo XYZ', 3)).toEqual([])
+  })
+
+  // Regresja: „hip thrust" / „hip thrusty" / „wypychanie bioder" to jedno ćwiczenie —
+  // dedup po tożsamości (id z bazy), nie po surowych stringach.
+  it('nie dubluje aliasów PL/EN tego samego ćwiczenia (hip thrust)', () => {
+    const r = findSubstitutes('Hip thrust', 30, 'glutes')
+    const hipVariants = r.filter(n => {
+      const e = findExerciseByName(n)
+      return (e && e.id === 'wypychanie-bioder') || n.toLowerCase().includes('hip thrusty') || n.toLowerCase() === 'wypychanie bioder'
+    })
+    expect(hipVariants).toEqual([])
+  })
+  it('wyklucza bieżące ćwiczenie także gdy sesja używa aliasu (Wypychanie bioder)', () => {
+    const r = findSubstitutes('Wypychanie bioder', 30, 'glutes')
+    expect(r.map(n => n.toLowerCase())).not.toContain('hip thrust')
+    expect(r.map(n => n.toLowerCase())).not.toContain('hip thrusty')
+  })
+  it('żadne dwie propozycje nie wskazują tego samego ćwiczenia z bazy', () => {
+    const r = findSubstitutes('Hip thrust', 30, 'glutes')
+    const ids = r.map(n => findExerciseByName(n)?.id).filter(Boolean)
+    expect(new Set(ids).size).toBe(ids.length)
+  })
+  it('nazwy z bazy wyświetlane są w formie kanonicznej', () => {
+    const r = findSubstitutes('Wyciskanie sztangi na ławce poziomej', 30, 'chest_middle')
+    for (const name of r) {
+      const e = findExerciseByName(name)
+      if (e) expect(name).toBe(e.name)
+    }
   })
 })
 

@@ -1,4 +1,5 @@
 import { detectMuscle, EXERCISE_TO_MUSCLE } from './muscles'
+import { findExerciseByName } from './exerciseDb'
 
 const _substitutesCache = new Map<string, string[]>();
 
@@ -6,6 +7,29 @@ function normalizeForDedup(name: string): string {
   return name
     .replace(/na ławce płaskiej/g, 'na ławce poziomej')
     .replace(/\bna skosie\b/g, 'na ławce skośnej')
+}
+
+// Klucz tożsamości ćwiczenia: id z bazy (rozwiązuje aliasy PL/EN — „hip thrust",
+// „hip thrusty" i „wypychanie bioder" to jeden klucz), fallback dla nazw spoza bazy:
+// znormalizowany string po tłumaczeniu EN→PL. Naprawia duble typu PL/EN na liście zamian.
+function identityKey(name: string): string {
+  const direct = findExerciseByName(name)
+  if (direct) return `id:${direct.id}`
+  const translated = translateExerciseName(name)
+  const viaTranslation = findExerciseByName(translated)
+  if (viaTranslation) return `id:${viaTranslation.id}`
+  return normalizeForDedup(translated.toLowerCase().trim()).replace(/[-\s]/g, '')
+}
+
+// Kanoniczna nazwa do wyświetlenia: z bazy jeśli znana, inaczej tłumaczenie EN→PL.
+function displayName(name: string): string {
+  const direct = findExerciseByName(name)
+  if (direct) return direct.name
+  const translated = translateExerciseName(name)
+  const viaTranslation = findExerciseByName(translated)
+  if (viaTranslation) return viaTranslation.name
+  const t = translated.toLowerCase().trim()
+  return t.charAt(0).toUpperCase() + t.slice(1)
 }
 
 export function findSubstitutes(
@@ -21,43 +45,33 @@ export function findSubstitutes(
   const targetMuscle = muscleHeadOverride || detectMuscle(exerciseName)
   if (!targetMuscle) { _substitutesCache.set(cacheKey, []); return [] }
 
-  const currentNorm = exerciseName.toLowerCase().trim()
-  const excludeSet = new Set<string>()
-  const rawExcludes = [currentNorm, ...excludeNorm]
-  for (const n of rawExcludes) {
-    excludeSet.add(n)
-    excludeSet.add(normalizeForDedup(n))
-    const tr = translateExerciseName(n).toLowerCase().trim()
-    excludeSet.add(tr)
-    excludeSet.add(normalizeForDedup(tr))
-  }
-
-  const rawEntries = Object.entries(EXERCISE_TO_MUSCLE)
-    .filter(([, muscle]) => muscle === targetMuscle)
-    .map(([key]) => translateExerciseName(key))
+  // Wykluczenia (bieżące ćwiczenie + reszta sesji) po tożsamości — działa niezależnie
+  // od tego, czy sesja używa nazwy polskiej, angielskiej czy aliasu.
+  const excludeSet = new Set<string>([exerciseName, ...excludeNames].map(identityKey))
 
   const seen = new Set<string>()
-  const unique: string[] = []
-  for (const name of rawEntries) {
-    const norm = name.toLowerCase().trim()
-    const synNorm = normalizeForDedup(norm)
-    if (excludeSet.has(norm) || excludeSet.has(synNorm)) continue
-    const stripped = norm.replace(/[-\s]/g, '')
-    if (seen.has(norm) || seen.has(synNorm) || seen.has(stripped)) continue
-    seen.add(norm)
-    seen.add(synNorm)
-    seen.add(stripped)
-    unique.push(norm)
+  const dbNames: string[] = []
+  const legacyNames: string[] = []
+  for (const [key, muscle] of Object.entries(EXERCISE_TO_MUSCLE)) {
+    if (muscle !== targetMuscle) continue
+    const ik = identityKey(key)
+    if (excludeSet.has(ik) || seen.has(ik)) continue
+    seen.add(ik)
+    if (ik.startsWith('id:')) dbNames.push(displayName(key))
+    else legacyNames.push(displayName(key))
   }
 
-  unique.sort((a, b) => b.length - a.length)
-  const filtered: string[] = []
-  for (const name of unique) {
-    if (filtered.some(longer => longer.includes(name))) continue
-    filtered.push(name)
-  }
+  // Nazwy spoza bazy: odrzuć generyczne, które są fragmentem innej kandydatki
+  // (np. „Wyciskanie hantli" przy obecnym „Wyciskanie hantli na ławce poziomej").
+  // Nazw z bazy nie filtrujemy — baza jest kuratorowana i nie zawiera generyków.
+  const allLower = [...dbNames, ...legacyNames].map(n => n.toLowerCase())
+  const legacyFiltered = legacyNames.filter(n => {
+    const low = n.toLowerCase()
+    return !allLower.some(o => o !== low && o.includes(low))
+  })
 
-  const display = filtered.map(k => k.charAt(0).toUpperCase() + k.slice(1))
+  // Kandydaci z bazy przodem — mają arkusz techniczny, poprawne metadane i aliasy.
+  const display = [...dbNames, ...legacyFiltered]
 
   if (display.length <= max) {
     _substitutesCache.set(cacheKey, display)
@@ -228,8 +242,12 @@ const EN_TO_PL: Record<string, string> = {
   'barbell lunge': 'Wykroki ze sztangą',
   'step up': 'Wchodzenie na skrzynię',
   'step-up': 'Wchodzenie na skrzynię',
-  'hip thrust': 'Wypychanie bioder',
-  'barbell hip thrust': 'Wypychanie bioder',
+  'hip thrust': 'Hip thrust',
+  'barbell hip thrust': 'Hip thrust',
+  'hip thrusty': 'Hip thrust',
+  'wypychanie bioder': 'Hip thrust',
+  'single leg hip thrust': 'Hip thrust jednonóż',
+  'clamshell': 'Muszelka',
   'glute bridge': 'Most biodrowy',
   'hip abduction': 'Odwodzenie nóg na maszynie',
   'cable kickback': 'Odwodzenia nóg',

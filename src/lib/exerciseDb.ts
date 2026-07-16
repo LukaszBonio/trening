@@ -1459,8 +1459,8 @@ const LEGS_EXERCISES: ExerciseEntry[] = [
 
   {
     id: 'wypychanie-bioder',
-    name: 'Wypychanie bioder',
-    aliases: ['hip thrust', 'barbell hip thrust'],
+    name: 'Hip thrust',
+    aliases: ['wypychanie bioder', 'barbell hip thrust', 'hip thrusty'],
     primaryMuscle: 'glutes',
     muscleHead: 'glutes',
     equipment: 'sztanga',
