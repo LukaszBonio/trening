@@ -6,6 +6,7 @@ import { useWorkoutsStore } from '../stores/workouts'
 import { detectMuscle, getMuscleName, detectEquipment } from '../lib/muscles'
 import { findSubstitutes, youtubeSearchUrl } from '../lib/substitutions'
 import { getExerciseDetailsByName } from '../lib/exerciseDetails'
+import { isTimedExercise } from '../lib/workoutMath'
 import ExerciseInfoModal from './ExerciseInfoModal.vue'
 import { lastSetFor } from '../lib/analytics'
 import { suggestNextWeight } from '../lib/progression'
@@ -56,6 +57,9 @@ const showRpeHelp = ref(false)
 // Modal "?" ze szczegółami techniki — tylko dla ćwiczeń z bazy (spoza bazy brak danych).
 const infoName = ref(null)
 const hasInfo = computed(() => !!currentEx.value && !!getExerciseDetailsByName(currentEx.value.name))
+
+// Ćwiczenie czasowe (plank, wall sit…) → mierzymy sekundy zamiast ciężaru/powtórzeń.
+const isTimed = computed(() => !!currentEx.value && isTimedExercise(currentEx.value.name, currentEx.value.reps))
 
 const muscleName = computed(() => {
   if (!currentEx.value) return ''
@@ -303,7 +307,8 @@ watch([exIdx, setIdx, () => session.active?.id], suggestWeightIfEmpty, { immedia
         </div>
         <div class="ex-target">
           <span class="set-pill-big">Seria {{ setIdx + 1 }} / {{ currentEx.sets.length }}</span>
-          <span>Cel: <strong>{{ currentEx.reps }}</strong> powt.</span>
+          <span v-if="isTimed">Cel: <strong>{{ currentEx.reps }}</strong></span>
+          <span v-else>Cel: <strong>{{ currentEx.reps }}</strong> powt.</span>
         </div>
         <div class="ex-tip" v-if="currentEx.tip">{{ currentEx.tip }}</div>
 
@@ -359,27 +364,41 @@ watch([exIdx, setIdx, () => session.active?.id], suggestWeightIfEmpty, { immedia
       <!-- Big inputs for current set -->
       <div class="input-card card">
         <div class="big-inputs">
-          <div class="big-input-block">
-            <label>{{ settings.settings.units }}</label>
+          <!-- Ćwiczenie czasowe: jedno pole „sek." zamiast ciężaru i powtórzeń -->
+          <div v-if="isTimed" class="big-input-block">
+            <label>sek.</label>
             <input
               ref="weightInputRef"
-              type="number"
-              inputmode="decimal"
-              step="0.5"
-              v-model="currentSet.weight"
-              placeholder="—"
-              class="set-input-focus"
-            />
-          </div>
-          <div class="big-input-block">
-            <label>powt.</label>
-            <input
               type="number"
               inputmode="numeric"
               v-model="currentSet.reps"
               placeholder="—"
+              class="set-input-focus"
             />
           </div>
+          <template v-else>
+            <div class="big-input-block">
+              <label>{{ settings.settings.units }}</label>
+              <input
+                ref="weightInputRef"
+                type="number"
+                inputmode="decimal"
+                step="0.5"
+                v-model="currentSet.weight"
+                placeholder="—"
+                class="set-input-focus"
+              />
+            </div>
+            <div class="big-input-block">
+              <label>powt.</label>
+              <input
+                type="number"
+                inputmode="numeric"
+                v-model="currentSet.reps"
+                placeholder="—"
+              />
+            </div>
+          </template>
           <div v-if="settings.settings.showRpe" class="big-input-block rpe">
             <label class="rpe-label">
               RPE

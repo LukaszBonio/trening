@@ -15,6 +15,9 @@ const workouts = useWorkoutsStore()
 
 const totalVolume = computed(() => workoutVolume(props.workout))
 const totalSetsCount = computed(() => totalSets(props.workout))
+// Trening bez obciążeń (Ania / kalistenika / izometria) — wolumen w kg jest mylący,
+// a świętowanie ma być delikatniejsze.
+const isBodyweight = computed(() => totalVolume.value === 0)
 const duration = computed(() => {
   const s = props.workout.duration || 0
   return s > 0 ? formatDuration(s) : '0m 0s'
@@ -32,6 +35,10 @@ const newPRs = computed(() => {
     p.best1RM > beforeMap.get(p.name.toLowerCase().trim())
   ).filter(p =>
     props.workout.exercises.some(ex => ex.name.toLowerCase().trim() === p.name.toLowerCase().trim())
+  ).filter(p =>
+    // Rekord ma sens tylko dla ćwiczeń z obciążeniem — „0 kg" na planku/masie ciała
+    // to nie rekord (i nie odpala świętowania rekordu).
+    (p.weight || 0) > 0
   )
 })
 
@@ -51,10 +58,11 @@ onMounted(() => {
   const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#d4ff3a'
   const baseColors = [accent, '#ffffff', '#facc15', '#22d3ee']
 
-  // Standard burst
+  // Delikatniejszy wystrzał dla treningu bez obciążeń (Ania/izometria), pełny dla reszty.
   confetti({
-    particleCount: 80,
-    spread: 70,
+    particleCount: isBodyweight.value ? 40 : 80,
+    spread: isBodyweight.value ? 45 : 70,
+    startVelocity: isBodyweight.value ? 28 : 45,
     origin: { y: 0.5 },
     colors: baseColors
   })
@@ -83,9 +91,13 @@ onMounted(() => {
           <div class="sum-label">Serie</div>
           <div class="sum-val">{{ totalSetsCount }}</div>
         </div>
-        <div class="sum-item">
+        <div v-if="!isBodyweight" class="sum-item">
           <div class="sum-label">Wolumen</div>
           <div class="sum-val">{{ totalVolume }}<small>kg</small></div>
+        </div>
+        <div v-else class="sum-item">
+          <div class="sum-label">Ćwiczenia</div>
+          <div class="sum-val">{{ workout.exercises.length }}</div>
         </div>
         <div class="sum-item">
           <div class="sum-label">Czas</div>

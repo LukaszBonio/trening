@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useSessionStore } from '../stores/session'
 import { useSettingsStore } from '../stores/settings'
 import { getExerciseDetailsByName } from '../lib/exerciseDetails'
+import { isTimedExercise } from '../lib/workoutMath'
 import ExerciseInfoModal from './ExerciseInfoModal.vue'
 
 const props = defineProps({
@@ -20,6 +21,9 @@ const exercise = computed(() => session.active?.exercises[props.exIdx])
 // Modal "?" ze szczegółami techniki — tylko gdy ćwiczenie jest w bazie.
 const infoName = ref(null)
 const hasInfo = computed(() => !!exercise.value && !!getExerciseDetailsByName(exercise.value.name))
+
+// Ćwiczenie czasowe (plank itp.) → kolumna „Sek." zamiast ciężaru.
+const timed = computed(() => !!exercise.value && isTimedExercise(exercise.value.name, exercise.value.reps))
 
 function toggle(setIdx) {
   const wasDone = exercise.value.sets[setIdx].done
@@ -48,17 +52,18 @@ function toggle(setIdx) {
     </div>
 
     <div class="sets">
-      <div class="set-header" :class="{ 'with-rpe': settings.settings.showRpe }">
+      <div class="set-header" :class="{ 'with-rpe': settings.settings.showRpe, timed }">
         <span>#</span>
-        <span>{{ settings.settings.units === 'lb' ? 'lb' : 'kg' }}</span>
-        <span>Powt.</span>
+        <span v-if="!timed">{{ settings.settings.units === 'lb' ? 'lb' : 'kg' }}</span>
+        <span>{{ timed ? 'Sek.' : 'Powt.' }}</span>
         <span v-if="settings.settings.showRpe">RPE</span>
         <span></span>
       </div>
       <template v-for="(set, i) in exercise.sets" :key="'set-' + i">
-        <div class="set-row" :class="{ done: set.done, 'with-rpe': settings.settings.showRpe }">
+        <div class="set-row" :class="{ done: set.done, 'with-rpe': settings.settings.showRpe, timed }">
           <span class="set-num">{{ i + 1 }}</span>
           <input
+            v-if="!timed"
             type="number"
             inputmode="decimal"
             step="0.5"
@@ -182,6 +187,9 @@ function toggle(setIdx) {
   grid-template-columns: 28px 1fr 1fr 60px 40px;
   gap: 6px;
 }
+/* Ćwiczenie czasowe: brak kolumny ciężaru (# · sek. · [rpe] · check) */
+.set-header.timed, .set-row.timed { grid-template-columns: 32px 1fr 44px; }
+.set-header.timed.with-rpe, .set-row.timed.with-rpe { grid-template-columns: 28px 1fr 60px 40px; }
 .set-header {
   font-size: 11px;
   color: var(--text-dim);

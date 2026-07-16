@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { workoutVolume, totalSets } from '../src/lib/workoutMath'
+import { workoutVolume, totalSets, isTimedExercise } from '../src/lib/workoutMath'
 
 describe('workoutVolume', () => {
   it('sumuje wagę × powtórzenia we wszystkich seriach', () => {
@@ -39,5 +39,23 @@ describe('totalSets', () => {
   it('zwraca 0 dla pustego/null treningu', () => {
     expect(totalSets(null)).toBe(0)
     expect(totalSets({})).toBe(0)
+  })
+})
+
+describe('isTimedExercise', () => {
+  it('wykrywa czas z pola reps', () => {
+    expect(isTimedExercise('Deska', '20-30s')).toBe(true)
+    expect(isTimedExercise('Coś', '30s')).toBe(true)
+    expect(isTimedExercise('Coś', '45 sek')).toBe(true)
+  })
+  it('wykrywa izometrię po nazwie mimo braku jednostki', () => {
+    expect(isTimedExercise('Deska bokiem', '30')).toBe(true)
+    expect(isTimedExercise('Wall sit', '')).toBe(true)
+    expect(isTimedExercise('Martwy zwis', null)).toBe(true)
+  })
+  it('nie oznacza zwykłych ćwiczeń jako czasowe', () => {
+    expect(isTimedExercise('Wyciskanie sztangi na ławce poziomej', '8-12')).toBe(false)
+    expect(isTimedExercise('Przysiad ze sztangą', '5')).toBe(false)
+    expect(isTimedExercise(null, null)).toBe(false)
   })
 })
