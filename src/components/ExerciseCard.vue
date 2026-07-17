@@ -5,6 +5,7 @@ import { useSettingsStore } from '../stores/settings'
 import { getExerciseDetailsByName } from '../lib/exerciseDetails'
 import { isTimedExercise } from '../lib/workoutMath'
 import ExerciseInfoModal from './ExerciseInfoModal.vue'
+import StopwatchInput from './StopwatchInput.vue'
 
 const props = defineProps({
   exIdx: { type: Number, required: true }
@@ -71,7 +72,13 @@ function toggle(setIdx) {
             placeholder="—"
             :disabled="set.done"
           />
+          <StopwatchInput
+            v-if="timed"
+            v-model="set.reps"
+            :disabled="set.done"
+          />
           <input
+            v-else
             type="number"
             inputmode="numeric"
             v-model="set.reps"

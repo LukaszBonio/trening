@@ -8,6 +8,7 @@ import { findSubstitutes, youtubeSearchUrl } from '../lib/substitutions'
 import { getExerciseDetailsByName } from '../lib/exerciseDetails'
 import { isTimedExercise } from '../lib/workoutMath'
 import ExerciseInfoModal from './ExerciseInfoModal.vue'
+import StopwatchInput from './StopwatchInput.vue'
 import { lastSetFor } from '../lib/analytics'
 import { suggestNextWeight } from '../lib/progression'
 import { useDialog } from '../composables/useDialog'
@@ -364,17 +365,10 @@ watch([exIdx, setIdx, () => session.active?.id], suggestWeightIfEmpty, { immedia
       <!-- Big inputs for current set -->
       <div class="input-card card">
         <div class="big-inputs">
-          <!-- Ćwiczenie czasowe: jedno pole „sek." zamiast ciężaru i powtórzeń -->
-          <div v-if="isTimed" class="big-input-block">
-            <label>sek.</label>
-            <input
-              ref="weightInputRef"
-              type="number"
-              inputmode="numeric"
-              v-model="currentSet.reps"
-              placeholder="—"
-              class="set-input-focus"
-            />
+          <!-- Ćwiczenie czasowe: stoper zamiast ciężaru i powtórzeń (zapisuje sekundy) -->
+          <div v-if="isTimed" class="big-input-block big-input-timer">
+            <label>czas</label>
+            <StopwatchInput size="big" v-model="currentSet.reps" :disabled="currentSet.done" />
           </div>
           <template v-else>
             <div class="big-input-block">
@@ -864,6 +858,8 @@ watch([exIdx, setIdx, () => session.active?.id], suggestWeightIfEmpty, { immedia
   letter-spacing: 0.5px;
   text-align: center;
 }
+/* Stoper (ćwiczenie czasowe) rozciąga się na całą szerokość niezależnie od kolumny RPE. */
+.big-input-timer { grid-column: 1 / -1; }
 .big-input-block input {
   padding: 20px 12px;
   background: var(--bg-elev-2);
