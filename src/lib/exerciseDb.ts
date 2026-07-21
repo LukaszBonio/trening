@@ -362,7 +362,7 @@ const PUSH_EXERCISES: ExerciseEntry[] = [
   {
     id: 'wznosy-hantli-przodem',
     name: 'Wznosy hantli przodem',
-    aliases: ['front raise', 'dumbbell front raise', 'front dumbbell raise'],
+    aliases: ['front raise', 'dumbbell front raise', 'front dumbbell raise', 'unoszenie hantli przodem', 'unoszenie ramion przodem', 'wznosy ramion przodem'],
     primaryMuscle: 'shoulders',
     muscleHead: 'shoulder_front',
     equipment: 'hantle',
@@ -395,7 +395,7 @@ const PUSH_EXERCISES: ExerciseEntry[] = [
   {
     id: 'wznosy-hantli-bokiem',
     name: 'Wznosy hantli bokiem',
-    aliases: ['lateral raise', 'dumbbell lateral raise', 'side lateral raise', 'side raise'],
+    aliases: ['lateral raise', 'dumbbell lateral raise', 'side lateral raise', 'side raise', 'wznosy hantlami bokiem', 'wznosy bokiem z hantlami', 'wznosy bokiem', 'wznosy hantli bokiem stojąc', 'unoszenie ramion bokiem', 'unoszenie hantli bokiem'],
     primaryMuscle: 'shoulders',
     muscleHead: 'shoulder_side',
     equipment: 'hantle',
@@ -566,7 +566,7 @@ const PUSH_EXERCISES: ExerciseEntry[] = [
   {
     id: 'wyprosty-triceps-na-wyciagu',
     name: 'Wyprosty triceps na wyciągu',
-    aliases: ['triceps pushdown', 'tricep pushdown', 'cable pushdown', 'pushdown', 'cable triceps pushdown'],
+    aliases: ['triceps pushdown', 'tricep pushdown', 'cable pushdown', 'pushdown', 'cable triceps pushdown', 'triceps na wyciągu', 'prostowanie ramion na wyciągu', 'prostowanie ramion', 'wyprost ramion', 'wyprosty ramion'],
     primaryMuscle: 'triceps',
     muscleHead: 'triceps_lat',
     equipment: 'wyciąg',
@@ -889,7 +889,7 @@ const PULL_EXERCISES: ExerciseEntry[] = [
   {
     id: 'martwy-ciag-rumunski',
     name: 'Martwy ciąg rumuński',
-    aliases: ['romanian deadlift', 'rdl', 'barbell rdl'],
+    aliases: ['romanian deadlift', 'rdl', 'barbell rdl', 'rumuński martwy ciąg'],
     primaryMuscle: 'back',
     muscleHead: 'back_lower',
     equipment: 'sztanga',
@@ -934,7 +934,7 @@ const PULL_EXERCISES: ExerciseEntry[] = [
   {
     id: 'wyprosty-na-lawce-rzymskiej',
     name: 'Wyprosty na ławce rzymskiej',
-    aliases: ['back extension', 'hyperextension', 'roman chair extension'],
+    aliases: ['back extension', 'hyperextension', 'roman chair extension', 'wyprosty pleców', 'prostowanie pleców'],
     primaryMuscle: 'back',
     muscleHead: 'back_lower',
     equipment: 'własna_waga',
@@ -1304,7 +1304,7 @@ const LEGS_EXERCISES: ExerciseEntry[] = [
   {
     id: 'przysiad-bulgarski',
     name: 'Przysiad bułgarski',
-    aliases: ['bulgarian split squat', 'split squat', 'rear foot elevated split squat'],
+    aliases: ['bulgarian split squat', 'split squat', 'rear foot elevated split squat', 'bułgarski przysiad'],
     primaryMuscle: 'quads',
     muscleHead: 'quads',
     equipment: 'hantle',
@@ -1379,7 +1379,7 @@ const LEGS_EXERCISES: ExerciseEntry[] = [
   {
     id: 'wyprosty-nog',
     name: 'Wyprosty nóg',
-    aliases: ['leg extension', 'leg extensions', 'machine leg extension'],
+    aliases: ['leg extension', 'leg extensions', 'machine leg extension', 'prostowanie nóg'],
     primaryMuscle: 'quads',
     muscleHead: 'quads',
     equipment: 'maszyna',

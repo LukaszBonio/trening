@@ -1,3 +1,5 @@
+import { findExerciseByName, type Equipment } from './exerciseDb'
+
 export type MuscleKey =
   | 'chest_upper' | 'chest_middle' | 'chest_lower'
   | 'shoulder_front' | 'shoulder_side' | 'shoulder_rear'
@@ -443,8 +445,21 @@ const EQUIPMENT_KEYWORDS: EquipmentKeyword[] = [
   { pattern: 'wiosłowanie', label: 'Sztanga', icon: 'ti-barbell' },
 ];
 
+// Sprzęt z bazy → etykieta + ikona chipu. Baza jest źródłem prawdy dla ćwiczeń,
+// które w niej są (np. „Przysiad bułgarski" = hantle, a nie sztanga jak sugeruje
+// generyczny wzorzec „przysiad"). Nazwy spoza bazy lecą heurystyką słów kluczowych.
+const EQUIPMENT_INFO: Record<Equipment, EquipmentInfo> = {
+  sztanga:     { label: 'Sztanga', icon: 'ti-barbell' },
+  hantle:      { label: 'Hantle', icon: 'ti-barbell' },
+  maszyna:     { label: 'Maszyna', icon: 'ti-settings-cog' },
+  'wyciąg':    { label: 'Wyciąg', icon: 'ti-arrow-down-circle' },
+  'własna_waga': { label: 'Własna waga', icon: 'ti-user' },
+}
+
 export function detectEquipment(exerciseName: string | null | undefined): EquipmentInfo | null {
   if (!exerciseName) return null;
+  const fromDb = findExerciseByName(exerciseName);
+  if (fromDb) return EQUIPMENT_INFO[fromDb.equipment];
   const name: string = exerciseName.toLowerCase().trim();
   for (const eq of EQUIPMENT_KEYWORDS) {
     if (name.includes(eq.pattern)) return { label: eq.label, icon: eq.icon };

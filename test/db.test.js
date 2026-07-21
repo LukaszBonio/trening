@@ -42,6 +42,15 @@ describe('detectEquipment', () => {
   it('zwraca null gdy brak match', () => {
     expect(detectEquipment('XYZ')).toBeNull()
   })
+  // Regresja: „Przysiad bułgarski" to ćwiczenie z hantlami, nie ze sztangą.
+  // Generyczny wzorzec „przysiad"→Sztanga dawał zły chip; baza jest źródłem prawdy.
+  it('bierze sprzęt z bazy zamiast generycznego wzorca (bułgarski przysiad = hantle)', () => {
+    expect(detectEquipment('Przysiad bułgarski').label).toBe('Hantle')
+    expect(detectEquipment('bułgarski przysiad').label).toBe('Hantle')
+  })
+  it('nadal działa heurystyka słów dla ćwiczeń spoza bazy', () => {
+    expect(detectEquipment('Przysiad ze sztangą sumo szeroko').label).toBe('Sztanga')
+  })
 })
 
 describe('findSubstitutes', () => {
@@ -76,6 +85,28 @@ describe('findSubstitutes', () => {
     const r = findSubstitutes('Hip thrust', 30, 'glutes')
     const ids = r.map(n => findExerciseByName(n)?.id).filter(Boolean)
     expect(new Set(ids).size).toBe(ids.length)
+  })
+  // Regresja: synonimy wznosów bokiem („unoszenie ramion/hantli bokiem") to jedno
+  // ćwiczenie — na liście zamian nie mogą się dublować obok „Wznosy hantli bokiem".
+  it('nie dubluje synonimów wznosów bokiem (barki boczne)', () => {
+    const r = findSubstitutes('Wznosy bokiem na maszynie', 30, 'shoulder_side')
+    const lat = r.filter(n => findExerciseByName(n)?.id === 'wznosy-hantli-bokiem')
+    expect(lat.length).toBeLessThanOrEqual(1)
+    expect(r.map(n => n.toLowerCase())).not.toContain('unoszenie ramion bokiem')
+    expect(r.map(n => n.toLowerCase())).not.toContain('unoszenie hantli bokiem')
+  })
+  it('żadne dwie propozycje nie mają tego samego rdzenia po synonimie czasownika', () => {
+    const verbSyn = new Set(['wznosy', 'wznos', 'unoszenie', 'uginanie', 'prostowanie', 'wyprost', 'wyprosty'])
+    const core = (s) => s.toLowerCase().split(/[\s-]+/).filter(w => w.length > 2 && !verbSyn.has(w)).sort().join(' ')
+    const groups = ['shoulder_side', 'shoulder_front', 'triceps_lat', 'back_lower', 'quads']
+    for (const g of groups) {
+      // reprezentatywne ćwiczenie z każdej partii, pełna lista bez limitu
+      const seed = { shoulder_side: 'Wznosy hantli bokiem', shoulder_front: 'Wznosy hantli przodem',
+        triceps_lat: 'Wyprosty triceps na wyciągu', back_lower: 'Martwy ciąg rumuński', quads: 'Przysiad bułgarski' }[g]
+      const r = findSubstitutes(seed, 30, g)
+      const cores = r.map(core)
+      expect(new Set(cores).size).toBe(cores.length)
+    }
   })
   it('nazwy z bazy wyświetlane są w formie kanonicznej', () => {
     const r = findSubstitutes('Wyciskanie sztangi na ławce poziomej', 30, 'chest_middle')
