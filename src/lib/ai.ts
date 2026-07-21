@@ -22,6 +22,10 @@ const GOAL_TO_TAG: Record<string, TrainingGoalTag> = {
 
 interface CallClaudeOptions {
   prompt: string
+  /** Stabilna część promptu (instrukcje/katalog) → trafia do `system`. */
+  system?: string
+  /** Gdy true, `system` wysyłany jest jako blok z `cache_control` (prompt caching). */
+  cacheSystem?: boolean
   maxTokens?: number
   signal?: AbortSignal
   timeoutMs?: number
@@ -185,12 +189,20 @@ async function _postToProxy(
   return await resp.json()
 }
 
-export async function callClaude({ prompt, maxTokens = 2500, signal, timeoutMs = 60000 }: CallClaudeOptions): Promise<string> {
-  const data = await _postToProxy(
-    { max_tokens: maxTokens, messages: [{ role: 'user', content: prompt }] },
-    signal,
-    timeoutMs
-  )
+export async function callClaude({ prompt, system, cacheSystem = false, maxTokens = 2500, signal, timeoutMs = 60000 }: CallClaudeOptions): Promise<string> {
+  const body: Record<string, unknown> = {
+    max_tokens: maxTokens,
+    messages: [{ role: 'user', content: prompt }]
+  }
+  // system jako blok z cache_control → Anthropic prompt caching: stabilny prefiks
+  // (instrukcje + katalog ćwiczeń) liczony raz i pobierany z cache przy powtórnych
+  // generowaniach tej samej konfiguracji (TTL ~5 min). Bez cache — zwykły string.
+  if (system) {
+    body.system = cacheSystem
+      ? [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }]
+      : system
+  }
+  const data = await _postToProxy(body, signal, timeoutMs)
   if (!Array.isArray(data.content)) throw new Error('Pusta odpowiedź API')
   const text = data.content.map((c: ClaudeContentBlock) => c.text || '').join('')
   return text.replace(/```json|```/g, '').trim()
@@ -742,70 +754,35 @@ ${recentSessions.map(formatSessionCompact).join('\n\n')}`)
   return parts.join('\n\n')
 }
 
-function buildPrompt(opts: BuildPromptOptions): string {
-  if (opts.type === 'ania') return buildAniaPrompt(opts)
+// Zwraca prompt rozbity na `system` (stabilny prefiks: kontekst + struktura + katalog
+// + schemat JSON + reguły — zależy TYLKO od konfiguracji, nie od historii → cache'owalny)
+// oraz `user` (dynamika: różnorodność, historia, analiza, avoid, progresja).
+export function buildPrompt(opts: BuildPromptOptions): { system: string; user: string } {
+  if (opts.type === 'ania') return { system: '', user: buildAniaPrompt(opts) }
   const { type, goal, equipment, avoid, recentSessions } = opts
   const td = TYPE_DETAILS[type] || TYPE_DETAILS.push
   const goalDesc = GOAL_HINTS[goal] || GOAL_HINTS.mass
   const hasHistory = recentSessions.length > 0
 
-  const parts: string[] = []
-
-  parts.push(`Wygeneruj plan treningowy typu ${td.label} dla osoby trenującej w ${equipment}.`)
-  parts.push(`Cel: ${goalDesc}`)
-  parts.push(`Struktura:\n${td.structure}`)
-
   const catalog = buildExerciseCatalog(type, equipment, goal, opts.level, opts.injuries)
-  if (catalog) parts.push(catalog.text)
+  const allowedHeads = MUSCLE_HEADS_BY_TYPE[type] || []
 
-  if (hasHistory) {
-    parts.push(`RÓŻNORODNOŚĆ:
-- Nie wybieraj identycznego zestawu ćwiczeń przy każdym generowaniu.
-- Zachowaj strukturę planu, ale rotuj ćwiczenia pomiędzy równoważnymi wariantami.
-- Preferuj ćwiczenia, które nie występowały w ostatnich ${recentSessions.length} treningach tego typu.
-- Dopuszczalne jest powtórzenie głównego ćwiczenia bazowego, jeśli jest uzasadnione historią progresji.`)
-  }
+  // ===== SYSTEM — stabilne dla danej konfiguracji (type/equipment/goal/level/injuries) =====
+  const sys: string[] = []
 
-  parts.push(`DOBÓR ĆWICZEŃ:
+  sys.push(`Jesteś doświadczonym trenerem siłowym. Wygeneruj plan treningowy typu ${td.label} dla osoby trenującej w ${equipment}.`)
+  sys.push(`Cel: ${goalDesc}`)
+  sys.push(`Struktura:\n${td.structure}`)
+
+  if (catalog) sys.push(catalog.text)
+
+  sys.push(`DOBÓR ĆWICZEŃ:
 ${td.selection.map((s: string) => `- ${s}`).join('\n')}
 - Nie duplikuj tego samego ćwiczenia w planie.`)
 
-  if (avoid && avoid.trim()) {
-    parts.push(`UNIKAJ: ${avoid.trim()}`)
-  }
-
-  if (hasHistory) {
-    parts.push(`OSTATNIE SESJE (${recentSessions.length}) — kompaktowo, weight x reps:
-${recentSessions.map(formatSessionCompact).join('\n\n')}`)
-
-    // ANALIZA per partia — AI ocenia status każdej partii z historii i dobiera
-    // ćwiczenia strategicznie. Zwraca wynik w polu "analysis" — UI pokazuje to userowi.
-    parts.push(`ANALIZA HISTORII — przeprowadź ją i ZWRÓĆ wynik w polu "analysis" w JSON:
-1. Dla każdej partii (klatka, barki, triceps, plecy, biceps, czworogłowy, hamstring, pośladki, łydki, core itd.) widocznej w historii oceń status:
-   - "progress" — waga lub powtórzenia rosną sesja po sesji
-   - "stagnation" — waga stoi przez 2+ ostatnie sesje przy podobnej liczbie powt. (potrzebny nowy bodziec)
-   - "overreaching" — wysokie zmęczenie sesja po sesji + spadek powt. (potrzebne odciążenie)
-   - "weakly_covered" — partia ma mało serii w historii lub nie była trenowana niedawno
-
-2. DOBÓR ĆWICZEŃ WG ANALIZY:
-   - Dla partii w STAGNACJI: WYBIERZ INNY WARIANT niż w ostatnich sesjach (np. zmień sztangę na hantle, poziomą ławkę na skos, prosty drążek na neutralny chwyt, free weight na maszynę). Nowy bodziec = nowa progresja.
-   - Dla partii w PROGRESS: ZACHOWAJ główne ćwiczenia bazowe z ostatnich sesji aby kontynuować adaptację. Możesz zmienić tylko ćwiczenia accessory/isolation.
-   - Dla partii w OVERREACHING: wybierz LŻEJSZE warianty (więcej maszyn, więcej izolacji, mniej wielostawowych). Zmniejsz nacisk na partię.
-   - Dla WEAKLY_COVERED partii: upewnij się że jest reprezentowana w planie zgodnie ze strukturą.
-
-3. Nie pomijaj wymaganej struktury — analiza wpływa na DOBÓR konkretnych ćwiczeń, nie na ich liczbę ani głowy mięśniowe.`)
-  }
-
-  const allowedHeads = MUSCLE_HEADS_BY_TYPE[type] || []
-  const analysisField = hasHistory
-    ? `,
-  "analysis": [
-    { "muscle": "nazwa partii po polsku (np. klatka, barki, triceps)", "status": "progress|stagnation|overreaching|weakly_covered", "note": "krótkie uzasadnienie (max 80 znaków, np. 'Wyciskanie sztangi stoi 2 sesje — zmieniam na hantle')" }
-  ]`
-    : ''
-  parts.push(`Zwróć WYŁĄCZNIE poprawny JSON w formacie (bez markdown, bez komentarzy):
+  sys.push(`Zwróć WYŁĄCZNIE poprawny JSON w formacie (bez markdown, bez komentarzy):
 {
-  "name": "krótka nazwa planu (max 40 znaków, po polsku)"${analysisField},
+  "name": "krótka nazwa planu (max 40 znaków, po polsku)",
   "exercises": [
     {
       "name": "nazwa ćwiczenia po polsku",
@@ -821,7 +798,7 @@ ${recentSessions.map(formatSessionCompact).join('\n\n')}`)
   ]
 }`)
 
-  parts.push(`KRYTYCZNE:
+  sys.push(`KRYTYCZNE:
 - Odpowiedź musi zawierać WYŁĄCZNIE poprawny JSON.
 - Nie używaj markdown.
 - Nie używaj bloków \`\`\`json.
@@ -836,7 +813,7 @@ ${recentSessions.map(formatSessionCompact).join('\n\n')}`)
     ? '- "name" musi być DOKŁADNĄ nazwą z sekcji BAZA ĆWICZEŃ — przepisz co do znaku, bez modyfikacji.'
     : '- Nazwy ćwiczeń wyłącznie po polsku. Preferuj dokładne nazwy z sekcji BAZA ĆWICZEŃ.'
 
-  parts.push(`WAŻNE:
+  sys.push(`WAŻNE:
 - Wszystkie pola są wymagane.
 ${setsRule}
 - "reps" musi być stringiem z zakresem ('6-8', '10-12', '12-15').
@@ -850,7 +827,51 @@ ${nameRule}
 - Wybieraj wyłącznie ćwiczenia możliwe do wykonania przy dostępnym sprzęcie — nie proponuj maszyn ani wyciągów, jeśli sprzęt to "dom z hantlami" lub "dom bez sprzętu (calisthenics)".
 - Tip ma być krótki i praktyczny.`)
 
-  parts.push(`ZASADY PROGRESJI:
+  // ===== USER — dynamiczne (historia/avoid/progresja) =====
+  const usr: string[] = []
+
+  usr.push('Wygeneruj teraz plan zgodnie z powyższymi zasadami i strukturą.')
+
+  if (hasHistory) {
+    usr.push(`RÓŻNORODNOŚĆ:
+- Nie wybieraj identycznego zestawu ćwiczeń przy każdym generowaniu.
+- Zachowaj strukturę planu, ale rotuj ćwiczenia pomiędzy równoważnymi wariantami.
+- Preferuj ćwiczenia, które nie występowały w ostatnich ${recentSessions.length} treningach tego typu.
+- Dopuszczalne jest powtórzenie głównego ćwiczenia bazowego, jeśli jest uzasadnione historią progresji.`)
+  }
+
+  if (avoid && avoid.trim()) {
+    usr.push(`UNIKAJ: ${avoid.trim()}`)
+  }
+
+  if (hasHistory) {
+    usr.push(`OSTATNIE SESJE (${recentSessions.length}) — kompaktowo, weight x reps:
+${recentSessions.map(formatSessionCompact).join('\n\n')}`)
+
+    // ANALIZA per partia — AI ocenia status każdej partii z historii i dobiera
+    // ćwiczenia strategicznie. Zwraca wynik w polu "analysis" — UI pokazuje to userowi.
+    usr.push(`ANALIZA HISTORII — przeprowadź ją i ZWRÓĆ wynik w polu "analysis" w JSON:
+1. Dla każdej partii (klatka, barki, triceps, plecy, biceps, czworogłowy, hamstring, pośladki, łydki, core itd.) widocznej w historii oceń status:
+   - "progress" — waga lub powtórzenia rosną sesja po sesji
+   - "stagnation" — waga stoi przez 2+ ostatnie sesje przy podobnej liczbie powt. (potrzebny nowy bodziec)
+   - "overreaching" — wysokie zmęczenie sesja po sesji + spadek powt. (potrzebne odciążenie)
+   - "weakly_covered" — partia ma mało serii w historii lub nie była trenowana niedawno
+
+2. DOBÓR ĆWICZEŃ WG ANALIZY:
+   - Dla partii w STAGNACJI: WYBIERZ INNY WARIANT niż w ostatnich sesjach (np. zmień sztangę na hantle, poziomą ławkę na skos, prosty drążek na neutralny chwyt, free weight na maszynę). Nowy bodziec = nowa progresja.
+   - Dla partii w PROGRESS: ZACHOWAJ główne ćwiczenia bazowe z ostatnich sesji aby kontynuować adaptację. Możesz zmienić tylko ćwiczenia accessory/isolation.
+   - Dla partii w OVERREACHING: wybierz LŻEJSZE warianty (więcej maszyn, więcej izolacji, mniej wielostawowych). Zmniejsz nacisk na partię.
+   - Dla WEAKLY_COVERED partii: upewnij się że jest reprezentowana w planie zgodnie ze strukturą.
+
+3. Nie pomijaj wymaganej struktury — analiza wpływa na DOBÓR konkretnych ćwiczeń, nie na ich liczbę ani głowy mięśniowe.`)
+
+    usr.push(`DODATKOWO: w zwracanym JSON dołącz pole "analysis" na najwyższym poziomie (obok "name" i "exercises"), w formacie:
+"analysis": [
+  { "muscle": "nazwa partii po polsku (np. klatka, barki, triceps)", "status": "progress|stagnation|overreaching|weakly_covered", "note": "krótkie uzasadnienie (max 80 znaków, np. 'Wyciskanie sztangi stoi 2 sesje — zmieniam na hantle')" }
+]`)
+  }
+
+  usr.push(`ZASADY PROGRESJI:
 ${hasHistory
   ? `- Dla ćwiczeń obecnych w historii analizuj ostatnie wykonania.
 - Jeśli wszystkie serie osiągnęły górną granicę zakresu powtórzeń, zwiększ ciężar o 2.5-5%.
@@ -860,7 +881,7 @@ ${hasHistory
 - Dla nowych ćwiczeń (brak w historii) ustaw "suggestedWeight": null.`
   : `- Brak historii treningowej — dla każdego ćwiczenia ustaw "suggestedWeight": null.`}`)
 
-  return parts.join('\n\n')
+  return { system: sys.join('\n\n'), user: usr.join('\n\n') }
 }
 
 // Cap długości user-input "avoid" — chroni przed nadużyciem promptu (kosztem tokenów)
@@ -986,14 +1007,15 @@ export async function generateAIPlan({
   const cached = getCachedPlan(cacheKey)
   if (cached) return cached
 
-  const prompt = buildPrompt({ type, goal, equipment, avoid: safeAvoid, recentSessions, equipmentTags, level, injuries })
+  const { system, user } = buildPrompt({ type, goal, equipment, avoid: safeAvoid, recentSessions, equipmentTags, level, injuries })
 
   // 1 silent retry przy błędzie parse — czasem Claude zwraca tekst zaczynający się od ```json
   // lub pełen JSON z jednym brakiem; ponowna próba w 90% przypadków wystarcza.
   let text: string | undefined, plan: Record<string, unknown> | undefined
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      text = await callClaude({ prompt, maxTokens: 3000, signal })
+      // system (stabilny prefiks: reguły + katalog) z prompt-cachingiem; user = dynamika.
+      text = await callClaude({ prompt: user, system, cacheSystem: !!system, maxTokens: 3000, signal })
       plan = parseClaudeJSON(text)
       break
     } catch (e: any) {

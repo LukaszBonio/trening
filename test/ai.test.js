@@ -5,6 +5,7 @@ import {
   normalizePlan,
   buildExerciseCatalog,
   buildAniaPrompt,
+  buildPrompt,
   PRIMARY_MUSCLES,
   MUSCLE_HEADS_BY_TYPE
 } from '../src/lib/ai'
@@ -394,5 +395,48 @@ describe('buildAniaPrompt', () => {
     })
     expect(withHist).toContain('ANALIZA POSTĘPÓW')
     expect(withHist).toContain('progresja')
+  })
+})
+
+describe('buildPrompt — split system/user (prompt caching)', () => {
+  const base = { type: 'push', goal: 'mass', equipment: 'siłownia', avoid: '', recentSessions: [], level: 'intermediate', injuries: [] }
+
+  it('system zawiera stabilny prefiks (katalog + struktura + reguły JSON)', () => {
+    const { system } = buildPrompt(base)
+    expect(system).toContain('BAZA ĆWICZEŃ')
+    expect(system).toContain('Struktura:')
+    expect(system).toContain('Zwróć WYŁĄCZNIE poprawny JSON')
+    expect(system).toContain('"movementPattern" musi być jedną z')
+  })
+  it('system NIE zależy od historii ani avoid (stały prefiks = cache hit)', () => {
+    const a = buildPrompt(base).system
+    const b = buildPrompt({ ...base, avoid: 'przysiady', recentSessions: [
+      { id: 's1', date: '2026-07-01', exercises: [{ name: 'Wyciskanie sztangi na ławce poziomej', sets: [{ weight: 80, reps: 8 }] }] }
+    ] }).system
+    expect(a).toBe(b)
+  })
+  it('user zawiera dynamikę: trigger, avoid, historię i analizę', () => {
+    const { system, user } = buildPrompt({ ...base, avoid: 'przysiady', recentSessions: [
+      { id: 's1', date: '2026-07-01', exercises: [{ name: 'Wyciskanie sztangi na ławce poziomej', sets: [{ weight: 80, reps: 8 }] }] }
+    ] })
+    expect(user).toContain('Wygeneruj teraz')
+    expect(user).toContain('UNIKAJ: przysiady')
+    expect(user).toContain('OSTATNIE SESJE')
+    expect(user).toContain('ANALIZA HISTORII')
+    expect(user).toContain('"analysis"')
+    // avoid/historia nie mogą wyciec do cache'owanego systemu
+    expect(system).not.toContain('przysiady')
+    expect(system).not.toContain('OSTATNIE SESJE')
+  })
+  it('bez historii: user nie ma sekcji analizy, system nadal pełny', () => {
+    const { system, user } = buildPrompt(base)
+    expect(user).not.toContain('ANALIZA HISTORII')
+    expect(user).not.toContain('"analysis"')
+    expect(system).toContain('BAZA ĆWICZEŃ')
+  })
+  it('typ "ania" → system pusty, całość w user (bez cache)', () => {
+    const { system, user } = buildPrompt({ type: 'ania', goal: 'mass', equipment: '', avoid: '', recentSessions: [], equipmentTags: ['masa_ciala'] })
+    expect(system).toBe('')
+    expect(user).toContain('SLOT 1')
   })
 })

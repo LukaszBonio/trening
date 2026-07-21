@@ -144,7 +144,23 @@ export default {
     if (!Array.isArray(body?.messages) || body.messages.length === 0) {
       return jsonResponse({ error: 'Invalid messages' }, 400)
     }
-    const promptChars = JSON.stringify(body.messages).length + (body.system ? String(body.system).length : 0)
+    // system: dozwolony string albo tablica bloków tekstowych (prompt caching).
+    // Sanityzujemy tablicę do {type:'text', text, [cache_control:ephemeral]} — nic więcej
+    // nie wpuszczamy, żeby nie dało się nadużyć klucza API dowolnym payloadem.
+    const safeSystem = (sys) => {
+      if (typeof sys === 'string') return sys
+      if (Array.isArray(sys)) {
+        return sys
+          .filter((b) => b && b.type === 'text' && typeof b.text === 'string')
+          .map((b) => b.cache_control
+            ? { type: 'text', text: b.text, cache_control: { type: 'ephemeral' } }
+            : { type: 'text', text: b.text })
+      }
+      return undefined
+    }
+    const systemSafe = safeSystem(body.system)
+
+    const promptChars = JSON.stringify(body.messages).length + (body.system ? JSON.stringify(body.system).length : 0)
     if (promptChars > MAX_PROMPT_CHARS) {
       return jsonResponse({ error: 'Prompt too large' }, 413)
     }
@@ -153,7 +169,7 @@ export default {
       model: body.model,
       max_tokens: maxTokens,
       messages: body.messages,
-      ...(typeof body.system === 'string' ? { system: body.system } : {}),
+      ...(systemSafe !== undefined ? { system: systemSafe } : {}),
       ...(Array.isArray(body.tools) ? { tools: body.tools } : {}),
       ...(body.tool_choice ? { tool_choice: body.tool_choice } : {}),
       ...(body.thinking ? { thinking: body.thinking } : {})
