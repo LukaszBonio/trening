@@ -2,6 +2,56 @@
 import type { ExerciseDetails } from './exerciseDetails'
 
 export const LEGS_DETAILS: Record<string, ExerciseDetails> = {
+  'przysiad-masa-ciala': {
+    equipmentDetail: 'masa ciała',
+    attachment: null,
+    startPosition: 'Stań w rozkroku na szerokość barków, palce stóp lekko na zewnątrz. Ramiona wyciągnij przed siebie dla równowagi, tułów wyprostowany.',
+    execution: [
+      'Zainicjuj ruch odprowadzeniem bioder w tył, jak przy siadaniu na krzesło.',
+      'Schodź w dół, aż uda będą co najmniej równolegle do podłogi.',
+      'Kolana podążają w linii palców stóp, pięty przyklejone do podłoża.',
+      'Wypchnij się piętami do pozycji stojącej, napinając pośladki na górze.'
+    ],
+    rangeOfMotion: 'Od pozycji stojącej do przysiadu poniżej równoległej ud do podłogi.',
+    musclesPrimary: ['czworogłowy uda', 'pośladkowy wielki'],
+    musclesSecondary: ['dwugłowy uda', 'przywodziciele', 'mięśnie grzbietu — stabilizacja'],
+    commonMistakes: [
+      'Odrywanie pięt od podłogi i przenoszenie ciężaru na palce.',
+      'Zapadanie kolan do środka.',
+      'Zaokrąglanie pleców w dolnej fazie.',
+      'Zbyt płytki zakres — brak zejścia do równoległej.'
+    ],
+    tips: [
+      'Wyobraź sobie siadanie na niskie krzesło tuż za tobą.',
+      'Rozłóż ciężar na całą stopę, akcent na pięty i zewnętrzną krawędź.',
+      'Gdy staje się za łatwe — spowolnij fazę schodzenia lub dodaj pauzę na dole.'
+    ]
+  },
+  'wykroki-masa-ciala': {
+    equipmentDetail: 'masa ciała',
+    attachment: null,
+    startPosition: 'Stań prosto, stopy na szerokość bioder, ręce na biodrach. Tułów pionowo, brzuch napięty.',
+    execution: [
+      'Zrób długi krok w przód i opuść biodra, aż oba kolana zegną się do ~90°.',
+      'Kolano tylnej nogi schodzi prawie do podłogi, przednie nad kostką.',
+      'Odepchnij się piętą przedniej nogi i wróć do pozycji startowej.',
+      'Powtórz na drugą nogę (naprzemiennie lub seriami na nogę).'
+    ],
+    rangeOfMotion: 'Od pozycji stojącej do wykroku z oboma kolanami zgiętymi do kąta prostego.',
+    musclesPrimary: ['czworogłowy uda', 'pośladkowy wielki'],
+    musclesSecondary: ['dwugłowy uda', 'mięśnie stabilizujące biodro'],
+    commonMistakes: [
+      'Za krótki krok — kolano przednie wychodzi mocno przed palce.',
+      'Pochylanie tułowia do przodu.',
+      'Zapadanie przedniego kolana do środka.',
+      'Odbijanie się kolanem od podłogi.'
+    ],
+    tips: [
+      'Trzymaj tułów pionowo, ciężar na pięcie przedniej nogi.',
+      'Wykrok wstecz (w tył) bywa łagodniejszy dla kolan niż w przód.',
+      'Gdy jest za łatwo — chwyć hantle lub wydłuż pauzę na dole.'
+    ]
+  },
   'przysiad-ze-sztanga': {
     equipmentDetail: 'sztanga prosta + stojaki (klatka)',
     attachment: null,

@@ -2,6 +2,81 @@
 import type { ExerciseDetails } from './exerciseDetails'
 
 export const PULL_DETAILS: Record<string, ExerciseDetails> = {
+  'podciaganie': {
+    equipmentDetail: 'drążek do podciągania',
+    attachment: null,
+    startPosition: 'Chwyć drążek nachwytem szerzej niż barki. Zwiśnij na wyprostowanych ramionach, łopatki lekko ściągnięte, nogi skrzyżowane lub proste.',
+    execution: [
+      'Rozpocznij od ściągnięcia łopatek w dół i do tyłu.',
+      'Podciągnij się, prowadząc łokcie w dół, aż broda minie drążek.',
+      'Zatrzymaj się na moment w górnej pozycji, klatka blisko drążka.',
+      'Opuść się kontrolowanie do pełnego wyprostu ramion.'
+    ],
+    rangeOfMotion: 'Od pełnego zwisu z wyprostowanymi ramionami do pozycji z brodą nad drążkiem.',
+    musclesPrimary: ['najszerszy grzbietu'],
+    musclesSecondary: ['obły większy', 'biceps ramienia', 'równoległoboczne', 'czworoboczny — część dolna'],
+    commonMistakes: [
+      'Bujanie ciałem i podciąganie na zamachu (kipping) zamiast siłą.',
+      'Niepełny wyprost ramion w dole — praca na skróconym zakresie.',
+      'Wzruszanie barków do uszu zamiast ściągania łopatek w dół.',
+      'Podciąganie samymi rękami bez inicjacji grzbietem.'
+    ],
+    tips: [
+      'Myśl o ciągnięciu łokci do bioder, nie o zginaniu rąk.',
+      'Jeśli nie robisz pełnego zakresu — użyj gumy oporowej lub maszyny grawitron.',
+      'Napnij brzuch i pośladki, by wyeliminować bujanie.'
+    ]
+  },
+  'podciaganie-podchwytem': {
+    equipmentDetail: 'drążek do podciągania',
+    attachment: null,
+    startPosition: 'Chwyć drążek podchwytem (dłonie do siebie) na szerokość barków. Zwiśnij na wyprostowanych ramionach, klatka lekko wypchnięta.',
+    execution: [
+      'Ściągnij łopatki i zainicjuj ruch grzbietem.',
+      'Podciągnij się, prowadząc łokcie w dół i blisko tułowia, aż broda minie drążek.',
+      'Napnij grzbiet i biceps w górnej pozycji.',
+      'Opuść się kontrolowanie do pełnego wyprostu ramion.'
+    ],
+    rangeOfMotion: 'Od pełnego zwisu z wyprostowanymi ramionami do pozycji z brodą nad drążkiem.',
+    musclesPrimary: ['najszerszy grzbietu', 'biceps ramienia'],
+    musclesSecondary: ['obły większy', 'ramienny', 'równoległoboczne'],
+    commonMistakes: [
+      'Bujanie i zamach zamiast czystego podciągnięcia.',
+      'Skracanie zakresu w dolnej fazie.',
+      'Odchylanie tułowia mocno do tyłu.',
+      'Zaniedbanie fazy negatywnej (opuszczanie „spadając").'
+    ],
+    tips: [
+      'Podchwyt mocniej angażuje biceps — dobre przejście do podciągania nachwytem.',
+      'Trzymaj łokcie blisko tułowia przez cały ruch.',
+      'Kontroluj 2-3 sekundy opuszczanie, by dołożyć pracy mięśniom.'
+    ]
+  },
+  'wioslowanie-australijskie': {
+    equipmentDetail: 'niski drążek (smith/stojak) lub taśmy TRX',
+    attachment: null,
+    startPosition: 'Połóż się pod drążkiem ustawionym na wysokości bioder. Chwyć nachwytem szerzej niż barki, ciało w linii prostej od pięt po barki, pięty na podłodze.',
+    execution: [
+      'Napnij brzuch i pośladki, utrzymując ciało sztywne jak deska.',
+      'Ściągnij łopatki i podciągnij klatkę do drążka, prowadząc łokcie do tyłu.',
+      'Dotknij drążka górną częścią klatki lub zbliż się maksymalnie.',
+      'Opuść się kontrolowanie do pełnego wyprostu ramion.'
+    ],
+    rangeOfMotion: 'Od wyprostu ramion w zwisie poziomym do klatki przy drążku.',
+    musclesPrimary: ['najszerszy grzbietu', 'równoległoboczne', 'czworoboczny — część środkowa'],
+    musclesSecondary: ['naramienny — część tylna', 'biceps ramienia'],
+    commonMistakes: [
+      'Opadanie bioder — ciało traci linię prostą.',
+      'Niepełny zakres, brak kontaktu klatki z drążkiem.',
+      'Ciągnięcie samymi rękami bez ściągania łopatek.',
+      'Zadzieranie głowy zamiast neutralnej szyi.'
+    ],
+    tips: [
+      'Im niżej drążek (bardziej poziome ciało), tym trudniej — reguluj wysokością.',
+      'Ugięcie kolan i stopy płasko upraszcza ćwiczenie dla początkujących.',
+      'Trzymaj napięty tułów przez cały ruch, jak w desce.'
+    ]
+  },
   'sciaganie-drazka-wyciagu-gornego': {
     equipmentDetail: 'wyciąg górny',
     attachment: 'drążek szeroki do ściągania',

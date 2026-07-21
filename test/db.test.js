@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { detectMuscle, detectEquipment } from '../src/lib/muscles'
 import { findSubstitutes, translateExerciseName } from '../src/lib/substitutions'
 import { findExerciseByName } from '../src/lib/exerciseDb'
+import { buildExerciseCatalog } from '../src/lib/ai'
 
 describe('detectMuscle', () => {
   it('rozpoznaje klatkę po keyword', () => {
@@ -114,6 +115,42 @@ describe('findSubstitutes', () => {
       const e = findExerciseByName(name)
       if (e) expect(name).toBe(e.name)
     }
+  })
+})
+
+describe('fundamentalne ćwiczenia w bazie (luki wykryte w audycie)', () => {
+  it('zawiera podciąganie i podciąganie podchwytem', () => {
+    expect(findExerciseByName('Podciąganie')?.equipment).toBe('własna_waga')
+    expect(findExerciseByName('pull up')?.id).toBe('podciaganie')
+    expect(findExerciseByName('chin up')?.id).toBe('podciaganie-podchwytem')
+  })
+  it('zawiera przysiad z masą ciała i wykroki bez obciążenia', () => {
+    expect(findExerciseByName('bodyweight squat')?.id).toBe('przysiad-masa-ciala')
+    expect(findExerciseByName('Przysiad z masą ciała')?.muscleHead).toBe('quads')
+    expect(findExerciseByName('bodyweight lunge')?.id).toBe('wykroki-masa-ciala')
+  })
+  it('zawiera pike push-up i wiosłowanie australijskie', () => {
+    expect(findExerciseByName('pike push up')?.muscleHead).toBe('shoulder_front')
+    expect(findExerciseByName('inverted row')?.id).toBe('wioslowanie-australijskie')
+  })
+})
+
+describe('buildExerciseCatalog — sprzęt', () => {
+  // Regresja: tryb kalisteniki miał puste heady (uda/plecy) → AI zmyślało ćwiczenia.
+  it('kalistenika ma teraz ćwiczenia na uda i plecy', () => {
+    const legs = buildExerciseCatalog('legs', 'dom bez sprzętu (calisthenics)', 'mass', 'beginner', [])
+    const pull = buildExerciseCatalog('pull', 'dom bez sprzętu (calisthenics)', 'mass', 'beginner', [])
+    expect(legs.text).toContain('Przysiad z masą ciała')
+    expect(pull.text).toContain('Podciąganie')
+  })
+  // Preferencja usera: na siłowni ćwiczenia obciążeniowe wyżej niż masa ciała.
+  it('na siłowni masa ciała jest niżej w grupie niż sprzęt obciążeniowy', () => {
+    const gym = buildExerciseCatalog('pull', 'siłownia', 'mass', 'intermediate', [])
+    const seg = gym.text.split('[back_lats]')[1].split('[')[0]
+    const lines = seg.trim().split('\n').filter(l => l.startsWith('- '))
+    const firstBodyweight = lines.findIndex(l => l.includes('własna waga'))
+    const lastLoaded = lines.map(l => l.includes('własna waga')).lastIndexOf(false)
+    expect(firstBodyweight).toBeGreaterThan(lastLoaded) // cała masa ciała po sprzęcie
   })
 })
 

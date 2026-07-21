@@ -2,6 +2,31 @@
 import type { ExerciseDetails } from './exerciseDetails'
 
 export const PUSH_DETAILS: Record<string, ExerciseDetails> = {
+  'pike-push-up': {
+    equipmentDetail: 'masa ciała (opcjonalnie podwyższenie pod stopy)',
+    attachment: null,
+    startPosition: 'Z pozycji podporu przodem unieś biodra wysoko, tworząc ciałem odwróconą literę „V". Dłonie nieco szerzej niż barki, nogi wyprostowane, wzrok na stopy.',
+    execution: [
+      'Ugnij łokcie, opuszczając głowę w kierunku podłogi między dłońmi.',
+      'Zatrzymaj się tuż nad podłożem, utrzymując biodra wysoko.',
+      'Wypchnij się dynamicznie do wyprostu ramion.',
+      'Im wyżej ustawisz stopy (na podwyższeniu), tym większe obciążenie barków.'
+    ],
+    rangeOfMotion: 'Od wyprostu ramion w pozycji „V" do momentu, gdy czubek głowy jest tuż nad podłogą.',
+    musclesPrimary: ['naramienny — część przednia', 'naramienny — część boczna'],
+    musclesSecondary: ['triceps ramienia', 'czworoboczny — część górna', 'mięsień piłowaty przedni'],
+    commonMistakes: [
+      'Opuszczanie bioder i przechodzenie w zwykłe pompki (obciążenie ucieka z barków).',
+      'Zbyt płytki zakres — głowa nie schodzi nisko.',
+      'Rozjeżdżanie łokci szeroko na boki.',
+      'Zadzieranie głowy zamiast prowadzenia jej między dłonie.'
+    ],
+    tips: [
+      'Trzymaj biodra jak najwyżej przez cały ruch — to utrzymuje kąt barkowy.',
+      'Zacznij ze stopami na podłodze; gdy jest za łatwo, oprzyj je na podwyższeniu.',
+      'Napnij brzuch i pośladki, żeby tułów był stabilny.'
+    ]
+  },
   // ===== KLATKA — GÓRA =====
   'wyciskanie-sztangi-na-lawce-skosnej': {
     equipmentDetail: 'sztanga prosta + ławka skośna 30-45°',

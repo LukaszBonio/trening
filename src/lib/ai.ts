@@ -459,11 +459,18 @@ export function buildExerciseCatalog(
   for (const h of heads) byHead.set(h, [])
   for (const ex of list) byHead.get(ex.muscleHead)?.push(ex)
 
+  // Gdy dostępny jest sprzęt obciążeniowy (siłownia / dom z hantlami), ćwiczenia z masą
+  // ciała schodzą niżej w rankingu każdej grupy — AI (nudge „preferuj wyżej") sięga
+  // wtedy najpierw po sztangę/hantle/maszynę/wyciąg. Przy samej kalistenice bez zmian.
+  const preferLoaded = allowed.some(eq => eq !== 'własna_waga')
+  const eqRank = (ex: ExerciseEntry) => (preferLoaded && ex.equipment === 'własna_waga' ? 1 : 0)
+
   const lines: string[] = []
   for (const [head, exs] of byHead) {
     if (!exs.length) continue
-    // W obrębie grupy: najlepiej dopasowane do celu jako pierwsze (nudge dla AI).
-    exs.sort((a, b) => fit(b) - fit(a))
+    // W obrębie grupy: najlepiej dopasowane do celu jako pierwsze (nudge dla AI),
+    // a przy dostępnym sprzęcie — ćwiczenia obciążeniowe przed masą ciała.
+    exs.sort((a, b) => eqRank(a) - eqRank(b) || fit(b) - fit(a))
     lines.push(`[${head}]`)
     for (const ex of exs) {
       lines.push(`- ${ex.name} (${EQUIPMENT_LABEL[ex.equipment]}, ${ex.exerciseType})`)
