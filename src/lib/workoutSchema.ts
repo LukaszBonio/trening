@@ -11,7 +11,7 @@ export type WorkoutType =
   | 'upper_a' | 'upper_b'
   | 'lower_a' | 'lower_b'
   | 'fbw_a' | 'fbw_b' | 'fbw_c'
-  | 'ania'
+  | 'ania' | 'ania_a' | 'ania_b'
 
 export type GroupId =
   | 'klatka' | 'barki' | 'triceps'
@@ -108,6 +108,18 @@ export const WORKOUT_SCHEMA: Record<WorkoutType, SchemaGroup[]> = {
     { id: 'czworogłowy', count: 1, muscles: ['quads'] },
     { id: 'plecy',       count: 1, muscles: ['back_lats', 'back_middle', 'back_lower', 'back_upper'] },
     { id: 'barki',       count: 1, muscles: ['shoulder_rear'] },
+  ],
+  // Ania Dzień 1 — kręgosłup lędźwiowy (głęboka stabilizacja) + górne plecy + postawa/łopatki.
+  ania_a: [
+    { id: 'core',   count: 2, muscles: ['core', 'abs', 'obliques'] },
+    { id: 'plecy',  count: 2, muscles: ['back_middle', 'back_upper', 'back_lats', 'back_lower'] },
+    { id: 'barki',  count: 1, muscles: ['shoulder_rear'] },
+  ],
+  // Ania Dzień 2 — core + pośladki + tylna taśma.
+  ania_b: [
+    { id: 'core',      count: 2, muscles: ['core', 'abs', 'obliques'] },
+    { id: 'pośladki',  count: 2, muscles: ['glutes', 'adductors'] },
+    { id: 'hamstring', count: 1, muscles: ['hamstrings'] },
   ],
 }
 

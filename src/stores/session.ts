@@ -34,6 +34,8 @@ interface ActiveSession {
   source: string
   startedAt: number
   exercises: SessionExercise[]
+  // Uwaga do treningu wpisywana na koniec (obecnie tylko plany Ani). Zasila AI.
+  note?: string
 }
 
 interface PlanExercise {
@@ -144,6 +146,11 @@ export const useSessionStore = defineStore('session', () => {
     Object.assign(active.value.exercises[exIdx].sets[setIdx], patch)
   }
 
+  function setNote(note: string): void {
+    if (!active.value) return
+    active.value.note = note
+  }
+
   function swapExercise(exIdx: number, newName: string): void {
     if (!active.value) return
     const ex = active.value.exercises[exIdx]
@@ -160,6 +167,7 @@ export const useSessionStore = defineStore('session', () => {
   function finishToPayload() {
     if (!active.value) return null
     const now = Date.now()
+    const note = typeof active.value.note === 'string' ? active.value.note.trim() : ''
     return {
       id: active.value.id,
       type: active.value.type,
@@ -167,6 +175,7 @@ export const useSessionStore = defineStore('session', () => {
       date: new Date(active.value.startedAt).toISOString(),
       finishedAt: now,
       duration: Math.floor((now - active.value.startedAt) / 1000),
+      ...(note ? { note } : {}),
       exercises: active.value.exercises.map(ex => {
         const out: Record<string, unknown> = {
           name: ex.name,
@@ -201,7 +210,7 @@ export const useSessionStore = defineStore('session', () => {
 
   return {
     active, isActive, totalSetsDone, totalSets,
-    startSession, addSet, removeSet, toggleSet, updateSet, swapExercise,
+    startSession, addSet, removeSet, toggleSet, updateSet, setNote, swapExercise,
     discard, finishToPayload
   }
 })

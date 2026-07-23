@@ -29,6 +29,22 @@ const completionWorkout = ref(null)  // last finished workout for summary modal
 
 const selectedType = ref(null)
 const planSource = ref('library')  // 'library' | 'ai' | 'custom'
+
+// Czytelne etykiety dni Ani (typy ania_a / ania_b).
+const ANIA_DAY_LABELS = {
+  ania:   'Ćwiczenia wzmacniające dla Ani',
+  ania_a: 'Ania — Dzień 1: Kręgosłup i postawa',
+  ania_b: 'Ania — Dzień 2: Core i pośladki'
+}
+const aniaDayTitle = computed(() => ANIA_DAY_LABELS[selectedType.value] || 'Ćwiczenia wzmacniające dla Ani')
+const isAniaSession = computed(() => !!session.active && session.active.type.startsWith('ania'))
+const sessionTypeLabel = computed(() => {
+  const t = session.active?.type || ''
+  if (t === 'ania_a') return 'ANIA · DZIEŃ 1'
+  if (t === 'ania_b') return 'ANIA · DZIEŃ 2'
+  if (t === 'ania') return 'ANIA'
+  return t.toUpperCase()
+})
 const restTimerRef = ref(null)
 const workoutCardsRef = ref(null)
 // Flaga że już zapytaliśmy o dobitkę w tej sesji — nie pytamy drugi raz po powrocie.
@@ -242,7 +258,7 @@ function toggleSystem(sysId) {
 function selectDay(dayKey) {
   selectedType.value = dayKey
   // Plan Ani tworzony jest przez AI — otwórz od razu generator, pomiń bibliotekę.
-  if (dayKey === 'ania') planSource.value = 'ai'
+  if (dayKey.startsWith('ania')) planSource.value = 'ai'
   localStorage.setItem('tp_last_type', dayKey)
 }
 
@@ -272,7 +288,7 @@ async function discardWorkout() {
   <div v-if="session.isActive" class="active-session">
     <BaseCard class="session-header">
       <div>
-        <div class="session-type">{{ session.active.type.toUpperCase() }} · <span class="duration">{{ duration }}</span></div>
+        <div class="session-type">{{ sessionTypeLabel }} · <span class="duration">{{ duration }}</span></div>
         <h2 class="card-title" style="margin: 0">{{ session.active.planName }}</h2>
       </div>
       <div class="session-progress">
@@ -302,6 +318,23 @@ async function discardWorkout() {
 
     <PlateCalculator />
 
+    <!-- Notatka do treningu — tylko plany Ani. Zapisywana z treningiem i czytana
+         przez AI przy następnym generowaniu tego dnia (dobór wariantu/bezpieczeństwo). -->
+    <div v-if="isAniaSession" class="session-note">
+      <label class="session-note-label">
+        <i class="ti ti-note"></i> Uwagi do treningu (opcjonalnie)
+      </label>
+      <textarea
+        class="session-note-input"
+        :value="session.active.note || ''"
+        @input="session.setNote($event.target.value)"
+        placeholder="np. bolało kolano przy wall sit, most biodrowy za łatwy, zwiększyć czas deski…"
+        rows="2"
+        maxlength="300"
+      ></textarea>
+      <p class="session-note-hint">AI weźmie te uwagi pod uwagę przy kolejnym planie tego dnia.</p>
+    </div>
+
     <div class="session-actions">
       <button class="btn" @click="discardWorkout">Anuluj</button>
       <button class="btn btn-primary" @click="finishWorkout">Zakończ trening</button>
@@ -325,12 +358,12 @@ async function discardWorkout() {
       </template>
 
       <!-- Plan Ani: dedykowany, generowany wyłącznie przez AI (bez biblioteki/edytora) -->
-      <template v-else-if="selectedType === 'ania'">
+      <template v-else-if="selectedType.startsWith('ania')">
         <h2 class="card-title" style="margin-bottom: var(--space-2)">
-          Ćwiczenia wzmacniające dla Ani
+          {{ aniaDayTitle }}
         </h2>
         <AIGenerator
-          type="ania"
+          :type="selectedType"
           @select="onPickPlan"
           @use-library="() => {}"
         />
@@ -444,9 +477,9 @@ async function discardWorkout() {
       </div>
     </BaseCard>
 
-    <!-- Dedykowany plan korekcyjny — generowany przez AI z analizą postępów -->
+    <!-- Dedykowany plan korekcyjny Ani — dwudniowy podział, generowany przez AI -->
     <BaseCard class="ania-card">
-      <button class="ania-btn" @click="selectDay('ania')">
+      <div class="ania-head">
         <div class="ania-icon">
           <i class="ti ti-heart-handshake"></i>
         </div>
@@ -455,8 +488,23 @@ async function discardWorkout() {
             <h2 class="ania-name">Ćwiczenia wzmacniające dla Ani</h2>
             <span class="ania-badge"><i class="ti ti-sparkles"></i> AI</span>
           </div>
-          <p class="ania-desc">Plan korekcyjny — core, pośladki, postawa. AI analizuje postępy i dobiera progresję.</p>
+          <p class="ania-desc">Dwudniowy plan korekcyjny. AI analizuje postępy, notatki i dobiera progresję.</p>
         </div>
+      </div>
+      <button class="ania-day-btn" @click="selectDay('ania_a')">
+        <span class="ania-day-num">1</span>
+        <span class="ania-day-text">
+          <span class="ania-day-title">Kręgosłup i postawa</span>
+          <span class="ania-day-desc">Głęboka stabilizacja lędźwi, górne plecy, zaokrąglone ramiona.</span>
+        </span>
+        <i class="ti ti-chevron-right ania-arrow"></i>
+      </button>
+      <button class="ania-day-btn" @click="selectDay('ania_b')">
+        <span class="ania-day-num">2</span>
+        <span class="ania-day-text">
+          <span class="ania-day-title">Core i pośladki</span>
+          <span class="ania-day-desc">Wzmacnianie core, pośladki, stabilizacja miednicy.</span>
+        </span>
         <i class="ti ti-chevron-right ania-arrow"></i>
       </button>
     </BaseCard>
@@ -716,20 +764,12 @@ async function discardWorkout() {
   border-color: var(--accent-soft-2);
   background: linear-gradient(135deg, var(--accent-soft), transparent 70%);
 }
-.ania-btn {
+.ania-head {
   display: flex;
   gap: 12px;
   align-items: center;
-  padding: var(--space-4);
-  width: 100%;
-  background: none;
-  border: none;
-  color: var(--text);
-  cursor: pointer;
-  text-align: left;
-  transition: background var(--dur);
+  padding: var(--space-4) var(--space-4) var(--space-3);
 }
-.ania-btn:hover { background: var(--bg-hover); }
 .ania-icon {
   width: 44px;
   height: 44px;
@@ -778,10 +818,77 @@ async function discardWorkout() {
   flex-shrink: 0;
   transition: transform var(--dur);
 }
-.ania-btn:hover .ania-arrow {
+
+/* Przyciski wyboru dnia (Dzień 1 / Dzień 2) */
+.ania-day-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px var(--space-4);
+  background: none;
+  border: none;
+  border-top: 1px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--dur);
+}
+.ania-day-btn:hover { background: var(--bg-hover); }
+.ania-day-num {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+}
+.ania-day-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ania-day-title { font-weight: 600; font-size: 14px; }
+.ania-day-desc { font-size: 12px; color: var(--text-muted); line-height: 1.35; }
+.ania-day-btn:hover .ania-arrow {
   color: var(--accent);
   transform: translateX(2px);
 }
+
+/* Notatka do treningu (Ania) */
+.session-note {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.session-note-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.session-note-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  line-height: 1.4;
+}
+.session-note-input:focus { outline: none; border-color: var(--accent); }
+.session-note-hint { margin: 0; font-size: 11px; color: var(--text-dim); }
 
 /* Stary type-btn (na wszelki wypadek) */
 .type-btn {

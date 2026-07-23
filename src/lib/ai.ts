@@ -106,6 +106,8 @@ export interface RecentSession {
   id?: string
   date: string | number | Date
   exercises: SessionExercise[]
+  // Uwaga zapisana przez użytkownika na koniec treningu (tylko plany Ani) — zasila AI.
+  note?: string
 }
 
 interface GenerateAIPlanOptions {
@@ -258,7 +260,11 @@ export const MUSCLE_HEADS_BY_TYPE: Record<string, string[]> = {
   fbw_b:   ['chest_middle', 'chest_upper', 'back_lats', 'back_middle', 'back_lower', 'shoulder_front', 'shoulder_side', 'quads', 'hamstrings', 'glutes', 'triceps_long', 'triceps_lat', 'abs', 'core'],
   fbw_c:   ['chest_middle', 'chest_upper', 'back_lats', 'back_middle', 'shoulder_front', 'shoulder_side', 'shoulder_rear', 'quads', 'hamstrings', 'glutes', 'biceps_short', 'calves', 'core'],
   // Plan korekcyjny Ani — bez klatki/przednich barków/tricepsa/bicepsa (górna część minimalna).
-  ania:    ['core', 'abs', 'obliques', 'glutes', 'adductors', 'hamstrings', 'quads', 'back_lats', 'back_middle', 'back_lower', 'back_upper', 'shoulder_rear', 'calves']
+  ania:    ['core', 'abs', 'obliques', 'glutes', 'adductors', 'hamstrings', 'quads', 'back_lats', 'back_middle', 'back_lower', 'back_upper', 'shoulder_rear', 'calves'],
+  // Ania Dzień 1 — kręgosłup (głęboka stabilizacja lędźwi) + górne plecy + postawa/łopatki.
+  ania_a:  ['core', 'abs', 'obliques', 'back_middle', 'back_lats', 'back_lower', 'back_upper', 'shoulder_rear'],
+  // Ania Dzień 2 — core + pośladki + tylna taśma + stabilizacja kolana.
+  ania_b:  ['core', 'abs', 'obliques', 'glutes', 'adductors', 'hamstrings', 'quads']
 }
 
 // Szczegóły dla każdego typu treningu — struktura, zasady doboru, oczekiwana liczba ćwiczeń.
@@ -398,6 +404,28 @@ const TYPE_DETAILS: Record<string, TypeDetail> = {
       'Wyłącznie bezpieczne ćwiczenia dla osoby początkującej ze schorzeniami kręgosłupa i kolana.',
       'Kręgosłup w pozycji neutralnej, bez obciążonego zginania lędźwi i osiowego obciążania.',
       'Kolano bez koślawości, rotacji i głębokiego zgięcia pod obciążeniem.'
+    ]
+  },
+  // Ania — Dzień 1: kręgosłup lędźwiowy (głęboka stabilizacja) + górne plecy + postawa.
+  ania_a: {
+    label: 'ANIA — DZIEŃ 1: KRĘGOSŁUP I POSTAWA',
+    expectedCount: 5,
+    structure: '2× głęboka stabilizacja lędźwi/core + 2× górne plecy (wiosłowanie/ściąganie) + 1× łopatki/tylne barki/postawa',
+    selection: [
+      'Priorytet: głębokie stabilizatory kręgosłupa lędźwiowego (bez obciążonego zginania/wyprostu lędźwi).',
+      'Górne plecy i łopatki — korekcja zaokrąglonych ramion i wysuniętej głowy.',
+      'Kręgosłup neutralny, bez osiowego obciążania.'
+    ]
+  },
+  // Ania — Dzień 2: core + pośladki + tylna taśma + stabilizacja kolana.
+  ania_b: {
+    label: 'ANIA — DZIEŃ 2: CORE I POŚLADKI',
+    expectedCount: 5,
+    structure: '2× core (aktywacja + izometria) + 2× pośladki (wyprost bioder + odwodzenie) + 1× tylna taśma',
+    selection: [
+      'Priorytet: wzmocnienie core i pośladków przy neutralnym kręgosłupie.',
+      'Kolano (MCL) bez koślawości, rotacji i głębokiego zgięcia pod obciążeniem.',
+      'Bez osiowego obciążania kręgosłupa.'
     ]
   }
 }
@@ -567,7 +595,58 @@ interface AniaSlot {
 // Kuratorowane menu. Każdy slot MA co najmniej jedną opcję na masę ciała (fallback,
 // bo 'masa_ciala' jest zawsze zaznaczona). Nazwy pokrywające się z bazą ćwiczeń
 // (exerciseDb) dostają metadane z bazy w normalizePlan.
-const ANIA_SLOTS: AniaSlot[] = [
+// DZIEŃ 1 — Kręgosłup lędźwiowy (głęboka stabilizacja) + górne plecy + postawa/łopatki.
+const ANIA_A_SLOTS: AniaSlot[] = [
+  {
+    title: 'Głęboka stabilizacja lędźwi (anti-extension, kręgosłup neutralny)',
+    primaryMuscle: 'core', muscleHead: 'core', exerciseType: 'isolation', movementPattern: 'core',
+    options: [
+      { name: 'Martwy robak', equip: 'masa_ciala', level: 'baza' },
+      { name: 'Martwy robak z wyprostem nogi', equip: 'masa_ciala', level: 'progresja' },
+      { name: 'Ptak-pies', equip: 'masa_ciala', level: 'anty-rotacja' }
+    ]
+  },
+  {
+    title: 'Izometria tułowia (stabilizacja anty-rotacyjna/boczna)',
+    primaryMuscle: 'core', muscleHead: 'core', exerciseType: 'isolation', movementPattern: 'core',
+    options: [
+      { name: 'Deska', equip: 'masa_ciala', level: 'izometria' },
+      { name: 'Deska bokiem', equip: 'masa_ciala', level: 'progresja (skolioza/skośne)' },
+      { name: 'Pallof press', equip: 'guma', level: 'anty-rotacja z oporem' }
+    ]
+  },
+  {
+    title: 'Górne plecy — wiosłowanie (retrakcja łopatek)',
+    primaryMuscle: 'back', muscleHead: 'back_middle', exerciseType: 'compound', movementPattern: 'horizontal_pull',
+    options: [
+      { name: 'Wiosłowanie australijskie', equip: 'masa_ciala', level: 'baza (masa ciała)' },
+      { name: 'Wiosłowanie z gumą', equip: 'guma', level: 'z oporem' },
+      { name: 'Wiosłowanie hantlą w podparciu', equip: 'hantle', level: 'wariant z hantlami' },
+      { name: 'Wiosłowanie na maszynie', equip: 'maszyna', level: 'wariant na siłowni' }
+    ]
+  },
+  {
+    title: 'Najszersze / ściąganie łopatek w dół',
+    primaryMuscle: 'back', muscleHead: 'back_upper', exerciseType: 'compound', movementPattern: 'vertical_pull',
+    options: [
+      { name: 'Wznosy T-Y-W leżąc', equip: 'masa_ciala', level: 'baza (postawa)' },
+      { name: 'Ściąganie drążka wyciągu górnego', equip: 'maszyna', level: 'wariant na siłowni' }
+    ]
+  },
+  {
+    title: 'Tylne barki + korekcja zaokrąglonych ramion i ustawienia głowy',
+    primaryMuscle: 'rear_shoulders', muscleHead: 'shoulder_rear', exerciseType: 'isolation', movementPattern: 'shoulder_isolation',
+    options: [
+      { name: 'Wall angels', equip: 'masa_ciala', level: 'korekcja głowy/łopatek' },
+      { name: 'Band pull-apart', equip: 'guma', level: 'baza z gumą' },
+      { name: 'Wznosy hantli w opadzie', equip: 'hantle', level: 'wariant z hantlami' },
+      { name: 'Face pull', equip: 'maszyna', level: 'wariant na siłowni' }
+    ]
+  }
+]
+
+// DZIEŃ 2 — Core + pośladki + tylna taśma + stabilizacja kolana.
+const ANIA_B_SLOTS: AniaSlot[] = [
   {
     title: 'Aktywacja core (leżąc, kręgosłup neutralny)',
     primaryMuscle: 'core', muscleHead: 'core', exerciseType: 'isolation', movementPattern: 'core',
@@ -615,42 +694,22 @@ const ANIA_SLOTS: AniaSlot[] = [
       { name: 'Uginanie nóg leżąc', equip: 'maszyna', level: 'wariant na siłowni' },
       { name: 'Uginanie nóg siedząc', equip: 'maszyna', level: 'wariant na siłowni' }
     ]
-  },
-  {
-    title: 'Czworogłowy / stabilizacja kolana (MCL — kontrolowany zakres, bez koślawości)',
-    primaryMuscle: 'quads', muscleHead: 'quads', exerciseType: 'isolation', movementPattern: 'squat',
-    options: [
-      { name: 'Wall sit', equip: 'masa_ciala', level: 'baza (izometria)' },
-      { name: 'Przysiad z hantlem do ławki', equip: 'hantle', level: 'progresja (ograniczony zakres)' },
-      { name: 'Wyprosty nóg', equip: 'maszyna', level: 'wariant na siłowni (lekki)' }
-    ]
-  },
-  {
-    title: 'Plecy / postawa — ściąganie łopatek',
-    primaryMuscle: 'back', muscleHead: 'back_middle', exerciseType: 'compound', movementPattern: 'horizontal_pull',
-    options: [
-      { name: 'Wznosy T-Y-W leżąc', equip: 'masa_ciala', level: 'baza (postawa)' },
-      { name: 'Wiosłowanie z gumą', equip: 'guma', level: 'z oporem' },
-      { name: 'Wiosłowanie hantlą w podparciu', equip: 'hantle', level: 'wariant z hantlami' },
-      { name: 'Wiosłowanie na maszynie', equip: 'maszyna', level: 'wariant na siłowni' },
-      { name: 'Ściąganie drążka wyciągu górnego', equip: 'maszyna', level: 'wariant na siłowni' }
-    ]
-  },
-  {
-    title: 'Łopatki + górny grzbiet + korekcja ustawienia głowy',
-    primaryMuscle: 'rear_shoulders', muscleHead: 'shoulder_rear', exerciseType: 'isolation', movementPattern: 'shoulder_isolation',
-    options: [
-      { name: 'Wall angels', equip: 'masa_ciala', level: 'korekcja głowy/łopatek' },
-      { name: 'Band pull-apart', equip: 'guma', level: 'baza z gumą' },
-      { name: 'Face pull', equip: 'maszyna', level: 'wariant na siłowni' }
-    ]
   }
 ]
+
+// Menu per dzień. buildAniaPrompt wybiera zestaw wg typu (ania_a / ania_b).
+// Legacy 'ania' → Dzień 2 (najbliższy dawnemu profilowi core/pośladki), ale UI już
+// nie tworzy planów tego typu (istnieje tylko dla starych rekordów historii).
+const ANIA_DAYS: Record<string, { title: string; slots: AniaSlot[] }> = {
+  ania_a: { title: 'Dzień 1 — Kręgosłup i postawa', slots: ANIA_A_SLOTS },
+  ania_b: { title: 'Dzień 2 — Core i pośladki', slots: ANIA_B_SLOTS },
+  ania:   { title: 'Core i pośladki', slots: ANIA_B_SLOTS }
+}
 
 // Dedykowany builder promptu dla planu Ani. Reużywa formatSessionCompact + reguł pól,
 // ale z profilem korekcyjnym, przeciwwskazaniami i progresją przez trudność (nie ciężar).
 // Eksportowane dla testów.
-export function buildAniaPrompt({ equipmentTags, avoid, recentSessions }: BuildPromptOptions): string {
+export function buildAniaPrompt({ type, equipmentTags, avoid, recentSessions }: BuildPromptOptions): string {
   // Masa ciała zawsze dostępna (baza). Reszta wg zaznaczenia usera.
   const selected = new Set<AniaEquip>(['masa_ciala'])
   for (const t of (equipmentTags || [])) {
@@ -658,10 +717,12 @@ export function buildAniaPrompt({ equipmentTags, avoid, recentSessions }: BuildP
   }
   const equipSummary = [...selected].map(t => ANIA_EQUIP_LABEL[t]).join(', ')
   const hasHistory = recentSessions.length > 0
-  const td = TYPE_DETAILS.ania
+  const day = ANIA_DAYS[type] || ANIA_DAYS.ania_b
+  const slots = day.slots
+  const td = TYPE_DETAILS[type] || TYPE_DETAILS.ania
   const parts: string[] = []
 
-  parts.push(`Jesteś trenerem personalnym specjalizującym się w treningu korekcyjnym i pracy z osobami początkującymi ze schorzeniami kręgosłupa i stawów. Ułóż BEZPIECZNY, korekcyjno-wzmacniający plan treningowy dla konkretnej osoby (Ania). Dostępny sprzęt: ${equipSummary}.`)
+  parts.push(`Jesteś trenerem personalnym specjalizującym się w treningu korekcyjnym i pracy z osobami początkującymi ze schorzeniami kręgosłupa i stawów. Ułóż BEZPIECZNY, korekcyjno-wzmacniający plan treningowy dla konkretnej osoby (Ania). To ${day.title} w dwudniowym podziale. Dostępny sprzęt: ${equipSummary}.`)
 
   parts.push(`PROFIL:
 - Kobieta, POCZĄTKUJĄCA (brak doświadczenia z treningiem siłowym).
@@ -683,7 +744,7 @@ export function buildAniaPrompt({ equipmentTags, avoid, recentSessions }: BuildP
   // Menu — filtrowane wg zaznaczonych kategorii sprzętu. Każdy slot = jedno ćwiczenie.
   // Masa ciała zawsze w secie → każdy slot ma co najmniej opcję na masę ciała.
   const menuLines: string[] = []
-  ANIA_SLOTS.forEach((slot, i) => {
+  slots.forEach((slot, i) => {
     const shown = slot.options.filter(o => selected.has(o.equip))
     const optText = shown.map(o => `"${o.name}" (${ANIA_EQUIP_LABEL[o.equip]}, ${o.level})`).join('; ')
     menuLines.push(`SLOT ${i + 1} — ${slot.title}\n  primaryMuscle: "${slot.primaryMuscle}", muscleHead: "${slot.muscleHead}", exerciseType: "${slot.exerciseType}", movementPattern: "${slot.movementPattern}"\n  Wybierz 1 z: ${optText}`)
@@ -692,6 +753,19 @@ export function buildAniaPrompt({ equipmentTags, avoid, recentSessions }: BuildP
 
   if (avoid && avoid.trim()) {
     parts.push(`DODATKOWO UNIKAJ: ${avoid.trim()}`)
+  }
+
+  // Uwagi zapisane przez użytkownika na koniec poprzednich treningów Ani — AI ma je
+  // uwzględnić przy doborze wariantu i bezpieczeństwie (np. ból → łatwiejszy wariant).
+  const noteLines = recentSessions
+    .filter(s => typeof s.note === 'string' && s.note.trim())
+    .map(s => {
+      const d = new Date(s.date)
+      const label = Number.isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10) + ': '
+      return `- ${label}${s.note!.trim()}`
+    })
+  if (noteLines.length) {
+    parts.push(`UWAGI UŻYTKOWNIKA z ostatnich treningów (traktuj priorytetowo — dostosuj dobór/trudność, zachowaj bezpieczeństwo):\n${noteLines.join('\n')}`)
   }
 
   if (hasHistory) {
@@ -704,10 +778,11 @@ ${recentSessions.map(formatSessionCompact).join('\n\n')}`)
    - "stagnation" — brak postępu przez 2+ sesje
    - "overreaching" — spadek jakości/objawy przeciążenia
    - "weakly_covered" — partia słabo pokryta w historii
-2. PROGRESJA (BEZ zwiększania ciężaru — plan na masie ciała):
-   - progress → zwiększ trudność: więcej powtórzeń w zakresie, dłuższy czas izometrii, LUB trudniejszy wariant z menu (np. "Most biodrowy" → "Most biodrowy jednonóż", "Martwy robak" → "Martwy robak z wyprostem nogi").
+2. PROGRESJA:
+   - Ćwiczenia z masą ciała/gumą → progresuj TRUDNOŚCIĄ: więcej powtórzeń w zakresie, dłuższy czas izometrii, LUB trudniejszy wariant z menu (np. "Most biodrowy" → "Most biodrowy jednonóż", "Martwy robak" → "Martwy robak z wyprostem nogi").
+   - Ćwiczenia OBCIĄŻONE (hantle/maszyna: Hip thrust, Odwodzenie nóg na maszynie, Uginanie nóg, Wiosłowanie na maszynie/hantlą, Face pull) → progresuj CIĘŻAREM: przy komfortowym wykonaniu górnego zakresu podnieś obciążenie o mały krok. Aplikacja i tak podpowie ciężar z historii — Ty ustaw sensowny punkt startowy.
    - stagnation → zmień wariant w obrębie slotu na inny bodziec.
-   - overreaching → cofnij do łatwiejszego wariantu i zmniejsz objętość.
+   - overreaching → cofnij do łatwiejszego/lżejszego wariantu i zmniejsz objętość.
    - weakly_covered → upewnij się, że slot jest solidnie pokryty.
 3. Zachowaj bezpieczeństwo i pełną strukturę ${td.expectedCount} ćwiczeń.`)
   } else {
@@ -733,7 +808,7 @@ ${recentSessions.map(formatSessionCompact).join('\n\n')}`)
       "sets": LICZBA,
       "reps": "ZAKRES lub CZAS jako string",
       "tip": "krótka wskazówka bezpieczeństwa (max 60 znaków)",
-      "suggestedWeight": null
+      "suggestedWeight": LICZBA_LUB_NULL
     }
   ]
 }`)
@@ -747,7 +822,7 @@ ${recentSessions.map(formatSessionCompact).join('\n\n')}`)
 - "movementPattern": ${MOVEMENT_PATTERNS.map(p => `"${p}"`).join(', ')}.
 - "sets": liczba 2 lub 3 (początkująca — niska/umiarkowana objętość).
 - "reps": string — zakres powtórzeń ("10-15") lub czas dla izometrii ("20-30s").
-- "suggestedWeight": zawsze null (plan na masie ciała / minimalnym obciążeniu).
+- "suggestedWeight": dla wariantów OBCIĄŻONYCH (hantle/maszyna) podaj lekki ciężar startowy w kg (liczba); dla masy ciała/gumy zawsze null.
 - "tip": max 60 znaków, kluczowa wskazówka bezpieczeństwa/techniki (np. "Kręgosłup neutralny, napnij brzuch").
 - Ten plan to trening wzmacniająco-korekcyjny, nie terapia medyczna. Priorytetem jest bezpieczeństwo.`)
 
@@ -758,7 +833,7 @@ ${recentSessions.map(formatSessionCompact).join('\n\n')}`)
 // + schemat JSON + reguły — zależy TYLKO od konfiguracji, nie od historii → cache'owalny)
 // oraz `user` (dynamika: różnorodność, historia, analiza, avoid, progresja).
 export function buildPrompt(opts: BuildPromptOptions): { system: string; user: string } {
-  if (opts.type === 'ania') return { system: '', user: buildAniaPrompt(opts) }
+  if (opts.type.startsWith('ania')) return { system: '', user: buildAniaPrompt(opts) }
   const { type, goal, equipment, avoid, recentSessions } = opts
   const td = TYPE_DETAILS[type] || TYPE_DETAILS.push
   const goalDesc = GOAL_HINTS[goal] || GOAL_HINTS.mass
@@ -959,7 +1034,7 @@ export function normalizePlan(plan: Record<string, any>, { type, goal }: { type:
     ex.name = translateExerciseName(ex.name)
     // Wymuszenie 3 serii dla redukcji — niezależnie od tego co AI zwróciło.
     // Plan Ani wyłączony: progresja idzie przez trudność/powtórzenia (2-3 serie), nie ciężar.
-    if (goal === 'cut' && type !== 'ania') ex.sets = 3
+    if (goal === 'cut' && !type.startsWith('ania')) ex.sets = 3
     // Ćwiczenie z bazy → baza jest źródłem prawdy: kanoniczna nazwa + metadata
     // z bazy nadpisują to co zwróciło AI (AI może się mylić, baza nie).
     const dbEx = findExerciseByName(ex.name)

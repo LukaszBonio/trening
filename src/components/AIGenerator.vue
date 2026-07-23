@@ -44,7 +44,7 @@ const props = defineProps({
 const emit = defineEmits(['select', 'use-library'])
 
 // Plan korekcyjny Ani — cel jest stały (nie z ustawień), więc chowamy sekcję celu.
-const isAnia = computed(() => props.type === 'ania')
+const isAnia = computed(() => props.type.startsWith('ania'))
 
 // Wybór sprzętu dla planu Ani (checkboxy). Masa ciała zawsze dostępna (baza).
 const aniaEquipOpen = ref(false)
