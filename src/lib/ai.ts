@@ -251,11 +251,11 @@ const MOVEMENT_PATTERNS: string[] = [
 export const MUSCLE_HEADS_BY_TYPE: Record<string, string[]> = {
   push:    ['chest_upper', 'chest_middle', 'chest_lower', 'shoulder_front', 'shoulder_side', 'triceps_long', 'triceps_lat', 'triceps_med'],
   pull:    ['back_lats', 'back_middle', 'back_upper', 'back_lower', 'shoulder_rear', 'biceps_long', 'biceps_short', 'biceps_brach', 'forearms'],
-  legs:    ['quads', 'hamstrings', 'glutes', 'adductors', 'calves', 'abs', 'obliques', 'core'],
-  upper_a: ['chest_upper', 'chest_middle', 'chest_lower', 'shoulder_front', 'shoulder_side', 'shoulder_rear', 'back_lats', 'back_middle', 'back_upper', 'biceps_long', 'biceps_short', 'biceps_brach', 'triceps_long', 'triceps_lat', 'triceps_med'],
-  upper_b: ['chest_upper', 'chest_middle', 'chest_lower', 'shoulder_front', 'shoulder_side', 'shoulder_rear', 'back_lats', 'back_middle', 'back_upper', 'biceps_long', 'biceps_short', 'biceps_brach', 'triceps_long', 'triceps_lat', 'triceps_med'],
-  lower_a: ['quads', 'hamstrings', 'glutes', 'adductors', 'calves', 'abs', 'obliques', 'core'],
-  lower_b: ['quads', 'hamstrings', 'glutes', 'adductors', 'calves', 'abs', 'obliques', 'core'],
+  legs:    ['quads', 'hamstrings', 'glutes', 'adductors', 'calves', 'abs', 'obliques', 'core', 'back_lower'],
+  upper_a: ['chest_upper', 'chest_middle', 'chest_lower', 'shoulder_front', 'shoulder_side', 'shoulder_rear', 'back_lats', 'back_middle', 'back_upper', 'biceps_long', 'biceps_short', 'biceps_brach', 'triceps_long', 'triceps_lat', 'triceps_med', 'forearms'],
+  upper_b: ['chest_upper', 'chest_middle', 'chest_lower', 'shoulder_front', 'shoulder_side', 'shoulder_rear', 'back_lats', 'back_middle', 'back_upper', 'biceps_long', 'biceps_short', 'biceps_brach', 'triceps_long', 'triceps_lat', 'triceps_med', 'forearms'],
+  lower_a: ['quads', 'hamstrings', 'glutes', 'adductors', 'calves', 'abs', 'obliques', 'core', 'back_lower'],
+  lower_b: ['quads', 'hamstrings', 'glutes', 'adductors', 'calves', 'abs', 'obliques', 'core', 'back_lower'],
   fbw_a:   ['chest_middle', 'chest_upper', 'back_lats', 'back_middle', 'shoulder_front', 'shoulder_side', 'shoulder_rear', 'quads', 'hamstrings', 'glutes', 'biceps_short', 'triceps_lat', 'abs', 'core'],
   fbw_b:   ['chest_middle', 'chest_upper', 'back_lats', 'back_middle', 'back_lower', 'shoulder_front', 'shoulder_side', 'quads', 'hamstrings', 'glutes', 'triceps_long', 'triceps_lat', 'abs', 'core'],
   fbw_c:   ['chest_middle', 'chest_upper', 'back_lats', 'back_middle', 'shoulder_front', 'shoulder_side', 'shoulder_rear', 'quads', 'hamstrings', 'glutes', 'biceps_short', 'calves', 'core'],
@@ -316,47 +316,69 @@ const TYPE_DETAILS: Record<string, TypeDetail> = {
   upper_a: {
     label: 'UPPER A',
     expectedCount: 7,
-    structure: '2 klatka + 2 plecy + 1 barki + 1 biceps + 1 triceps (7 ćwiczeń) — wariant bazowy',
+    structure: `Zbalansowany push/pull (kolejność musi być zachowana):
+1. KLATKA — wyciskanie poziome (muscleHead: "chest_middle", compound): sztanga lub hantle, ławka pozioma.
+2. PLECY — ciąg pionowy (muscleHead: "back_lats", compound): podciąganie lub ściąganie drążka wyciągu górnego.
+3. BARK — wyciskanie nad głowę (muscleHead: "shoulder_front", compound): OHP / wyciskanie hantli nad głowę / Arnold.
+4. PLECY — wiosłowanie poziome (muscleHead: "back_middle", compound): wiosłowanie sztangą/hantlą/na maszynie.
+5. BARK BOCZNY (muscleHead: "shoulder_side", isolation): wznosy bokiem — szerokość barków.
+6. BICEPS (muscleHead: "biceps_short" lub "biceps_long", isolation): uginanie ze sztangą/hantlami.
+7. TRICEPS (muscleHead: "triceps_long" lub "triceps_lat", isolation): pushdown / francuskie / wąski chwyt.`,
     selection: [
-      'Pierwsze ćwiczenie musi być ćwiczeniem wielostawowym (wyciskanie lub wiosłowanie).',
-      'Co najmniej 2 ćwiczenia muszą być ćwiczeniami bazowymi.',
-      'Zachowaj balans push/pull w obrębie planu.',
-      'Łącz ruchy poziome i pionowe.',
+      'Pozycje 1-4 muszą być compound. Pozycje 5-7 to izolacja.',
+      'Zachowaj balans push/pull (2 klatka+bark pchający : 2 plecy) i łącz ruchy poziome z pionowymi.',
+      'Nie twórz planu wyłącznie na maszynach — pierwsze wyciskanie i wiosłowanie ze sztangą lub hantlami.',
       'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
     ]
   },
   upper_b: {
     label: 'UPPER B',
     expectedCount: 7,
-    structure: '2 klatka + 2 plecy + 1 barki + 1 biceps + 1 triceps (7 ćwiczeń) — wariant objętościowy, inne ćwiczenia niż Upper A',
+    structure: `Wariant objętościowy z akcentem na skos i tylny bark (kolejność zachowana, inne ćwiczenia niż Upper A):
+1. KLATKA GÓRNA — skos dodatni (muscleHead: "chest_upper", compound): wyciskanie skośne sztangą/hantlami.
+2. PLECY — wiosłowanie poziome (muscleHead: "back_middle", compound).
+3. KLATKA ISOLATION (muscleHead: dowolny "chest_*", isolation): rozpiętki / cable crossover.
+4. PLECY — ciąg pionowy (muscleHead: "back_lats", compound): podciąganie / ściąganie drążka.
+5. BARK TYLNY (muscleHead: "shoulder_rear", isolation): face pull / odwrotne rozpiętki — priorytet, brak go na Upper A.
+6. BICEPS (muscleHead: "biceps_long" lub "biceps_brach", isolation): uginanie na skosie / młotkowe.
+7. TRICEPS (muscleHead: "triceps_long" lub "triceps_lat", isolation).`,
     selection: [
-      'Pierwsze ćwiczenie musi być ćwiczeniem wielostawowym (wyciskanie lub wiosłowanie).',
-      'Co najmniej 2 ćwiczenia muszą być ćwiczeniami bazowymi.',
+      'Pozycje 1, 2, 4 muszą być compound. Pozycje 3, 5, 6, 7 to izolacja.',
       'Wybieraj warianty z większą objętością (8-15 powt).',
-      'Łącz ruchy poziome i pionowe.',
+      'OBOWIĄZKOWO uwzględnij tylny bark (shoulder_rear) — dopełnia Upper A, który go nie ma.',
       'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
     ]
   },
   lower_a: {
     label: 'LOWER A',
     expectedCount: 6,
-    structure: '2 quad-dominant + 2 hamstring/pośladki + 1 łydki + 1 core (6 ćwiczeń) — priorytet czworogłowy',
+    structure: `Priorytet czworogłowy (kolejność zachowana):
+1. PRZYSIAD (muscleHead: "quads", compound): przysiad ze sztangą / przedni / hack / suwnica.
+2. HIP HINGE (muscleHead: "back_lower" lub "hamstrings", compound): martwy ciąg rumuński (RDL).
+3. CZWOROGŁOWY accessory (muscleHead: "quads"): leg press / wykroki / wyprosty nóg.
+4. HAMSTRING (muscleHead: "hamstrings", isolation): uginanie nóg leżąc/siedząc / nordic.
+5. ŁYDKI (muscleHead: "calves", isolation): wspięcia na palce.
+6. CORE (muscleHead: "core" lub "abs", isolation): deska / brzuszki / unoszenie nóg.`,
     selection: [
-      'Pierwsze ćwiczenie musi być przysiadem lub wariantem przysiadowym.',
-      'Co najmniej 2 ćwiczenia muszą być ćwiczeniami bazowymi.',
-      'Zachowaj balans przód/tył uda.',
-      'Łącz ruchy obustronne i jednostronne.',
+      'Pozycja 1 to przysiad, pozycja 2 to hip hinge (RDL/martwy ciąg) — obie compound.',
+      'Zachowaj balans przód/tył uda i łącz ruchy obustronne z jednostronnymi.',
+      'Zachowuj balans pomiędzy wolnymi ciężarami a maszynami.',
       'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
     ]
   },
   lower_b: {
     label: 'LOWER B',
     expectedCount: 6,
-    structure: '2 hamstring/pośladki dominantne + 2 czworogłowy + 1 łydki + 1 core (6 ćwiczeń) — priorytet hip hinge',
+    structure: `Priorytet hip hinge / tylna taśma (kolejność zachowana, inne ćwiczenia niż Lower A):
+1. MARTWY CIĄG / HIP HINGE (muscleHead: "back_lower", compound): martwy ciąg klasyczny / rumuński / sumo.
+2. POŚLADKI (muscleHead: "glutes", compound): hip thrust / most biodrowy ze sztangą.
+3. CZWOROGŁOWY (muscleHead: "quads", compound): przysiad przedni / leg press / hack.
+4. HAMSTRING (muscleHead: "hamstrings", isolation): uginanie nóg / glute ham raise.
+5. ŁYDKI (muscleHead: "calves", isolation).
+6. CORE (muscleHead: "core" lub "abs", isolation).`,
     selection: [
-      'Pierwsze ćwiczenie musi być martwym ciągiem lub hip hinge.',
-      'Co najmniej 2 ćwiczenia muszą być ćwiczeniami bazowymi.',
-      'Zachowaj balans przód/tył uda.',
+      'Pozycja 1 to martwy ciąg / hip hinge, pozycja 2 to akcent na pośladki — obie compound.',
+      'Zachowaj balans przód/tył uda z przewagą tylnej taśmy.',
       'Łącz ruchy obustronne i jednostronne.',
       'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
     ]

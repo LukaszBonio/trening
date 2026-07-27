@@ -81,11 +81,11 @@ export const WORKOUT_SCHEMA: Record<WorkoutType, SchemaGroup[]> = {
   ],
   lower_a: [
     { id: 'czworogłowy', count: 2 }, { id: 'hamstring', count: 2 },
-    { id: 'pośladki', count: 1 }, { id: 'łydki', count: 1 },
+    { id: 'pośladki', count: 1 }, { id: 'łydki', count: 1 }, { id: 'core', count: 1 },
   ],
   lower_b: [
     { id: 'czworogłowy', count: 2 }, { id: 'hamstring', count: 2 },
-    { id: 'pośladki', count: 1 }, { id: 'łydki', count: 1 },
+    { id: 'pośladki', count: 1 }, { id: 'łydki', count: 1 }, { id: 'core', count: 1 },
   ],
   fbw_a: [
     { id: 'czworogłowy', count: 1 }, { id: 'klatka', count: 1 }, { id: 'plecy', count: 1 },
