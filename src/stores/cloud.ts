@@ -364,9 +364,31 @@ export const useCloudStore = defineStore('cloud', () => {
     await offlineQueue.flush()
   }
 
+  // Zgłoszenie buga → tabela `bug_reports` w Supabase (user_id + treść + auto-kontekst).
+  // Zwraca { ok, error } — bez rzucania, żeby UI mogło pokazać przyjazny komunikat.
+  async function reportBug(
+    message: string,
+    context: Record<string, unknown> = {}
+  ): Promise<{ ok: boolean; error?: string }> {
+    const c = client.value
+    if (!c || !user.value) return { ok: false, error: 'Musisz być zalogowany, aby zgłosić błąd.' }
+    if (!isOnline.value) return { ok: false, error: 'Brak połączenia — spróbuj ponownie online.' }
+    try {
+      const { error } = await c.from('bug_reports').insert({
+        user_id: user.value.id,
+        message: String(message || '').trim().slice(0, 2000),
+        context
+      })
+      if (error) return { ok: false, error: error.message }
+      return { ok: true }
+    } catch (e: any) {
+      return { ok: false, error: e?.message || String(e) }
+    }
+  }
+
   return {
     client, user, syncStatus, lastError, lastSyncedAt, isLoggedIn,
     isOnline, queueSize, authReady,
-    init, waitForAuth, signUp, signIn, signOut, resetPassword, completePasswordReset, forceSync, flushQueue
+    init, waitForAuth, signUp, signIn, signOut, resetPassword, completePasswordReset, forceSync, flushQueue, reportBug
   }
 })

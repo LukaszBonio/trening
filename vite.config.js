@@ -1,10 +1,21 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
+import { execSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
+
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url)))
+let commit = 'unknown'
+try { commit = execSync('git rev-parse --short HEAD').toString().trim() } catch {}
 
 export default defineConfig({
   // GitHub Pages serwuje pod /trening/ — przy lokalnym dev Vite ignoruje base
   base: process.env.GITHUB_ACTIONS ? '/trening/' : './',
+  // Wersja + commit wstrzykiwane do buildu — dołączane do zgłoszeń bugów (kontekst).
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+    __APP_COMMIT__: JSON.stringify(commit)
+  },
   plugins: [
     vue(),
     VitePWA({

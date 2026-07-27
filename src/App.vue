@@ -5,6 +5,7 @@ import OnboardingTour from './components/OnboardingTour.vue'
 import GoalModal from './components/GoalModal.vue'
 import ToastContainer from './components/ToastContainer.vue'
 import DialogContainer from './components/DialogContainer.vue'
+import BugReportButton from './components/BugReportButton.vue'
 import { useSettingsStore, GOALS } from './stores/settings'
 import { useToast } from './composables/useToast'
 
@@ -105,6 +106,8 @@ const tabs = [
         <span>{{ tab.label }}</span>
       </RouterLink>
     </nav>
+
+    <BugReportButton />
   </div>
 </template>
 
