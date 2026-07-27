@@ -73,6 +73,28 @@ describe('lastSetFor', () => {
     ]
     expect(lastSetFor(history, 'bench press').weight).toBe(60)
   })
+  // Regresja: dopasowanie po tożsamości (id z bazy), nie po surowym stringu —
+  // po zmianie nazwy / aliasie PL-EN „ostatni ciężar" musi się odnaleźć.
+  it('znajduje historię mimo innej nazwy tego samego ćwiczenia (alias/rename)', () => {
+    const history = [
+      { date: '2026-06-01', exercises: [{ name: 'Wypychanie bioder', sets: [{ weight: 80, reps: 10 }] }] }
+    ]
+    // plan używa kanonicznej nazwy „Hip thrust" — dawniej zwracało null
+    expect(lastSetFor(history, 'Hip thrust').weight).toBe(80)
+  })
+  it('dopasowuje przemianowane ćwiczenie po id (Uginanie hantli młotkowo → Hammer curl)', () => {
+    const history = [
+      { date: '2026-06-01', exercises: [{ name: 'Uginanie hantli młotkowo', sets: [{ weight: 14, reps: 12 }] }] }
+    ]
+    expect(lastSetFor(history, 'Hammer curl').weight).toBe(14)
+  })
+  it('nie myli różnych ćwiczeń (fallback string dla spoza bazy)', () => {
+    const history = [
+      { date: '2026-06-01', exercises: [{ name: 'Jakieś custom XYZ', sets: [{ weight: 30, reps: 10 }] }] }
+    ]
+    expect(lastSetFor(history, 'Inne custom ABC')).toBeNull()
+    expect(lastSetFor(history, 'Jakieś custom XYZ').weight).toBe(30)
+  })
 })
 
 describe('recentSessionsOfType', () => {

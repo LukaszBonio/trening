@@ -1,6 +1,17 @@
 // Funkcje analityczne — agregaty na podstawie history workouts.
 // Czyste funkcje, łatwe do testowania, nie zależą od Vue ani store.
 
+import { findExerciseByName } from './exerciseDb'
+
+// Klucz tożsamości ćwiczenia: id z bazy (rozwiązuje aliasy PL/EN i przemianowane
+// nazwy — „Hip thrust" / „Wypychanie bioder" / „hip thrusty" → jeden klucz), fallback
+// na znormalizowany string dla ćwiczeń spoza bazy (custom). Dzięki temu historia
+// (np. „ostatni ciężar") trafia mimo różnic w zapisie nazwy.
+function exerciseIdentityKey(name: string): string {
+  const ex = findExerciseByName(name)
+  return ex ? `id:${ex.id}` : name.toLowerCase().trim()
+}
+
 export interface WorkoutSet {
   weight: number
   reps: number
@@ -138,11 +149,14 @@ export function personalRecords(history: Workout[]): PersonalRecord[] {
  * Zwraca { weight, reps, rpe, date } lub null jeśli brak. rpe może być undefined.
  */
 export function lastSetFor(history: Workout[], exerciseName: string): LastSetResult | null {
-  const key = exerciseName.toLowerCase().trim()
+  // Dopasowanie po TOŻSAMOŚCI (id z bazy), nie po surowym stringu — inaczej po zmianie
+  // nazwy / aliasie PL-EN „ostatni ciężar" gubił się (np. historia „Wypychanie bioder",
+  // plan „Hip thrust"). Fallback na znormalizowaną nazwę dla ćwiczeń spoza bazy.
+  const key = exerciseIdentityKey(exerciseName)
   const sorted = [...history].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   for (const w of sorted) {
     for (const ex of w.exercises) {
-      if (ex.name.toLowerCase().trim() !== key) continue
+      if (exerciseIdentityKey(ex.name) !== key) continue
       const s = ex.sets.find(x => (x.weight || 0) > 0 || (x.reps || 0) > 0) || ex.sets[0]
       if (!s) continue
       return { weight: s.weight || 0, reps: s.reps || 0, rpe: s.rpe || null, date: w.date }
