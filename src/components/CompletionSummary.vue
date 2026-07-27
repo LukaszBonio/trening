@@ -5,6 +5,11 @@ import { personalRecords } from '../lib/analytics'
 import { useWorkoutsStore } from '../stores/workouts'
 import { workoutVolume, totalSets } from '../lib/workoutMath'
 import { formatDuration } from '../lib/format'
+import { findExerciseByName } from '../lib/exerciseDb'
+
+// Klucz tożsamości ćwiczenia (id z bazy) — spójny z analytics: dopasowanie PR mimo
+// aliasu PL-EN / przemianowania (rekord kanoniczny vs nazwa w ukończonym treningu).
+const idKey = (n) => findExerciseByName(n)?.id ?? String(n || '').toLowerCase().trim()
 
 const props = defineProps({
   workout: { type: Object, required: true }
@@ -29,12 +34,12 @@ const newPRs = computed(() => {
   const without = workouts.history.filter(w => w.id !== props.workout.id)
   const prsAll = personalRecords(workouts.history)
   const prsBefore = personalRecords(without)
-  const beforeMap = new Map(prsBefore.map(p => [p.name.toLowerCase().trim(), p.best1RM]))
-  return prsAll.filter(p =>
-    !beforeMap.has(p.name.toLowerCase().trim()) ||
-    p.best1RM > beforeMap.get(p.name.toLowerCase().trim())
-  ).filter(p =>
-    props.workout.exercises.some(ex => ex.name.toLowerCase().trim() === p.name.toLowerCase().trim())
+  const beforeMap = new Map(prsBefore.map(p => [idKey(p.name), p.best1RM]))
+  return prsAll.filter(p => {
+    const k = idKey(p.name)
+    return !beforeMap.has(k) || p.best1RM > beforeMap.get(k)
+  }).filter(p =>
+    props.workout.exercises.some(ex => idKey(ex.name) === idKey(p.name))
   ).filter(p =>
     // Rekord ma sens tylko dla ćwiczeń z obciążeniem — „0 kg" na planku/masie ciała
     // to nie rekord (i nie odpala świętowania rekordu).

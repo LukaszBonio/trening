@@ -12,6 +12,12 @@ function exerciseIdentityKey(name: string): string {
   return ex ? `id:${ex.id}` : name.toLowerCase().trim()
 }
 
+// Nazwa kanoniczna do wyświetlenia (z bazy, jeśli znana; inaczej zapisana).
+// Dzięki temu listy/rekordy/wykresy pokazują spójną nazwę mimo aliasów PL-EN w historii.
+function exerciseDisplayName(name: string): string {
+  return findExerciseByName(name)?.name ?? name
+}
+
 export interface WorkoutSet {
   weight: number
   reps: number
@@ -76,13 +82,13 @@ export function uniqueExercises(history: Workout[]): UniqueExerciseEntry[] {
   const map = new Map<string, UniqueExerciseEntry>()
   for (const w of history) {
     for (const ex of w.exercises) {
-      const key = ex.name.toLowerCase().trim()
+      const key = exerciseIdentityKey(ex.name)
       const existing = map.get(key)
       if (existing) {
         existing.count++
         existing.lastDate = w.date > existing.lastDate ? w.date : existing.lastDate
       } else {
-        map.set(key, { name: ex.name, count: 1, lastDate: w.date })
+        map.set(key, { name: exerciseDisplayName(ex.name), count: 1, lastDate: w.date })
       }
     }
   }
@@ -94,12 +100,12 @@ export function uniqueExercises(history: Workout[]): UniqueExerciseEntry[] {
  * Format: [{ date, bestWeight, bestReps, best1RM, totalVolume }]
  */
 export function exerciseProgress(history: Workout[], exerciseName: string): ProgressPoint[] {
-  const key = exerciseName.toLowerCase().trim()
+  const key = exerciseIdentityKey(exerciseName)
   const sorted = [...history].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
   const points: ProgressPoint[] = []
   for (const w of sorted) {
     for (const ex of w.exercises) {
-      if (ex.name.toLowerCase().trim() !== key) continue
+      if (exerciseIdentityKey(ex.name) !== key) continue
       let bestWeight = 0, bestReps = 0, best1RM = 0, totalVol = 0
       for (const s of ex.sets) {
         const e = estimated1RM(s.weight, s.reps)
@@ -125,13 +131,13 @@ export function personalRecords(history: Workout[]): PersonalRecord[] {
   const map = new Map<string, PersonalRecord>()
   for (const w of history) {
     for (const ex of w.exercises) {
-      const key = ex.name.toLowerCase().trim()
+      const key = exerciseIdentityKey(ex.name)
       for (const s of ex.sets) {
         const e = estimated1RM(s.weight, s.reps)
         const current = map.get(key)
         if (!current || e > current.best1RM) {
           map.set(key, {
-            name: ex.name,
+            name: exerciseDisplayName(ex.name),
             best1RM: e,
             weight: s.weight,
             reps: s.reps,

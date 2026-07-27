@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import {
   estimated1RM,
   uniqueExercises,
+  exerciseProgress,
   personalRecords,
   currentStreak,
   lastSetFor,
@@ -27,17 +28,34 @@ describe('estimated1RM (Epley)', () => {
 })
 
 describe('uniqueExercises', () => {
-  it('zwraca listę unikalnych nazw posortowaną wg liczby wystąpień', () => {
+  it('zwraca listę unikalnych nazw posortowaną wg liczby wystąpień (nazwa kanoniczna)', () => {
     const history = [
       { date: '2026-06-01', exercises: [{ name: 'Bench Press' }, { name: 'Squat' }] },
       { date: '2026-06-02', exercises: [{ name: 'bench press' }] }
     ]
     const out = uniqueExercises(history)
     expect(out).toHaveLength(2)
-    expect(out[0].name).toBe('Bench Press')
+    // aliasy 'Bench Press'/'bench press' → jedno ćwiczenie, nazwa kanoniczna z bazy
+    expect(out[0].name).toBe('Wyciskanie sztangi na ławce poziomej')
     expect(out[0].count).toBe(2)
-    expect(out[1].name).toBe('Squat')
+    expect(out[1].name).toBe('Przysiad ze sztangą')
     expect(out[1].count).toBe(1)
+  })
+  it('scala różne nazwy tego samego ćwiczenia (alias/rename → 1 wpis)', () => {
+    const history = [
+      { date: '2026-06-01', exercises: [{ name: 'Wypychanie bioder' }] },
+      { date: '2026-06-08', exercises: [{ name: 'Hip thrust' }] }
+    ]
+    const out = uniqueExercises(history)
+    expect(out).toHaveLength(1)
+    expect(out[0].name).toBe('Hip thrust')
+    expect(out[0].count).toBe(2)
+  })
+  it('nie scala ćwiczeń spoza bazy o różnych nazwach', () => {
+    const history = [
+      { date: '2026-06-01', exercises: [{ name: 'Custom A' }, { name: 'Custom B' }] }
+    ]
+    expect(uniqueExercises(history)).toHaveLength(2)
   })
 })
 
@@ -51,6 +69,30 @@ describe('personalRecords', () => {
     expect(out).toHaveLength(1)
     expect(out[0].weight).toBe(85)
     expect(out[0].reps).toBe(5)
+  })
+  it('scala rekord tego samego ćwiczenia mimo aliasu/rename (1 wpis, nazwa kanoniczna)', () => {
+    const history = [
+      { date: '2026-06-01', exercises: [{ name: 'Wyciskanie nogami', sets: [{ weight: 100, reps: 10 }] }] },
+      { date: '2026-06-08', exercises: [{ name: 'Leg press', sets: [{ weight: 120, reps: 8 }] }] }
+    ]
+    const out = personalRecords(history)
+    expect(out).toHaveLength(1)
+    expect(out[0].name).toBe('Leg press')
+    expect(out[0].weight).toBe(120)
+  })
+})
+
+describe('exerciseProgress', () => {
+  it('łączy historię tego samego ćwiczenia mimo różnych nazw (alias/rename)', () => {
+    const history = [
+      { date: '2026-06-01', exercises: [{ name: 'Wyciskanie nogami', sets: [{ weight: 100, reps: 10 }] }] },
+      { date: '2026-06-08', exercises: [{ name: 'Leg press', sets: [{ weight: 110, reps: 10 }] }] }
+    ]
+    // zapytanie kanoniczną nazwą łapie oba punkty (dawniej tylko jeden)
+    const pts = exerciseProgress(history, 'Leg press')
+    expect(pts).toHaveLength(2)
+    expect(pts[0].bestWeight).toBe(100)
+    expect(pts[1].bestWeight).toBe(110)
   })
 })
 
