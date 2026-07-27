@@ -355,14 +355,14 @@ const TYPE_DETAILS: Record<string, TypeDetail> = {
     structure: `Priorytet czworogłowy (kolejność zachowana):
 1. PRZYSIAD (muscleHead: "quads", compound): przysiad ze sztangą / przedni / hack / suwnica.
 2. HIP HINGE (muscleHead: "back_lower" lub "hamstrings", compound): martwy ciąg rumuński (RDL).
-3. CZWOROGŁOWY accessory (muscleHead: "quads"): leg press / wykroki / wyprosty nóg.
+3. JEDNOSTRONNE (muscleHead: "quads", compound): wykroki / przysiad bułgarski / wchodzenie na skrzynię — praca jednonóż (stabilizacja, pośladki, przywodziciele).
 4. HAMSTRING (muscleHead: "hamstrings", isolation): uginanie nóg leżąc/siedząc / nordic.
 5. ŁYDKI (muscleHead: "calves", isolation): wspięcia na palce.
 6. CORE (muscleHead: "core" lub "abs", isolation): deska / brzuszki / unoszenie nóg.`,
     selection: [
       'Pozycja 1 to przysiad, pozycja 2 to hip hinge (RDL/martwy ciąg) — obie compound.',
-      'Zachowaj balans przód/tył uda i łącz ruchy obustronne z jednostronnymi.',
-      'Zachowuj balans pomiędzy wolnymi ciężarami a maszynami.',
+      'Pozycja 3 MUSI być ruchem jednostronnym (jednonóż) — wykroki, przysiad bułgarski lub wchodzenie na skrzynię.',
+      'Zachowaj balans przód/tył uda.',
       'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
     ]
   },
