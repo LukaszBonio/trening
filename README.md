@@ -10,7 +10,7 @@ prowadzi Cię przez trening seria po serii i analizuje postępy. Działa offline
 [![PWA](https://img.shields.io/badge/PWA-installable-5A0FC8?logo=pwa&logoColor=white)](https://lukaszbonio.github.io/trening/)
 [![Vue 3](https://img.shields.io/badge/Vue_3-Composition_API-4FC08D?logo=vue.js&logoColor=white)](#technology-stack)
 [![Vite](https://img.shields.io/badge/Vite-5.4-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
-[![AI](https://img.shields.io/badge/AI-Claude_Sonnet_4.6-D97757?logo=anthropic&logoColor=white)](https://www.anthropic.com/)
+[![AI](https://img.shields.io/badge/AI-Claude_Sonnet_5-D97757?logo=anthropic&logoColor=white)](https://www.anthropic.com/)
 [![Offline](https://img.shields.io/badge/Offline-ready-4ade80)](#features)
 [![License](https://img.shields.io/badge/license-Personal-lightgrey)](#license)
 
@@ -44,10 +44,10 @@ prowadzi Cię przez trening seria po serii i analizuje postępy. Działa offline
 ## O projekcie
 
 **Trening Pro** to aplikacja webowa (PWA) do planowania i rejestrowania treningów siłowych.
-Plany generuje **Claude** (model `claude-sonnet-4-6`) z uwzględnieniem Twojego celu i historii.
+Plany generuje **Claude** (model `claude-sonnet-5`) z uwzględnieniem Twojego celu i historii.
 
-Aplikacja zbudowana jest na **Vue 3 + TypeScript + Vite + Pinia** — 6 widoków, 21 komponentów, 6 composables,
-7 stores, 27 lib modules z **223 testami** (Vitest). PWA z Service Workerem zapewnia działanie offline.
+Aplikacja zbudowana jest na **Vue 3 + TypeScript + Vite + Pinia** — 6 widoków, 24 komponenty, 6 composables,
+8 stores, 28 lib modules z **283 testami** (Vitest). PWA z Service Workerem zapewnia działanie offline.
 Klucz API jest ukryty za serwerem proxy (Cloudflare Worker z JWT auth) — **użytkownik nie potrzebuje własnego klucza API.**
 
 > **Dla kogo?** Dla osób trenujących siłowo, które chcą gotowego planu na dziś, prostego
@@ -68,11 +68,20 @@ Klucz API jest ukryty za serwerem proxy (Cloudflare Worker z JWT auth) — **uż
 
 ## Features
 
-### 🎯 Plany treningowe
-- **10 typów treningu w 3 systemach** — Push/Pull/Legs, Upper A/B, Lower A/B, FBW A/B/C
-- **Plan korekcyjny „Ćwiczenia dla Ani”** — dedykowany, bezpieczny program dla początkujących ze schorzeniami kręgosłupa/kolana; wybór dostępnego sprzętu (masa ciała / gumy / hantle / maszyny), progresja przez trudność
-- **49 gotowych planów offline** + **kuratorowana baza 108 ćwiczeń** (Push/Pull/Legs) z pełnymi metadanymi: głowa mięśniowa, sprzęt, wzorzec ruchu, typ (compound/isolation), poziom
-- **Generator AI** — Claude dobiera ćwiczenia **z bazy** (kanoniczne nazwy, bez duplikatów) wg celu, sprzętu i wykluczeń; analizuje historię i dobiera progresję obciążeń
+### 🗓️ Generator programu tygodniowego *(jeden silnik decyzyjny)*
+- **Cały tydzień z jednego generatora** — podaj liczbę dni (2–6), a AI dobiera split, rozkłada ćwiczenia i objętość na dni, i generuje każdy dzień osobno (z **rotacją ćwiczeń między dniami** — żaden dzień się nie powtarza)
+- **7 systemów treningowych** — PPL, Upper/Lower, Full Body, **Arnold Split**, **Bro Split**, **Torso/Limbs** (+ auto-dobór wg liczby dni)
+- **Model tygodniowej objętości** — docelowe serie/tydz per partia (zakresy hipertrofii MEV–MAV, skalowane poziomem); walidacja „za mało / w normie / za dużo" z podpowiedzią
+- **Strict Mode** — twarde limity objętości i częstotliwości + AI koryguje sprzeczne wymagania zamiast realizować je ślepo
+- **Regeneracja pojedynczego dnia** i wybór czasu sesji (45–90′) sterujący objętością; program synchronizuje się w chmurze
+- **Rozszerzalny** — nowa metoda (np. PHUL) = definicja reguł, bez zmian silnika
+
+### 🎯 Plany treningowe (pojedyncza sesja)
+- **16 typów treningu** — Push/Pull/Legs, Upper A/B, Lower A/B, FBW A/B/C, Arnold (Klatka+Plecy / Barki+Ramiona), Bro (Klatka/Plecy/Barki/Ramiona), Torso/Limbs — z **precyzyjną strukturą slotową** (który slot = która głowa mięśniowa + wzorzec ruchu, które muszą być compound)
+- **Plan korekcyjny „Ćwiczenia dla Ani” — dwudniowy** — Dzień 1 (kręgosłup lędźwiowy + górne plecy + postawa) i Dzień 2 (core + pośladki); bezpieczny program dla początkujących ze schorzeniami kręgosłupa/kolana; wybór sprzętu (masa ciała / gumy / hantle / maszyny), progresja przez trudność i ciężar, **notatki do treningu czytane przez AI** przy kolejnym planie
+- **49 gotowych planów offline** + **kuratorowana baza 114 ćwiczeń** (Push/Pull/Legs) z pełnymi metadanymi: głowa mięśniowa, sprzęt, wzorzec ruchu, typ (compound/isolation), poziom
+- **Generator AI** — Claude dobiera ćwiczenia **z bazy** (kanoniczne nazwy, bez duplikatów) wg celu, sprzętu i wykluczeń; analizuje historię i dobiera progresję obciążeń. **Prompt caching** buforuje katalog ćwiczeń po stronie Anthropic (tańsze i szybsze kolejne generowania)
+- **Zgłoś błąd** — pływający przycisk 🐞 na każdym ekranie; zgłoszenie z automatycznym kontekstem (widok, sesja, wersja+commit, urządzenie) trafia do Supabase (statusy new/in_progress/resolved w panelu)
 - **Edytor własnych planów** — twórz, edytuj, duplikuj plany z drag-drop reorderingu ćwiczeń
 - **Zamiana ćwiczeń w locie** — podczas treningu podmień ćwiczenie na równoważny wariant (ta sama głowa mięśniowa, zachowany sprzęt)
 - **Karta techniki ćwiczenia** — przycisk „?” otwiera pełny arkusz: dokładny sprzęt i uchwyt, pozycja startowa, wykonanie krok po kroku, zakres ruchu, mięśnie główne/pomocnicze, najczęstsze błędy i wskazówki
@@ -89,6 +98,8 @@ Klucz API jest ukryty za serwerem proxy (Cloudflare Worker z JWT auth) — **uż
 - **Tryb kart** (domyślny) — jedna partia mięśniowa na ekran, swipe między kartami
 - **Tryb listy** — wszystkie ćwiczenia w jednym widoku (toggle w ustawieniach)
 - **Logowanie serii** — ciężar, powtórzenia, RPE (1-10), notatki tekstowe
+- **Stoper ćwiczeń czasowych** — dla planka/izometrii Start/Stop liczy sekundy i zapisuje je zamiast ciężaru/powtórzeń
+- **„Ostatni ciężar" dopasowany po tożsamości** — pre-fill wagi i podpowiedź działają mimo różnych nazw tego samego ćwiczenia (alias PL/EN, przemianowanie)
 - **Timer odpoczynku** — auto-start po zaznaczeniu serii, presety 60/90/120/180s, ±15s, drift-corrected (działa z zablokowanym ekranem)
 - **Powiadomienia + wibracja** — koniec przerwy działa nawet w tle
 - **Live duration** — zegar treningu w nagłówku sesji (mm:ss)
@@ -185,7 +196,7 @@ npm install
 npm run dev          # → http://localhost:5173
 
 # Testy
-npm test             # 223 testów (Vitest)
+npm test             # 283 testów (Vitest)
 
 # Production build
 npm run build        # → dist/
@@ -198,7 +209,7 @@ npm run preview
 
 **Dev:** Vite + HMR, lazy-loaded routes, Pinia DevTools (przez Vue DevTools).
 
-**Testy:** `npm test` — 223 testów Vitest (composables, lib modules, stores). Env `node` (bez jsdom).
+**Testy:** `npm test` — 283 testów Vitest (composables, lib modules, stores). Env `node` (bez jsdom).
 
 **Build:** ~2.5s, **37 plików w PWA precache (~2.9 MB)** — Chart.js i jsPDF wydzielone do osobnych chunków, lazy-loaded per route.
 
@@ -221,6 +232,8 @@ Schemat tabel w `docs/SUPABASE_SCHEMA.sql`. Tabele:
 - `workouts` — historia treningów (id text, user_id uuid, data jsonb)
 - `body_log` — pomiary wagi ciała (id text, user_id uuid, data jsonb)
 - `user_settings` — preferencje per user (user_id uuid, data jsonb)
+- `programs` — programy tygodniowe (id **uuid**, user_id uuid, data jsonb)
+- `bug_reports` — zgłoszenia błędów (id uuid, user_id, message, context jsonb, status enum)
 
 Każda tabela ma Row Level Security wymuszające `auth.uid() = user_id`.
 
@@ -245,9 +258,9 @@ Po pierwszym zalogowaniu online sesja jest zapamiętana, więc aplikacja działa
 flowchart LR
     subgraph Client["📱 Przeglądarka (Vue PWA)"]
         UI["Vue 3 components<br/>+ Vue Router (6 widoków)"]
-        Stores["Pinia stores (8)<br/>workouts · session · cloud<br/>timer · body · settings<br/>customPlans · favorites"]
+        Stores["Pinia stores (8)<br/>workouts · session · cloud · programs<br/>body · settings · customPlans · favorites"]
         Composables["Composables (6)<br/>useRestTimer · useSetNavigation<br/>usePersistentRef · useDialog<br/>useToast · useCoach"]
-        Libs["Lib modules (21)<br/>muscles · plans · exerciseDb · substitutions<br/>analytics · ai · coach · pdf · plates<br/>workoutSchema · offlineQueue<br/>weeklyReport · notifications"]
+        Libs["Lib modules (28)<br/>muscles · plans · exerciseDb · substitutions<br/>analytics · ai · coach · pdf · plates<br/>workoutSchema · weeklyVolume · offlineQueue<br/>weeklyReport · notifications"]
         SW["Service Worker<br/>(generated by Vite PWA)"]
         LS[("localStorage<br/>history · drafts · settings · queue")]
     end
@@ -309,12 +322,12 @@ trening/
 │   │   ├── CoachView.vue       #   AI Coach — analiza postępów + czat
 │   │   ├── HistoryView.vue     #   Lista treningów, edycja, PDF, zapis jako plan
 │   │   └── YouView.vue         #   Konto, ustawienia, backup
-│   ├── components/             # 21 komponentów (BaseCard, WorkoutCards, RestTimer, AICoach, ...)
+│   ├── components/             # 24 komponenty (BaseCard, WorkoutCards, RestTimer, AICoach, ...)
 │   ├── composables/            # 6 composables (useRestTimer, useSetNavigation, useCoach, ...)
-│   ├── stores/                 # 7 Pinia stores (workouts, session, cloud, ...)
-│   ├── lib/                    # 21 pure modules (muscles, plans, exerciseDb, ai, coach, ...)
+│   ├── stores/                 # 8 Pinia stores (workouts, session, cloud, ...)
+│   ├── lib/                    # 28 pure modules (muscles, plans, exerciseDb, ai, coach, ...)
 │   └── styles/global.css       # CSS variables (dark/light themes)
-├── test/                       # 17 plików testowych Vitest (223 testów)
+├── test/                       # 18 plików testowych Vitest (283 testów)
 ├── public/                     # Static assets (icons, manifest)
 ├── docs/SUPABASE_SCHEMA.sql    # SQL do wykonania w Supabase
 └── legacy/                     # Stary monolit (8270 LOC index.html) — referencja
@@ -329,6 +342,7 @@ trening/
 | **stores/cloud.ts** | Supabase auth, init/delta sync, integracja z offlineQueue |
 | **stores/customPlans.ts** | Własne plany użytkownika (CRUD) |
 | **stores/favorites.ts** | Ulubione plany (library + custom) |
+| **stores/programs.ts** | Program tygodniowy: zapis lokalny + sync Supabase (`programs`) |
 | **composables/useRestTimer** | Timer odpoczynku: drift-corrected countdown, wake lock, notification, flash |
 | **composables/useSetNavigation** | Nawigacja po seriach: advance, goBack, jump, progress |
 | **composables/usePersistentRef** | Ref z auto-persist do localStorage (5 stores go używa) |
@@ -338,13 +352,14 @@ trening/
 | **composables/useCoach** | Stan AI Coacha (singleton): analiza postępów + czat, abort, offline |
 | **lib/muscles.ts** | Słownik 25 głów mięśniowych, detectMuscle, detectEquipment |
 | **lib/plans.ts** | 49 gotowych planów (10 typów) |
-| **lib/exerciseDb.ts** | Kuratorowana baza 108 ćwiczeń z metadanymi — źródło doboru dla AI |
-| **lib/exerciseDetails.ts** | Pełny arkusz techniczny 108 ćwiczeń (sprzęt, uchwyt, wykonanie, mięśnie, błędy, wskazówki) — Push/Pull/Legs |
+| **lib/exerciseDb.ts** | Kuratorowana baza 114 ćwiczeń z metadanymi — źródło doboru dla AI |
+| **lib/exerciseDetails.ts** | Pełny arkusz techniczny 114 ćwiczeń (sprzęt, uchwyt, wykonanie, mięśnie, błędy, wskazówki) — Push/Pull/Legs |
 | **lib/coach.ts** | AI Coach: buildery promptów (analiza trendów per ćwiczenie + czat) + walidacja |
 | **lib/substitutions.ts** | findSubstitutes, youtubeSearchUrl |
-| **lib/workoutSchema.ts** | Grupowanie ćwiczeń po partii dla trybu kart (hybrid: muscle + index) |
-| **lib/analytics.ts** | Estimated 1RM (Epley), PR detection, streak, exerciseProgress, analiza wzorców ruchowych |
-| **lib/ai.ts** | Claude API client + JSON validation |
+| **lib/workoutSchema.ts** | Grupowanie ćwiczeń po partii dla trybu kart (hybrid: muscle + index); definicje typów dni (16 typów) |
+| **lib/analytics.ts** | Estimated 1RM (Epley), PR detection, streak, exerciseProgress, analiza wzorców — dopasowanie po tożsamości ćwiczenia |
+| **lib/ai.ts** | Silnik generatora: `generateAIPlan` (pojedyncza sesja) + `generateProgram` (cały tydzień, orkiestracja), `TYPE_DETAILS`/`MUSCLE_HEADS_BY_TYPE`, prompt caching, Claude API client + walidacja |
+| **lib/weeklyVolume.ts** | Warstwa tygodniowa: zakresy objętości MEV–MAV, dobór splitu, walidacja programu |
 | **lib/offlineQueue.ts** | Persistent queue z exponential backoff retry |
 | **lib/plates.ts** | Kalkulator talerzy (kolory IPF) |
 | **lib/pdf.ts** | Eksport treningu do PDF (jsPDF) |
@@ -358,14 +373,14 @@ trening/
 |---|---|
 | **Framework** | [Vue 3.5](https://vuejs.org/) (Composition API + `<script setup>`) |
 | **Build / Dev** | [Vite 5.4](https://vitejs.dev/) + [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) |
-| **Testy** | [Vitest 3.2](https://vitest.dev/) — 223 testów (17 plików), env `node` |
-| **State** | [Pinia 2.2](https://pinia.vuejs.org/) — 7 stores, reactive, persistent |
+| **Testy** | [Vitest 3.2](https://vitest.dev/) — 283 testów (18 plików), env `node` |
+| **State** | [Pinia 2.2](https://pinia.vuejs.org/) — 8 stores, reactive, persistent |
 | **Routing** | [Vue Router 4](https://router.vuejs.org/) — hash mode, lazy-loaded views |
 | **Wykresy** | [Chart.js 4.4](https://www.chartjs.org/) — line, bar, lazy-loaded chunk |
 | **PDF** | [jsPDF 2.5](https://github.com/parallax/jsPDF) — eksport treningu |
 | **Konfetti** | [canvas-confetti](https://github.com/catdad/canvas-confetti) — workout completion |
 | **Cloud** | [Supabase](https://supabase.com/) — auth + PostgreSQL z RLS |
-| **AI** | [Claude API](https://www.anthropic.com/) — `claude-sonnet-4-6` przez Cloudflare Worker proxy |
+| **AI** | [Claude API](https://www.anthropic.com/) — `claude-sonnet-5` przez Cloudflare Worker proxy |
 | **Ikony / fonty** | [Tabler Icons](https://tabler-icons.io/) · Google Fonts (Inter, Space Grotesk) |
 | **Web API** | Service Worker · localStorage · Notification API · Vibration · Drag-Drop · Screen Wake Lock |
 | **Hosting** | GitHub Pages (frontend) + Cloudflare (proxy) + Supabase (cloud sync) |
@@ -442,20 +457,31 @@ Używana do PR detection, per-exercise progress, achievement "100 kg klub".
 </details>
 
 <details>
-<summary><b>Ćwiczenia dla Ani — plan korekcyjny (osoba początkująca)</b></summary>
+<summary><b>Arnold Split / Bro Split / Torso-Limbs (dostępne w programie tygodniowym)</b></summary>
+
+| System | Dni | Układ |
+|---|---|---|
+| **Arnold Split** | Klatka+Plecy · Barki+Ramiona · Nogi | 8 / 7 / 7 ćwiczeń |
+| **Bro Split** | Klatka · Plecy · Barki · Nogi · Ramiona | 5 / 6 / 5 / 7 / 6 |
+| **Torso / Limbs** | Tułów (klatka+plecy+barki) · Kończyny (nogi+ramiona) | 8 / 8 |
+
+Każdy typ ma własną strukturę slotową (kolejność, wymuszone compound, balans partii). Dobierane automatycznie lub ręcznie w generatorze programu.
+
+</details>
+
+<details>
+<summary><b>Ćwiczenia dla Ani — plan korekcyjny dwudniowy (osoba początkująca)</b></summary>
 
 Dedykowany, bezpieczny program dla początkujących ze schorzeniami kręgosłupa (dyskopatia, rwa),
-miednicy i kolana (po MCL). Generowany przez AI z kuratorowanego menu bezpiecznych ćwiczeń,
-z **wyborem dostępnego sprzętu** (masa ciała / gumy / hantle / maszyny) i **progresją przez trudność**,
-nie przez ryzykowne obciążanie kręgosłupa. AI analizuje historię i stopniowo podnosi poziom.
+miednicy i kolana (po MCL), **rozbity na dwa dni**. Generowany przez AI z kuratorowanego menu
+bezpiecznych ćwiczeń, z **wyborem sprzętu** (masa ciała / gumy / hantle / maszyny), **progresją
+przez trudność i ciężar** (dla wariantów obciążonych) oraz **notatkami do treningu**, które AI
+czyta przy kolejnym planie tego dnia.
 
-| Slot | Cel |
+| Dzień | Skupienie |
 |---|---|
-| 1–2 | Aktywacja i stabilizacja core (kręgosłup neutralny) |
-| 3–4 | Pośladki + stabilizacja miednicy |
-| 5 | Tylna taśma (dwugłowe uda) bez obciążania lędźwi |
-| 6 | Czworogłowy / stabilizacja kolana (kontrolowany zakres) |
-| 7–8 | Plecy + korekcja postawy i ustawienia łopatek/głowy |
+| **Dzień 1 — Kręgosłup i postawa** | Głęboka stabilizacja lędźwi, górne plecy (wiosłowania), korekcja zaokrąglonych ramion i łopatek |
+| **Dzień 2 — Core i pośladki** | Aktywacja/izometria core, most/hip thrust, odwodzenie biodra, tylna taśma |
 
 > Trening wzmacniająco-korekcyjny, nie porada medyczna — przy schorzeniach warto skonsultować z fizjoterapeutą.
 
@@ -516,9 +542,9 @@ podczas treningu. Możesz przełączyć na tryb listy w **Ty → Ustawienia → 
 
 **Architektura:**
 - [x] Vue 3 + Vite + Pinia (port z 8270-LOC monolitu vanilla JS)
-- [x] 7 Pinia stores, 21 komponentów, 6 composables, 6 widoków z lazy-loadingiem
+- [x] 8 Pinia stores, 24 komponenty, 6 composables, 6 widoków z lazy-loadingiem
 - [x] Vue Router (hash mode), page transitions
-- [x] 223 testów Vitest (17 plików) — composables, lib modules, stores
+- [x] 283 testów Vitest (18 plików) — composables, lib modules, stores
 
 **Refactoring (V2.1):**
 - [x] `db.js` (1280 LOC) → `muscles.js` + `plans.js` + `substitutions.js` (barrel re-export)
@@ -541,22 +567,31 @@ podczas treningu. Możesz przełączyć na tryb listy w **Ty → Ustawienia → 
 - [x] Dark / light theme, color accent picker, mobile bottom nav
 - [x] Push notifications, konfetti, onboarding tour, skeleton loaders
 
-### ✅ V3 — *obecna wersja*
+### ✅ V3 — *TypeScript + baza ćwiczeń + AI Coach*
 - [x] TypeScript migration — cały `src/` (lib, stores, composables, router, main)
 - [x] Drift-corrected timer — absolutny `endTime` + `Date.now()`, re-sync na `visibilitychange`; fallback wideo trzyma ekran gdy Wake Lock zawodzi (Android/oszczędzanie baterii)
 - [x] Timestamp-based conflict resolution — `updatedAt` per rekord, porównanie z DB `updated_at`, nowszy wygrywa
-- [x] Kuratorowana baza 108 ćwiczeń — AI dobiera z niej ćwiczenia (kanoniczne nazwy, poprawne metadane, bez duplikatów)
+- [x] Kuratorowana baza 114 ćwiczeń — AI dobiera z niej ćwiczenia (kanoniczne nazwy, poprawne metadane, bez duplikatów)
 - [x] Plan korekcyjny „Ćwiczenia dla Ani” — wybór sprzętu, przeciwwskazania, progresja przez trudność
 - [x] AI Coach — analiza trendów per ćwiczenie + czat z trenerem (osobna zakładka)
 - [x] Reset hasła (e-mail → nowy formularz) + pokaż/ukryj hasło
 - [x] Fix: martwe zakładki po deployu — auto-reload przy błędzie ładowania chunku widoku
 
-### 🔮 V4 — *następne kroki*
+### ✅ V4 — *generator programu tygodniowego + rozbudowa*
+- [x] **Generator programu tygodniowego** — jeden silnik decyzyjny (`generateProgram`), auto-dobór splitu wg dni, rozkład objętości, rotacja ćwiczeń między dniami, sync Supabase
+- [x] **Strict Mode** — twarde limity objętości/częstotliwości + auto-korekta sprzeczności; walidacja tygodniowej objętości (MEV–MAV); regeneracja pojedynczego dnia; czas sesji
+- [x] **7 systemów** — PPL, Upper/Lower, FBW + **Arnold**, **Bro**, **Torso/Limbs** (rozszerzalne przez reguły, bez zmian silnika)
+- [x] Precyzyjna struktura slotowa dla Upper/Lower i FBW (slot → głowa mięśniowa + wzorzec); baza rozszerzona do 114 ćwiczeń (podciąganie, bodyweight staples)
+- [x] Prompt caching katalogu ćwiczeń (Anthropic) — tańsze/szybsze generowanie
+- [x] Plan Ani **dwudniowy** + notatki do treningu czytane przez AI
+- [x] Stoper ćwiczeń czasowych; „ostatni ciężar" po tożsamości; FAB „Zgłoś błąd" → Supabase
+
+### 🔮 V5 — *następne kroki*
 - [ ] Internacjonalizacja (EN) i przełącznik języka
-- [ ] Rozszerzenie bazy ćwiczeń na pozostałe typy (Upper/Lower/FBW) + tryb strict wszędzie
+- [ ] Kolejne metody (PHUL/PHAT — periodyzacja rep-scheme)
+- [ ] Auto-fix objętości w Strict (auto-regeneracja dni poza normą)
 - [ ] Pełny social (obserwowanie, leaderboardy)
-- [ ] Integracje z wearables / Health
-- [ ] Apple Watch / WearOS companion
+- [ ] Integracje z wearables / Health · Apple Watch / WearOS companion
 
 ---
 
