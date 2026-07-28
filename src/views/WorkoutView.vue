@@ -51,7 +51,18 @@ const workoutCardsRef = ref(null)
 // Flaga że już zapytaliśmy o dobitkę w tej sesji — nie pytamy drugi raz po powrocie.
 const dobitkaAsked = ref(false)
 
-const expandedSystem = ref(localStorage.getItem('tp_last_system') || null)
+// Zakładki trybu na ekranie Trening — jeden kontekst naraz (mniej tłoku).
+const HOME_MODES = [
+  { key: 'program', label: 'Program', icon: 'ti-calendar-week' },
+  { key: 'single',  label: 'Pojedynczy', icon: 'ti-list-check' },
+  { key: 'ania',    label: 'Ania', icon: 'ti-heart-handshake' }
+]
+const homeMode = ref(localStorage.getItem('tp_home_mode') || 'single')
+function setHomeMode(m) { homeMode.value = m; try { localStorage.setItem('tp_home_mode', m) } catch {} }
+// „Pojedynczy" — wybrany system (chipy) zamiast 3 osobnych akordeonów.
+const selectedSystem = ref(localStorage.getItem('tp_last_system') || 'ppl')
+function selectSystem(id) { selectedSystem.value = id; try { localStorage.setItem('tp_last_system', id) } catch {} }
+const currentSystem = computed(() => trainingSystems.find(s => s.id === selectedSystem.value) || trainingSystems[0])
 
 // Trzy systemy treningowe — każdy ma swoje dni
 const trainingSystems = [
@@ -251,11 +262,6 @@ async function finishWorkout() {
   completionWorkout.value = payload
 }
 
-function toggleSystem(sysId) {
-  expandedSystem.value = expandedSystem.value === sysId ? null : sysId
-  if (expandedSystem.value) localStorage.setItem('tp_last_system', sysId)
-}
-
 function selectDay(dayKey) {
   selectedType.value = dayKey
   // Plan Ani tworzony jest przez AI — otwórz od razu generator, pomiń bibliotekę.
@@ -423,66 +429,80 @@ async function discardWorkout() {
     </BaseCard>
   </div>
 
-  <!-- Type selection — pogrupowane wg systemu treningowego -->
+  <!-- Type selection — zakładki trybów (Program / Pojedynczy / Ania) -->
   <div v-else class="type-select">
-    <!-- Następny trening w cyklu (jeśli jest historia) -->
-    <BaseCard v-if="nextWorkout" class="repeat-banner">
-      <div class="repeat-info">
-        <i class="ti" :class="nextWorkout.icon" :style="{ color: nextWorkout.color }"></i>
-        <div>
-          <div class="dim repeat-label">Następny trening</div>
-          <div class="repeat-name">
-            {{ nextWorkout.label }}
-            <span class="repeat-tag" :style="{ color: nextWorkout.color, borderColor: nextWorkout.color }">{{ nextWorkout.desc }}</span>
-          </div>
-        </div>
-      </div>
-      <button class="btn btn-primary repeat-btn" @click="selectDay(nextWorkout.key)">
-        <i class="ti ti-player-play"></i> Trenuj
+    <div class="home-tabs">
+      <button
+        v-for="m in HOME_MODES"
+        :key="m.key"
+        class="home-tab"
+        :class="{ active: homeMode === m.key }"
+        @click="setHomeMode(m.key)"
+      >
+        <i class="ti" :class="m.icon"></i>
+        <span>{{ m.label }}</span>
       </button>
-    </BaseCard>
+    </div>
 
-    <!-- Program tygodniowy AI (cały tydzień z jednego silnika) -->
-    <ProgramPanel />
+    <!-- TRYB: PROGRAM TYGODNIOWY -->
+    <ProgramPanel v-if="homeMode === 'program'" />
 
-    <!-- 3 systemy treningowe — accordion -->
-    <BaseCard v-for="sys in trainingSystems" :key="sys.id" class="system-card">
-      <button class="system-header" @click="toggleSystem(sys.id)">
-        <div class="system-icon">
-          <i class="ti" :class="sys.icon"></i>
+    <!-- TRYB: POJEDYNCZY TRENING -->
+    <template v-else-if="homeMode === 'single'">
+      <BaseCard v-if="nextWorkout" class="repeat-banner">
+        <div class="repeat-info">
+          <i class="ti" :class="nextWorkout.icon" :style="{ color: nextWorkout.color }"></i>
+          <div>
+            <div class="dim repeat-label">Następny trening</div>
+            <div class="repeat-name">
+              {{ nextWorkout.label }}
+              <span class="repeat-tag" :style="{ color: nextWorkout.color, borderColor: nextWorkout.color }">{{ nextWorkout.desc }}</span>
+            </div>
+          </div>
         </div>
-        <div class="system-info">
-          <div class="system-title-row">
-            <h2 class="system-name">{{ sys.name }}</h2>
-            <span class="system-badge">{{ sys.badge }}</span>
-          </div>
-          <p class="system-desc">{{ sys.desc }}</p>
-        </div>
-        <i class="ti system-chevron" :class="expandedSystem === sys.id ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
-      </button>
-
-      <div v-if="expandedSystem === sys.id" class="days-grid">
-        <button
-          v-for="day in sys.days"
-          :key="day.key"
-          class="day-btn"
-          :style="{ '--c': day.color }"
-          @click="selectDay(day.key)"
-        >
-          <div class="day-icon">
-            <i class="ti" :class="day.icon"></i>
-          </div>
-          <div class="day-text">
-            <div class="day-label">{{ day.label }}</div>
-            <div class="day-desc">{{ day.desc }}</div>
-          </div>
-          <i class="ti ti-chevron-right day-arrow"></i>
+        <button class="btn btn-primary repeat-btn" @click="selectDay(nextWorkout.key)">
+          <i class="ti ti-player-play"></i> Trenuj
         </button>
-      </div>
-    </BaseCard>
+      </BaseCard>
 
-    <!-- Dedykowany plan korekcyjny Ani — dwudniowy podział, generowany przez AI -->
-    <BaseCard class="ania-card">
+      <BaseCard class="system-card">
+        <div class="system-chips">
+          <button
+            v-for="sys in trainingSystems"
+            :key="sys.id"
+            class="system-chip"
+            :class="{ active: selectedSystem === sys.id }"
+            @click="selectSystem(sys.id)"
+          >
+            <i class="ti" :class="sys.icon"></i>
+            <span>{{ sys.name }}</span>
+          </button>
+        </div>
+        <p class="system-desc system-desc-sel">{{ currentSystem.desc }}</p>
+
+        <div class="days-grid">
+          <button
+            v-for="day in currentSystem.days"
+            :key="day.key"
+            class="day-btn"
+            :style="{ '--c': day.color }"
+            @click="selectDay(day.key)"
+          >
+            <div class="day-icon">
+              <i class="ti" :class="day.icon"></i>
+            </div>
+            <div class="day-text">
+              <div class="day-label">{{ day.label }}</div>
+              <div class="day-desc">{{ day.desc }}</div>
+            </div>
+            <i class="ti ti-chevron-right day-arrow"></i>
+          </button>
+        </div>
+      </BaseCard>
+    </template>
+
+    <!-- TRYB: ĆWICZENIA DLA ANI -->
+    <BaseCard v-else-if="homeMode === 'ania'" class="ania-card">
       <div class="ania-head">
         <div class="ania-icon">
           <i class="ti ti-heart-handshake"></i>
@@ -575,6 +595,63 @@ async function discardWorkout() {
   flex-direction: column;
   gap: var(--space-3);
 }
+
+/* Przełącznik trybów (Program / Pojedynczy / Ania) */
+.home-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.home-tab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 8px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background var(--dur), color var(--dur);
+}
+.home-tab .ti { font-size: 16px; }
+.home-tab:hover { color: var(--text); }
+.home-tab.active { background: var(--accent); color: #000; }
+
+/* Chipy wyboru systemu w trybie „Pojedynczy" */
+.system-chips {
+  display: flex;
+  gap: 6px;
+  padding: var(--space-3) var(--space-3) 0;
+  flex-wrap: wrap;
+}
+.system-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all var(--dur);
+}
+.system-chip .ti { font-size: 15px; }
+.system-chip:hover { border-color: var(--border-strong); color: var(--text); }
+.system-chip.active { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.system-desc-sel { padding: 0 var(--space-4); margin: 10px 0 var(--space-2); }
 
 .repeat-banner {
   display: flex;
