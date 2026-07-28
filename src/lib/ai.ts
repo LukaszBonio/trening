@@ -2,6 +2,7 @@
 // Worker URL can be overridden by localStorage 'tp_proxy_url' for testing.
 
 import { PRIMARY_TO_GROUP } from './workoutSchema'
+import { chooseSplit, estimateWeeklyVolume } from './weeklyVolume'
 import { getAuthToken } from './auth'
 import { translateExerciseName } from './substitutions'
 import { getExercisesForHeads, findExerciseByName, type Equipment, type ExerciseEntry } from './exerciseDb'
@@ -119,6 +120,10 @@ interface GenerateAIPlanOptions {
   equipmentTags?: string[]
   level?: string
   injuries?: string[]
+  // Ćwiczenia użyte w innych dniach programu — do wykluczenia (rotacja między dniami).
+  excludeExercises?: string[]
+  // Krótki opis kontekstu programu (dni/tydz, częstotliwość partii) — nudge objętości.
+  programContext?: string
   signal?: AbortSignal
 }
 
@@ -585,6 +590,9 @@ interface BuildPromptOptions {
   // Profil użytkownika — wpływa na dobór/filtr ćwiczeń w katalogu.
   level?: string
   injuries?: string[]
+  // Generator programu: ćwiczenia z innych dni (rotacja) + kontekst tygodnia.
+  excludeExercises?: string[]
+  programContext?: string
 }
 
 // === Plan korekcyjny "Ćwiczenia dla Ani" ===
@@ -929,6 +937,16 @@ ${nameRule}
 
   usr.push('Wygeneruj teraz plan zgodnie z powyższymi zasadami i strukturą.')
 
+  // Kontekst programu (dni/tydz, częstotliwość partii) — nudge doboru liczby serii.
+  if (opts.programContext) {
+    usr.push(`KONTEKST PROGRAMU: ${opts.programContext}`)
+  }
+
+  // Rotacja między dniami programu — nie powtarzaj ćwiczeń z innych dni.
+  if (opts.excludeExercises && opts.excludeExercises.length) {
+    usr.push(`NIE UŻYWAJ tych ćwiczeń (są już w innych dniach tego programu — zadbaj o różnorodność, wybierz inne warianty tej samej partii): ${opts.excludeExercises.join(', ')}.`)
+  }
+
   if (hasHistory) {
     usr.push(`RÓŻNORODNOŚĆ:
 - Nie wybieraj identycznego zestawu ćwiczeń przy każdym generowaniu.
@@ -991,12 +1009,14 @@ const MAX_AVOID_LENGTH = 200
 const _planCache = new Map<string, CacheEntry>()
 const PLAN_CACHE_TTL_MS = 5 * 60 * 1000
 
-function planCacheKey({ type, goal, equipment, avoid, recentSessions, equipmentTags, level, injuries }: BuildPromptOptions): string {
+function planCacheKey({ type, goal, equipment, avoid, recentSessions, equipmentTags, level, injuries, excludeExercises }: BuildPromptOptions): string {
   // Klucz zawiera tylko stabilne wejście — historia identyfikowana po id ostatnich sesji.
   const sessionsKey = recentSessions.map((s: RecentSession) => s.id || String(s.date)).join(',')
   const tagsKey = (equipmentTags || []).slice().sort().join('+')
   const injKey = (injuries || []).slice().sort().join('+')
-  return `${type}|${goal}|${equipment}|${avoid}|${tagsKey}|${level || ''}|${injKey}|${sessionsKey}`
+  // excludeExercises różnicuje dni programu tego samego typu (np. 2× push) → osobny cache.
+  const exclKey = (excludeExercises || []).slice().sort().join('+')
+  return `${type}|${goal}|${equipment}|${avoid}|${tagsKey}|${level || ''}|${injKey}|${sessionsKey}|${exclKey}`
 }
 
 function getCachedPlan(key: string): AIPlan | null {
@@ -1093,6 +1113,8 @@ export async function generateAIPlan({
   equipmentTags,
   level,
   injuries,
+  excludeExercises,
+  programContext,
   signal
 }: GenerateAIPlanOptions): Promise<AIPlan> {
   // Sanityzacja: ucinamy do MAX_AVOID_LENGTH, usuwamy znaki nowej linii (które mogłyby
@@ -1100,11 +1122,11 @@ export async function generateAIPlan({
   const safeAvoid = String(avoid || '').replace(/[\r\n]+/g, ' ').slice(0, MAX_AVOID_LENGTH).trim()
 
   // Cache hit dla identycznego wejścia (chroni przed double-click). TTL 5 min.
-  const cacheKey = planCacheKey({ type, goal, equipment, avoid: safeAvoid, recentSessions, equipmentTags, level, injuries })
+  const cacheKey = planCacheKey({ type, goal, equipment, avoid: safeAvoid, recentSessions, equipmentTags, level, injuries, excludeExercises })
   const cached = getCachedPlan(cacheKey)
   if (cached) return cached
 
-  const { system, user } = buildPrompt({ type, goal, equipment, avoid: safeAvoid, recentSessions, equipmentTags, level, injuries })
+  const { system, user } = buildPrompt({ type, goal, equipment, avoid: safeAvoid, recentSessions, equipmentTags, level, injuries, excludeExercises, programContext })
 
   // 1 silent retry przy błędzie parse — czasem Claude zwraca tekst zaczynający się od ```json
   // lub pełen JSON z jednym brakiem; ponowna próba w 90% przypadków wystarcza.
@@ -1124,4 +1146,69 @@ export async function generateAIPlan({
   const normalized = normalizePlan(plan!, { type, goal })
   setCachedPlan(cacheKey, normalized)
   return normalized
+}
+
+// === Generator programu tygodniowego (Faza 1) ===
+// Orkiestracja: wybór splitu wg liczby dni → dla każdego dnia wołamy istniejący silnik
+// z wykluczeniem ćwiczeń z innych dni (rotacja) + kontekstem programu. Sekwencyjnie,
+// żeby każdy kolejny dzień „widział" i omijał ćwiczenia poprzednich.
+export interface ProgramDay { type: string; label: string; plan: AIPlan }
+export interface GeneratedProgram {
+  daysPerWeek: number
+  split: string
+  splitLabel: string
+  goal: string
+  level: string
+  equipment: string
+  days: ProgramDay[]
+  volumeByGroup: Record<string, number>
+}
+export interface GenerateProgramOptions {
+  daysPerWeek: number
+  goal: string
+  equipment?: string
+  level?: string
+  injuries?: string[]
+  splitOverride?: string | null
+  onProgress?: (done: number, total: number, label: string) => void
+  signal?: AbortSignal
+}
+
+export async function generateProgram(opts: GenerateProgramOptions): Promise<GeneratedProgram> {
+  const { daysPerWeek, goal, equipment = 'siłownia', level, injuries, splitOverride, onProgress, signal } = opts
+  const split = chooseSplit(daysPerWeek, splitOverride)
+  const total = split.days.length
+  const days: ProgramDay[] = []
+  const used: string[] = []
+
+  for (let i = 0; i < total; i++) {
+    const d = split.days[i]
+    onProgress?.(i, total, d.label)
+    const programContext = `${total} dni/tydzień, split ${split.splitLabel}. Ten dzień to „${d.label}". Dobierz liczbę serii na ćwiczenie (3–4) tak, aby tygodniowa objętość każdej partii mieściła się w normie hipertrofii. Nie powtarzaj ćwiczeń z innych dni programu.`
+    const plan = await generateAIPlan({
+      type: d.type,
+      goal,
+      equipment,
+      level,
+      injuries,
+      recentSessions: [],
+      excludeExercises: [...used],
+      programContext,
+      signal
+    })
+    days.push({ type: d.type, label: d.label, plan })
+    for (const ex of plan.exercises) used.push(ex.name)
+  }
+  onProgress?.(total, total, '')
+
+  return {
+    daysPerWeek: total,
+    split: split.split,
+    splitLabel: split.splitLabel,
+    goal,
+    level: level || 'intermediate',
+    equipment,
+    days,
+    volumeByGroup: estimateWeeklyVolume(days)
+  }
 }

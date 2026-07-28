@@ -11,6 +11,7 @@ import AIGenerator from '../components/AIGenerator.vue'
 import CompletionSummary from '../components/CompletionSummary.vue'
 import PlateCalculator from '../components/PlateCalculator.vue'
 import WorkoutCards from '../components/WorkoutCards.vue'
+import ProgramPanel from '../components/ProgramPanel.vue'
 import { useCustomPlansStore } from '../stores/customPlans'
 import { useDialog } from '../composables/useDialog'
 import { useToast } from '../composables/useToast'
@@ -440,6 +441,9 @@ async function discardWorkout() {
         <i class="ti ti-player-play"></i> Trenuj
       </button>
     </BaseCard>
+
+    <!-- Program tygodniowy AI (cały tydzień z jednego silnika) -->
+    <ProgramPanel />
 
     <!-- 3 systemy treningowe — accordion -->
     <BaseCard v-for="sys in trainingSystems" :key="sys.id" class="system-card">
