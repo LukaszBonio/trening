@@ -264,6 +264,9 @@ export const MUSCLE_HEADS_BY_TYPE: Record<string, string[]> = {
   fbw_a:   ['chest_middle', 'chest_upper', 'back_lats', 'back_middle', 'shoulder_front', 'shoulder_side', 'shoulder_rear', 'quads', 'hamstrings', 'glutes', 'biceps_short', 'triceps_lat', 'abs', 'core'],
   fbw_b:   ['chest_middle', 'chest_upper', 'back_lats', 'back_middle', 'back_lower', 'shoulder_front', 'shoulder_side', 'quads', 'hamstrings', 'glutes', 'triceps_long', 'triceps_lat', 'abs', 'core'],
   fbw_c:   ['chest_middle', 'chest_upper', 'back_lats', 'back_middle', 'shoulder_front', 'shoulder_side', 'shoulder_rear', 'quads', 'hamstrings', 'glutes', 'biceps_short', 'calves', 'core'],
+  // Arnold Split — dzień Klatka+Plecy oraz dzień Barki+Ramiona (Faza 3: nowa metoda z reguł).
+  chest_back:     ['chest_upper', 'chest_middle', 'chest_lower', 'back_lats', 'back_middle', 'back_upper', 'back_lower'],
+  shoulders_arms: ['shoulder_front', 'shoulder_side', 'shoulder_rear', 'biceps_long', 'biceps_short', 'biceps_brach', 'triceps_long', 'triceps_lat', 'triceps_med', 'forearms'],
   // Plan korekcyjny Ani — bez klatki/przednich barków/tricepsa/bicepsa (górna część minimalna).
   ania:    ['core', 'abs', 'obliques', 'glutes', 'adductors', 'hamstrings', 'quads', 'back_lats', 'back_middle', 'back_lower', 'back_upper', 'shoulder_rear', 'calves'],
   // Ania Dzień 1 — kręgosłup (głęboka stabilizacja lędźwi) + górne plecy + postawa/łopatki.
@@ -419,6 +422,45 @@ const TYPE_DETAILS: Record<string, TypeDetail> = {
       'Plan eksponuje pośladki (hip thrust) i tylne barki (face pull).',
       'Wybieraj ćwiczenia efektywne czasowo.',
       'Unikaj nadmiaru ćwiczeń izolowanych.'
+    ]
+  },
+  // Arnold Split — dzień KLATKA + PLECY.
+  chest_back: {
+    label: 'ARNOLD — KLATKA + PLECY',
+    expectedCount: 8,
+    structure: `Naprzemiennie klatka/plecy (kolejność zachowana, balans 4:4):
+1. KLATKA — wyciskanie poziome (muscleHead: "chest_middle", compound).
+2. PLECY — wiosłowanie poziome (muscleHead: "back_middle", compound).
+3. KLATKA GÓRNA — skos dodatni (muscleHead: "chest_upper", compound).
+4. PLECY — ciąg pionowy (muscleHead: "back_lats", compound): podciąganie / ściąganie drążka.
+5. KLATKA ISOLATION (muscleHead: dowolny "chest_*", isolation): rozpiętki / cable crossover.
+6. PLECY — drugi ciąg (muscleHead: "back_lats" lub "back_middle", compound): inny wzorzec niż poz. 2 i 4.
+7. KLATKA DOLNA / pełne rozciągnięcie (muscleHead: "chest_lower", isolation lub compound): dip / high cable crossover.
+8. PLECY — najszersze / kaptur (muscleHead: "back_upper" lub "back_lats", isolation): pullover / ściąganie na prostych ramionach / wzruszenia.`,
+    selection: [
+      'Pozycje 1-4 muszą być compound. Balans klatka:plecy dokładnie 4:4.',
+      'Łącz wzorce poziome i pionowe zarówno dla klatki, jak i pleców.',
+      'Nie twórz planu wyłącznie na maszynach — pierwsze wyciskanie i wiosłowanie ze sztangą lub hantlami.',
+      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
+    ]
+  },
+  // Arnold Split — dzień BARKI + RAMIONA.
+  shoulders_arms: {
+    label: 'ARNOLD — BARKI + RAMIONA',
+    expectedCount: 7,
+    structure: `Barki + ramiona (kolejność zachowana):
+1. BARK — wyciskanie nad głowę (muscleHead: "shoulder_front", compound): OHP / hantle / Arnold press.
+2. BARK BOCZNY (muscleHead: "shoulder_side", isolation): wznosy bokiem — szerokość barków.
+3. BARK TYLNY (muscleHead: "shoulder_rear", isolation): face pull / odwrotne rozpiętki.
+4. BICEPS (muscleHead: "biceps_short" lub "biceps_long", isolation): uginanie ze sztangą/hantlami.
+5. TRICEPS (muscleHead: "triceps_long", isolation): overhead / francuskie wyciskanie.
+6. BICEPS (muscleHead: "biceps_long" lub "biceps_brach", isolation): inny kąt/chwyt niż poz. 4 (skos / młotkowe).
+7. TRICEPS (muscleHead: "triceps_lat", isolation): pushdown / wąski chwyt.`,
+    selection: [
+      'Pozycja 1 to compound (wyciskanie nad głowę); pozostałe to izolacja.',
+      'Biceps i triceps mają po dwa RÓŻNE warianty (inny kąt/chwyt).',
+      'Bark boczny i tylny obowiązkowo — dopełniają barki po dniu wyciskań.',
+      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
     ]
   },
   // Plan korekcyjno-wzmacniający dla Ani. Ma własny builder promptu (buildAniaPrompt),

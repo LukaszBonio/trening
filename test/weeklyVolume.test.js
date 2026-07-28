@@ -58,6 +58,13 @@ describe('chooseSplit', () => {
     expect(chooseSplit(1).days.length).toBe(2)
     expect(chooseSplit(9).days.length).toBe(6)
   })
+  it('Arnold Split (Faza 3) — nowa metoda z reguł', () => {
+    const s = chooseSplit(6, 'arnold')
+    expect(s.split).toBe('arnold')
+    expect(s.days.map(d => d.type)).toEqual(['chest_back', 'shoulders_arms', 'legs', 'chest_back', 'shoulders_arms', 'legs'])
+    expect(s.days[0].label).toBe('Klatka + Plecy')
+    expect(s.days[1].label).toBe('Barki + Ramiona')
+  })
   it('każdy dzień ma czytelną etykietę', () => {
     for (const d of chooseSplit(4).days) expect(DAY_LABEL[d.type]).toBe(d.label)
   })

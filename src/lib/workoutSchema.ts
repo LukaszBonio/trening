@@ -11,6 +11,7 @@ export type WorkoutType =
   | 'upper_a' | 'upper_b'
   | 'lower_a' | 'lower_b'
   | 'fbw_a' | 'fbw_b' | 'fbw_c'
+  | 'chest_back' | 'shoulders_arms'
   | 'ania' | 'ania_a' | 'ania_b'
 
 export type GroupId =
@@ -98,6 +99,13 @@ export const WORKOUT_SCHEMA: Record<WorkoutType, SchemaGroup[]> = {
   fbw_c: [
     { id: 'czworogłowy', count: 1 }, { id: 'klatka', count: 1 }, { id: 'plecy', count: 1 },
     { id: 'pośladki', count: 1 }, { id: 'barki', count: 1 }, { id: 'biceps', count: 1 }, { id: 'łydki', count: 1 },
+  ],
+  // Arnold Split
+  chest_back: [
+    { id: 'klatka', count: 4 }, { id: 'plecy', count: 4 },
+  ],
+  shoulders_arms: [
+    { id: 'barki', count: 3 }, { id: 'biceps', count: 2 }, { id: 'triceps', count: 2 },
   ],
   // Plan korekcyjno-wzmacniający "Ćwiczenia dla Ani" — kolejność slotów zgodna z promptem
   // (aktywacja core → stabilizacja → pośladki → biodro → tylna taśma → kolano → plecy → łopatki).

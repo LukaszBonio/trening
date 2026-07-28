@@ -59,6 +59,7 @@ export const DAY_LABEL: Record<string, string> = {
   push: 'Push', pull: 'Pull', legs: 'Legs',
   upper_a: 'Upper A', upper_b: 'Upper B', lower_a: 'Lower A', lower_b: 'Lower B',
   fbw_a: 'FBW A', fbw_b: 'FBW B', fbw_c: 'FBW C',
+  chest_back: 'Klatka + Plecy', shoulders_arms: 'Barki + Ramiona',
 }
 
 const SPLIT_LABEL: Record<string, string> = {
@@ -66,6 +67,7 @@ const SPLIT_LABEL: Record<string, string> = {
   upperLower: 'Upper / Lower',
   fbw: 'Full Body Workout',
   hybryda: 'Hybryda (Upper/Lower + PPL)',
+  arnold: 'Arnold Split',
 }
 
 // Cykliczne rozłożenie sekwencji typów na N dni (z powtórzeniem dla większej częstotliwości).
@@ -79,6 +81,7 @@ function cycle(types: string[], days: number): SplitDay[] {
 const PPL = ['push', 'pull', 'legs']
 const UL = ['upper_a', 'lower_a', 'upper_b', 'lower_b']
 const FBW = ['fbw_a', 'fbw_b', 'fbw_c']
+const ARNOLD = ['chest_back', 'shoulders_arms', 'legs']
 
 /**
  * Dobór splitu na podstawie liczby dni/tydzień. `override` wymusza system
@@ -90,6 +93,7 @@ export function chooseSplit(days: number, override?: string | null): SplitPlan {
   if (override === 'ppl') return { split: 'ppl', splitLabel: SPLIT_LABEL.ppl, days: cycle(PPL, d) }
   if (override === 'fbw') return { split: 'fbw', splitLabel: SPLIT_LABEL.fbw, days: cycle(FBW, d) }
   if (override === 'upperLower') return { split: 'upperLower', splitLabel: SPLIT_LABEL.upperLower, days: cycle(UL, d) }
+  if (override === 'arnold') return { split: 'arnold', splitLabel: SPLIT_LABEL.arnold, days: cycle(ARNOLD, d) }
 
   // Auto — najsensowniejszy split dla danej liczby dni.
   switch (d) {
@@ -110,6 +114,7 @@ export const SPLIT_OPTIONS = [
   { key: 'ppl', label: 'Push / Pull / Legs' },
   { key: 'upperLower', label: 'Upper / Lower' },
   { key: 'fbw', label: 'Full Body' },
+  { key: 'arnold', label: 'Arnold Split' },
 ]
 
 // --- Estymacja realnej objętości z wygenerowanego programu ---
