@@ -60,6 +60,8 @@ export const DAY_LABEL: Record<string, string> = {
   upper_a: 'Upper A', upper_b: 'Upper B', lower_a: 'Lower A', lower_b: 'Lower B',
   fbw_a: 'FBW A', fbw_b: 'FBW B', fbw_c: 'FBW C',
   chest_back: 'Klatka + Plecy', shoulders_arms: 'Barki + Ramiona',
+  day_chest: 'Klatka', day_back: 'Plecy', day_shoulders: 'Barki', day_arms: 'Ramiona',
+  torso: 'Tułów', limbs: 'Kończyny',
 }
 
 const SPLIT_LABEL: Record<string, string> = {
@@ -68,6 +70,8 @@ const SPLIT_LABEL: Record<string, string> = {
   fbw: 'Full Body Workout',
   hybryda: 'Hybryda (Upper/Lower + PPL)',
   arnold: 'Arnold Split',
+  bro: 'Bro Split',
+  torsoLimbs: 'Torso / Limbs',
 }
 
 // Cykliczne rozłożenie sekwencji typów na N dni (z powtórzeniem dla większej częstotliwości).
@@ -82,6 +86,8 @@ const PPL = ['push', 'pull', 'legs']
 const UL = ['upper_a', 'lower_a', 'upper_b', 'lower_b']
 const FBW = ['fbw_a', 'fbw_b', 'fbw_c']
 const ARNOLD = ['chest_back', 'shoulders_arms', 'legs']
+const BRO = ['day_chest', 'day_back', 'day_shoulders', 'legs', 'day_arms']
+const TORSO_LIMBS = ['torso', 'limbs']
 
 /**
  * Dobór splitu na podstawie liczby dni/tydzień. `override` wymusza system
@@ -94,6 +100,8 @@ export function chooseSplit(days: number, override?: string | null): SplitPlan {
   if (override === 'fbw') return { split: 'fbw', splitLabel: SPLIT_LABEL.fbw, days: cycle(FBW, d) }
   if (override === 'upperLower') return { split: 'upperLower', splitLabel: SPLIT_LABEL.upperLower, days: cycle(UL, d) }
   if (override === 'arnold') return { split: 'arnold', splitLabel: SPLIT_LABEL.arnold, days: cycle(ARNOLD, d) }
+  if (override === 'bro') return { split: 'bro', splitLabel: SPLIT_LABEL.bro, days: cycle(BRO, d) }
+  if (override === 'torsoLimbs') return { split: 'torsoLimbs', splitLabel: SPLIT_LABEL.torsoLimbs, days: cycle(TORSO_LIMBS, d) }
 
   // Auto — najsensowniejszy split dla danej liczby dni.
   switch (d) {
@@ -115,6 +123,8 @@ export const SPLIT_OPTIONS = [
   { key: 'upperLower', label: 'Upper / Lower' },
   { key: 'fbw', label: 'Full Body' },
   { key: 'arnold', label: 'Arnold Split' },
+  { key: 'bro', label: 'Bro Split' },
+  { key: 'torsoLimbs', label: 'Torso / Limbs' },
 ]
 
 // --- Estymacja realnej objętości z wygenerowanego programu ---

@@ -65,6 +65,18 @@ describe('chooseSplit', () => {
     expect(s.days[0].label).toBe('Klatka + Plecy')
     expect(s.days[1].label).toBe('Barki + Ramiona')
   })
+  it('Bro Split — 5 dni, pojedyncza partia', () => {
+    const s = chooseSplit(5, 'bro')
+    expect(s.split).toBe('bro')
+    expect(s.days.map(d => d.type)).toEqual(['day_chest', 'day_back', 'day_shoulders', 'legs', 'day_arms'])
+    expect(s.days.map(d => d.label)).toEqual(['Klatka', 'Plecy', 'Barki', 'Legs', 'Ramiona'])
+  })
+  it('Torso / Limbs — 4 dni naprzemiennie', () => {
+    const s = chooseSplit(4, 'torsoLimbs')
+    expect(s.split).toBe('torsoLimbs')
+    expect(s.days.map(d => d.type)).toEqual(['torso', 'limbs', 'torso', 'limbs'])
+    expect(s.days[0].label).toBe('Tułów')
+  })
   it('każdy dzień ma czytelną etykietę', () => {
     for (const d of chooseSplit(4).days) expect(DAY_LABEL[d.type]).toBe(d.label)
   })

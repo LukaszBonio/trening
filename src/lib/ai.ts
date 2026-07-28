@@ -267,6 +267,14 @@ export const MUSCLE_HEADS_BY_TYPE: Record<string, string[]> = {
   // Arnold Split — dzień Klatka+Plecy oraz dzień Barki+Ramiona (Faza 3: nowa metoda z reguł).
   chest_back:     ['chest_upper', 'chest_middle', 'chest_lower', 'back_lats', 'back_middle', 'back_upper', 'back_lower'],
   shoulders_arms: ['shoulder_front', 'shoulder_side', 'shoulder_rear', 'biceps_long', 'biceps_short', 'biceps_brach', 'triceps_long', 'triceps_lat', 'triceps_med', 'forearms'],
+  // Bro Split — pojedyncza partia dziennie (Klatka / Plecy / Barki / Ramiona; nogi = 'legs').
+  day_chest:     ['chest_upper', 'chest_middle', 'chest_lower'],
+  day_back:      ['back_lats', 'back_middle', 'back_upper', 'back_lower'],
+  day_shoulders: ['shoulder_front', 'shoulder_side', 'shoulder_rear'],
+  day_arms:      ['biceps_long', 'biceps_short', 'biceps_brach', 'triceps_long', 'triceps_lat', 'triceps_med', 'forearms'],
+  // Torso / Limbs — Tułów (klatka+plecy+barki) oraz Kończyny (nogi+ramiona).
+  torso:         ['chest_upper', 'chest_middle', 'chest_lower', 'back_lats', 'back_middle', 'back_upper', 'shoulder_front', 'shoulder_side', 'shoulder_rear'],
+  limbs:         ['quads', 'hamstrings', 'glutes', 'calves', 'back_lower', 'biceps_long', 'biceps_short', 'biceps_brach', 'triceps_long', 'triceps_lat', 'triceps_med'],
   // Plan korekcyjny Ani — bez klatki/przednich barków/tricepsa/bicepsa (górna część minimalna).
   ania:    ['core', 'abs', 'obliques', 'glutes', 'adductors', 'hamstrings', 'quads', 'back_lats', 'back_middle', 'back_lower', 'back_upper', 'shoulder_rear', 'calves'],
   // Ania Dzień 1 — kręgosłup (głęboka stabilizacja lędźwi) + górne plecy + postawa/łopatki.
@@ -460,6 +468,110 @@ const TYPE_DETAILS: Record<string, TypeDetail> = {
       'Pozycja 1 to compound (wyciskanie nad głowę); pozostałe to izolacja.',
       'Biceps i triceps mają po dwa RÓŻNE warianty (inny kąt/chwyt).',
       'Bark boczny i tylny obowiązkowo — dopełniają barki po dniu wyciskań.',
+      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
+    ]
+  },
+  // Bro Split — dzień KLATKA.
+  day_chest: {
+    label: 'KLATKA',
+    expectedCount: 5,
+    structure: `Cała klatka, wszystkie kąty (kolejność zachowana):
+1. WYCISKANIE POZIOME (muscleHead: "chest_middle", compound): sztanga lub hantle.
+2. WYCISKANIE SKOŚNE dodatnie (muscleHead: "chest_upper", compound).
+3. KLATKA DOLNA (muscleHead: "chest_lower", compound): dip / ławka ujemna.
+4. ROZPIĘTKI / rozciągnięcie (muscleHead: dowolny "chest_*", isolation): rozpiętki / cable crossover.
+5. DRUGA ISOLATION pod innym kątem (muscleHead: dowolny "chest_*", isolation): np. high/low cable crossover.`,
+    selection: [
+      'Pozycje 1-3 muszą być compound, pod różnymi kątami (poziom, skos, dół).',
+      'Pierwsze wyciskanie ze sztangą lub hantlami (nie maszyna).',
+      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
+    ]
+  },
+  // Bro Split — dzień PLECY.
+  day_back: {
+    label: 'PLECY',
+    expectedCount: 6,
+    structure: `Kompletne plecy (kolejność zachowana):
+1. CIĄG CIĘŻKI (muscleHead: "back_lower" lub "back_middle", compound): martwy ciąg lub ciężkie wiosłowanie sztangą.
+2. CIĄG PIONOWY (muscleHead: "back_lats", compound): podciąganie / ściąganie drążka.
+3. WIOSŁOWANIE POZIOME (muscleHead: "back_middle", compound): inny wariant niż poz. 1.
+4. DRUGI CIĄG PIONOWY/POZIOMY (muscleHead: "back_lats" lub "back_middle", compound): inny chwyt/kąt.
+5. NAJSZERSZE ISOLATION (muscleHead: "back_lats", isolation): ściąganie na prostych ramionach / pullover.
+6. KAPTUR / GÓRNY GRZBIET (muscleHead: "back_upper", isolation): wzruszenia barków.`,
+    selection: [
+      'Pozycje 1-4 muszą być compound; łącz ciągi pionowe i poziome.',
+      'Co najmniej 2 różne wzorce ciągnięcia (pion + poziom).',
+      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
+    ]
+  },
+  // Bro Split — dzień BARKI.
+  day_shoulders: {
+    label: 'BARKI',
+    expectedCount: 5,
+    structure: `Wszystkie aktony barków (kolejność zachowana):
+1. WYCISKANIE NAD GŁOWĘ (muscleHead: "shoulder_front", compound): OHP / hantle / Arnold press.
+2. BARK BOCZNY (muscleHead: "shoulder_side", isolation): wznosy bokiem.
+3. BARK TYLNY (muscleHead: "shoulder_rear", isolation): face pull / odwrotne rozpiętki.
+4. DRUGI BARK BOCZNY pod innym kątem (muscleHead: "shoulder_side", isolation): wyciąg / maszyna / wiosłowanie pod brodę.
+5. DRUGI BARK TYLNY lub kaptur (muscleHead: "shoulder_rear", isolation).`,
+    selection: [
+      'Pozycja 1 to compound; reszta izolacja z akcentem na bok i tył (szerokość + postawa).',
+      'Bok i tył po dwa warianty — najczęściej zaniedbane aktony.',
+      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
+    ]
+  },
+  // Bro Split — dzień RAMIONA.
+  day_arms: {
+    label: 'RAMIONA',
+    expectedCount: 6,
+    structure: `Biceps + triceps naprzemiennie (kolejność zachowana, balans 3:3):
+1. BICEPS baza (muscleHead: "biceps_short", isolation): uginanie ze sztangą.
+2. TRICEPS baza (muscleHead: "triceps_long", isolation): francuskie / overhead / wyciskanie wąskim.
+3. BICEPS drugi kąt (muscleHead: "biceps_long", isolation): uginanie na skosie / modlitewnik.
+4. TRICEPS drugi kąt (muscleHead: "triceps_lat", isolation): pushdown.
+5. BICEPS / ramienny (muscleHead: "biceps_brach", isolation): hammer curl.
+6. TRICEPS wykończenie lub PRZEDRAMIĘ (muscleHead: "triceps_lat" lub "forearms", isolation).`,
+    selection: [
+      'Balans biceps:triceps dokładnie 3:3; każdy pod różnymi kątami.',
+      'Łącz warianty ze sztangą, hantlami i wyciągiem.',
+      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
+    ]
+  },
+  // Torso / Limbs — dzień TUŁÓW (klatka + plecy + barki).
+  torso: {
+    label: 'TUŁÓW',
+    expectedCount: 8,
+    structure: `Cała góra: klatka + plecy + barki (kolejność zachowana):
+1. KLATKA — wyciskanie poziome (muscleHead: "chest_middle", compound).
+2. PLECY — wiosłowanie poziome (muscleHead: "back_middle", compound).
+3. KLATKA GÓRNA — skos (muscleHead: "chest_upper", compound).
+4. PLECY — ciąg pionowy (muscleHead: "back_lats", compound): podciąganie / ściąganie.
+5. BARK — wyciskanie nad głowę (muscleHead: "shoulder_front", compound).
+6. KLATKA ISOLATION (muscleHead: dowolny "chest_*", isolation).
+7. BARK BOCZNY (muscleHead: "shoulder_side", isolation).
+8. BARK TYLNY (muscleHead: "shoulder_rear", isolation).`,
+    selection: [
+      'Pozycje 1-5 muszą być compound; balans push/pull na górze.',
+      'Łącz wzorce poziome i pionowe dla klatki i pleców.',
+      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
+    ]
+  },
+  // Torso / Limbs — dzień KOŃCZYNY (nogi + ramiona).
+  limbs: {
+    label: 'KOŃCZYNY',
+    expectedCount: 8,
+    structure: `Nogi + ramiona (kolejność zachowana):
+1. PRZYSIAD (muscleHead: "quads", compound).
+2. HIP HINGE (muscleHead: "back_lower" lub "hamstrings", compound): RDL / martwy ciąg.
+3. CZWOROGŁOWY accessory (muscleHead: "quads"): leg press / wykroki.
+4. HAMSTRING (muscleHead: "hamstrings", isolation): uginanie nóg.
+5. BICEPS (muscleHead: "biceps_short" lub "biceps_long", isolation).
+6. TRICEPS (muscleHead: "triceps_long" lub "triceps_lat", isolation).
+7. ŁYDKI (muscleHead: "calves", isolation).
+8. BICEPS lub TRICEPS drugi wariant (muscleHead: "biceps_brach" lub "triceps_lat", isolation).`,
+    selection: [
+      'Pozycje 1-3 to nogi compound (przysiad + hinge + accessory).',
+      'Ramiona: po jednym-dwa biceps/triceps; łydki obowiązkowo.',
       'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
     ]
   },
