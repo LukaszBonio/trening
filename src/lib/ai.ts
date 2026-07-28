@@ -1162,6 +1162,8 @@ export interface GeneratedProgram {
   equipment: string
   days: ProgramDay[]
   volumeByGroup: Record<string, number>
+  strict?: boolean
+  sessionMinutes?: number | null
 }
 export interface GenerateProgramOptions {
   daysPerWeek: number
@@ -1170,12 +1172,28 @@ export interface GenerateProgramOptions {
   level?: string
   injuries?: string[]
   splitOverride?: string | null
+  // Faza 2: twardsze egzekwowanie objętości/nauki + budżet czasu sesji.
+  strict?: boolean
+  sessionMinutes?: number
   onProgress?: (done: number, total: number, label: string) => void
   signal?: AbortSignal
 }
 
+// Buduje opis kontekstu dnia dla promptu (współdzielony przez generateProgram i regenerateDay).
+function programContextFor(
+  dayLabel: string, splitLabel: string, total: number,
+  strict?: boolean, sessionMinutes?: number
+): string {
+  const base = `${total} dni/tydzień, split ${splitLabel}. Ten dzień to „${dayLabel}". Dobierz liczbę serii na ćwiczenie (3–4) tak, aby tygodniowa objętość każdej partii mieściła się w normie hipertrofii. Nie powtarzaj ćwiczeń z innych dni programu.`
+  const time = sessionMinutes ? ` Budżet czasu sesji ~${sessionMinutes} min — dobierz liczbę serii tak, aby sesja się w nim zmieściła.` : ''
+  const strictNote = strict
+    ? ' TRYB STRICT: bezwzględnie trzymaj się limitów objętości i częstotliwości oraz kolejności ćwiczeń zgodnej z wiedzą o hipertrofii. Jeżeli wymagania są sprzeczne — popraw je i wybierz naukowo optymalny wariant zamiast realizować ślepo.'
+    : ''
+  return `${base}${time}${strictNote}`
+}
+
 export async function generateProgram(opts: GenerateProgramOptions): Promise<GeneratedProgram> {
-  const { daysPerWeek, goal, equipment = 'siłownia', level, injuries, splitOverride, onProgress, signal } = opts
+  const { daysPerWeek, goal, equipment = 'siłownia', level, injuries, splitOverride, strict, sessionMinutes, onProgress, signal } = opts
   const split = chooseSplit(daysPerWeek, splitOverride)
   const total = split.days.length
   const days: ProgramDay[] = []
@@ -1184,7 +1202,6 @@ export async function generateProgram(opts: GenerateProgramOptions): Promise<Gen
   for (let i = 0; i < total; i++) {
     const d = split.days[i]
     onProgress?.(i, total, d.label)
-    const programContext = `${total} dni/tydzień, split ${split.splitLabel}. Ten dzień to „${d.label}". Dobierz liczbę serii na ćwiczenie (3–4) tak, aby tygodniowa objętość każdej partii mieściła się w normie hipertrofii. Nie powtarzaj ćwiczeń z innych dni programu.`
     const plan = await generateAIPlan({
       type: d.type,
       goal,
@@ -1193,7 +1210,7 @@ export async function generateProgram(opts: GenerateProgramOptions): Promise<Gen
       injuries,
       recentSessions: [],
       excludeExercises: [...used],
-      programContext,
+      programContext: programContextFor(d.label, split.splitLabel, total, strict, sessionMinutes),
       signal
     })
     days.push({ type: d.type, label: d.label, plan })
@@ -1209,6 +1226,31 @@ export async function generateProgram(opts: GenerateProgramOptions): Promise<Gen
     level: level || 'intermediate',
     equipment,
     days,
-    volumeByGroup: estimateWeeklyVolume(days)
+    volumeByGroup: estimateWeeklyVolume(days),
+    strict: !!strict,
+    sessionMinutes: sessionMinutes ?? null
   }
+}
+
+// Regeneruje POJEDYNCZY dzień programu (wykluczając ćwiczenia z pozostałych dni).
+// Zwraca nowy ProgramDay — wywołujący podmienia go w programie i przelicza objętość.
+export async function regenerateDay(
+  program: GeneratedProgram, index: number,
+  opts: { strict?: boolean; sessionMinutes?: number; signal?: AbortSignal } = {}
+): Promise<ProgramDay> {
+  const day = program.days[index]
+  const used = program.days
+    .filter((_, i) => i !== index)
+    .flatMap(d => d.plan.exercises.map(e => e.name))
+  const plan = await generateAIPlan({
+    type: day.type,
+    goal: program.goal,
+    equipment: program.equipment,
+    level: program.level,
+    recentSessions: [],
+    excludeExercises: used,
+    programContext: programContextFor(day.label, program.splitLabel, program.days.length, opts.strict, opts.sessionMinutes),
+    signal: opts.signal
+  })
+  return { type: day.type, label: day.label, plan }
 }

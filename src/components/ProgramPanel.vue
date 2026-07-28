@@ -1,25 +1,32 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { generateProgram } from '../lib/ai'
+import { generateProgram, regenerateDay } from '../lib/ai'
 import { useProgramsStore } from '../stores/programs'
 import { useSessionStore } from '../stores/session'
 import { useSettingsStore } from '../stores/settings'
-import { SPLIT_OPTIONS, weeklyTargets, volumeStatus } from '../lib/weeklyVolume'
+import { SPLIT_OPTIONS, weeklyTargets, volumeStatus, estimateWeeklyVolume, analyzeProgram } from '../lib/weeklyVolume'
 import { GROUP_LABELS } from '../lib/workoutSchema'
+import { useToast } from '../composables/useToast'
 import BaseCard from './BaseCard.vue'
 
 const programs = useProgramsStore()
 const session = useSessionStore()
 const settings = useSettingsStore()
+const toast = useToast()
 
 const open = ref(false)          // rozwinięcie generatora, gdy brak programu
 const days = ref(4)
 const equipment = ref('siłownia')
 const splitOverride = ref(null)
+const strict = ref(false)
+const sessionMinutes = ref(60)
 const generating = ref(false)
 const progress = ref({ done: 0, total: 0, label: '' })
+const regeneratingIdx = ref(-1)
 const error = ref('')
 let abortCtrl = null
+
+const SESSION_TIMES = [45, 60, 75, 90]
 
 const EQUIPMENT = ['siłownia', 'dom z hantlami', 'dom bez sprzętu (calisthenics)']
 
@@ -43,6 +50,9 @@ const volumeRows = computed(() => {
     .filter(r => r.sets > 0 || r.target > 0)
 })
 
+// Walidacja programu (partie poza normą) — mocniej eksponowana w Strict Mode.
+const analysis = computed(() => program.value ? analyzeProgram(program.value.days, program.value.level) : null)
+
 async function generate() {
   if (abortCtrl) { try { abortCtrl.abort() } catch {} }
   generating.value = true
@@ -57,6 +67,8 @@ async function generate() {
       level: settings.settings.trainingLevel,
       injuries: settings.settings.injuries,
       splitOverride: splitOverride.value,
+      strict: strict.value,
+      sessionMinutes: sessionMinutes.value,
       onProgress: (done, total, label) => { progress.value = { done, total, label } },
       signal: abortCtrl.signal
     })
@@ -74,6 +86,24 @@ function cancel() { if (abortCtrl) abortCtrl.abort() }
 
 function startDay(day) {
   session.startSession(day.plan, day.type, 'ai')
+}
+
+// Regeneracja pojedynczego dnia (wyklucza ćwiczenia z pozostałych dni).
+async function regenDay(i) {
+  if (regeneratingIdx.value !== -1) return
+  const p = program.value
+  if (!p) return
+  regeneratingIdx.value = i
+  try {
+    const newDay = await regenerateDay(p, i, { strict: p.strict, sessionMinutes: p.sessionMinutes })
+    const updatedDays = [...p.days]
+    updatedDays[i] = newDay
+    programs.save({ ...p, days: updatedDays, volumeByGroup: estimateWeeklyVolume(updatedDays) })
+  } catch (e) {
+    if (e.name !== 'AbortError') toast.error(e.message || 'Nie udało się zregenerować dnia.')
+  } finally {
+    regeneratingIdx.value = -1
+  }
 }
 
 async function removeProgram() {
@@ -120,6 +150,16 @@ const STATUS_META = {
       <div class="prog-meta">
         <span class="prog-chip">{{ program.splitLabel }}</span>
         <span class="prog-chip">{{ program.daysPerWeek }}× / tydz</span>
+        <span v-if="program.strict" class="prog-chip prog-chip-strict"><i class="ti ti-shield-check"></i> Strict</span>
+      </div>
+
+      <!-- Walidacja: partie poza normą objętości -->
+      <div v-if="analysis && !analysis.ok" class="prog-issues" :class="{ strict: program.strict }">
+        <i class="ti ti-alert-triangle"></i>
+        <div class="prog-issues-text">
+          <strong>{{ program.strict ? 'Strict: objętość poza normą' : 'Objętość do dopracowania' }}</strong>
+          <span>{{ analysis.issues.map(x => `${x.label}: ${x.status === 'low' ? 'za mało' : 'za dużo'} (${x.sets}/${x.range[0]}–${x.range[1]})`).join(' · ') }}. Regeneruj dzień 🔄, aby poprawić.</span>
+        </div>
       </div>
 
       <div class="prog-days">
@@ -131,9 +171,20 @@ const STATUS_META = {
               <div class="prog-day-sub">{{ day.plan.exercises.length }} ćwiczeń</div>
             </div>
           </div>
-          <button class="btn btn-primary prog-day-btn" @click="startDay(day)">
-            <i class="ti ti-player-play"></i> Trenuj
-          </button>
+          <div class="prog-day-actions">
+            <button
+              class="prog-regen"
+              :disabled="regeneratingIdx !== -1"
+              @click="regenDay(i)"
+              title="Regeneruj ten dzień (inne ćwiczenia)"
+              aria-label="Regeneruj dzień"
+            >
+              <i class="ti" :class="regeneratingIdx === i ? 'ti-loader-2 spin' : 'ti-refresh'"></i>
+            </button>
+            <button class="btn btn-primary prog-day-btn" @click="startDay(day)">
+              <i class="ti ti-player-play"></i> Trenuj
+            </button>
+          </div>
         </div>
       </div>
 
@@ -186,6 +237,22 @@ const STATUS_META = {
             <option v-for="e in EQUIPMENT" :key="e" :value="e">{{ e }}</option>
           </select>
         </div>
+        <div class="prog-field">
+          <label>Czas sesji</label>
+          <div class="prog-days-picker">
+            <button
+              v-for="t in SESSION_TIMES"
+              :key="t"
+              class="prog-day-opt"
+              :class="{ active: sessionMinutes === t }"
+              @click="sessionMinutes = t"
+            >{{ t }}′</button>
+          </div>
+        </div>
+        <label class="prog-strict">
+          <input type="checkbox" v-model="strict" />
+          <span><strong>Strict Mode</strong> — twarde limity objętości i częstotliwości; AI koryguje sprzeczne wymagania</span>
+        </label>
         <div class="prog-form-actions">
           <button class="btn" @click="open = false">Anuluj</button>
           <button class="btn btn-primary" @click="generate" style="flex:1;">
@@ -236,6 +303,13 @@ const STATUS_META = {
 }
 .prog-day-opt.active { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
 .prog-form-actions, .prog-actions { display: flex; gap: 8px; margin-top: var(--space-2); }
+.prog-strict {
+  display: flex; align-items: flex-start; gap: 10px; cursor: pointer;
+  font-size: 13px; color: var(--text-muted); line-height: 1.4;
+  padding: 4px 2px;
+}
+.prog-strict input { width: 18px; height: 18px; margin-top: 1px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+.prog-strict strong { color: var(--text); }
 
 .prog-loading { display: flex; flex-direction: column; gap: 10px; }
 .prog-progress-text { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; }
@@ -248,12 +322,41 @@ const STATUS_META = {
 .prog-chip {
   font-size: 11px; color: var(--accent); background: var(--accent-soft);
   padding: 3px 10px; border-radius: 100px; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 4px;
 }
+.prog-chip-strict { color: var(--success); background: color-mix(in srgb, var(--success) 15%, transparent); }
+
+.prog-issues {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 9px 12px; margin-bottom: var(--space-3);
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warning) 35%, transparent);
+  border-radius: var(--radius-sm); font-size: 12px; line-height: 1.4;
+}
+.prog-issues.strict {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  border-color: color-mix(in srgb, var(--danger) 35%, transparent);
+}
+.prog-issues > i { color: var(--warning); font-size: 16px; margin-top: 1px; flex-shrink: 0; }
+.prog-issues.strict > i { color: var(--danger); }
+.prog-issues-text { display: flex; flex-direction: column; gap: 2px; }
+.prog-issues-text strong { color: var(--text); font-size: 12px; }
+.prog-issues-text span { color: var(--text-muted); }
+
 .prog-days { display: flex; flex-direction: column; gap: 6px; margin-bottom: var(--space-3); }
 .prog-day {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
   padding: 10px 12px; background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
 }
+.prog-day-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.prog-regen {
+  width: 34px; height: 34px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: var(--bg-elev);
+  color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 16px; transition: color var(--dur), border-color var(--dur);
+}
+.prog-regen:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); }
+.prog-regen:disabled { opacity: 0.5; cursor: default; }
 .prog-day-info { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .prog-day-num {
   flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%;

@@ -4,7 +4,7 @@
 // - estymacja realnej objętości z wygenerowanego programu (feedback vs cele).
 // Czyste funkcje — bez Vue/sieci, łatwe do testowania.
 
-import { PRIMARY_TO_GROUP } from './workoutSchema'
+import { PRIMARY_TO_GROUP, GROUP_LABELS } from './workoutSchema'
 import { detectMuscle } from './muscles'
 import { MUSCLE_TO_GROUP } from './workoutSchema'
 
@@ -144,4 +144,37 @@ export function volumeStatus(group: string, sets: number): 'low' | 'ok' | 'high'
   if (sets < range[0]) return 'low'
   if (sets > range[1]) return 'high'
   return 'ok'
+}
+
+// --- Walidacja programu (Faza 2) ---
+
+export interface VolumeIssue {
+  group: string
+  label: string
+  sets: number
+  range: [number, number]
+  status: 'low' | 'high'
+}
+
+export interface ProgramAnalysis {
+  issues: VolumeIssue[]        // partie poza zakresem (za mało / za dużo)
+  ok: boolean                  // brak problemów
+  volumeByGroup: Record<string, number>
+}
+
+/**
+ * Walidacja tygodniowej objętości programu vs zakresy hipertrofii.
+ * Zwraca partie poza normą — do pokazania userowi (i twardego pilnowania w Strict Mode).
+ */
+export function analyzeProgram(days: ProgDay[], _level = 'intermediate'): ProgramAnalysis {
+  const vol = estimateWeeklyVolume(days)
+  const issues: VolumeIssue[] = []
+  for (const g of Object.keys(VOLUME_RANGES) as VolumeGroup[]) {
+    const sets = vol[g] || 0
+    const st = volumeStatus(g, sets)
+    if (st === 'low' || st === 'high') {
+      issues.push({ group: g, label: GROUP_LABELS[g]?.name || g, sets, range: VOLUME_RANGES[g], status: st })
+    }
+  }
+  return { issues, ok: issues.length === 0, volumeByGroup: vol }
 }

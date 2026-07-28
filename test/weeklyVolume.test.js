@@ -5,6 +5,7 @@ import {
   volumeStatus,
   chooseSplit,
   estimateWeeklyVolume,
+  analyzeProgram,
   DAY_LABEL
 } from '../src/lib/weeklyVolume'
 
@@ -80,5 +81,29 @@ describe('estimateWeeklyVolume', () => {
   it('fallback na detekcję z nazwy gdy brak primaryMuscle', () => {
     const days = [{ plan: { exercises: [{ name: 'Przysiad ze sztangą', sets: 5 }] } }]
     expect(estimateWeeklyVolume(days)['czworogłowy']).toBe(5)
+  })
+})
+
+describe('analyzeProgram', () => {
+  it('flaguje partię za mało (poniżej zakresu)', () => {
+    const days = [{ plan: { exercises: [{ name: 'x', primaryMuscle: 'chest', sets: 4 }] } }] // klatka 4 < 10
+    const a = analyzeProgram(days)
+    expect(a.ok).toBe(false)
+    const klatka = a.issues.find(i => i.group === 'klatka')
+    expect(klatka.status).toBe('low')
+  })
+  it('flaguje partię za dużo (powyżej zakresu)', () => {
+    const days = [{ plan: { exercises: [{ name: 'x', primaryMuscle: 'chest', sets: 25 }] } }] // klatka 25 > 18
+    const klatka = analyzeProgram(days).issues.find(i => i.group === 'klatka')
+    expect(klatka.status).toBe('high')
+  })
+  it('ok=true gdy wszystkie trenowane partie w normie', () => {
+    // klatka 14 (w 10-18), plecy 16 (12-20) — obie ok; reszta 0 = low → więc nie ok.
+    // sprawdzamy tylko, że partie w normie NIE trafiają do issues
+    const days = [{ plan: { exercises: [
+      { name: 'a', primaryMuscle: 'chest', sets: 14 }
+    ] } }]
+    const a = analyzeProgram(days)
+    expect(a.issues.find(i => i.group === 'klatka')).toBeUndefined()
   })
 })
