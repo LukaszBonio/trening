@@ -98,62 +98,62 @@ describe('buildCoachChatSystem', () => {
   })
 })
 
-describe('executeCoachTool', () => {
-  it('lista_cwiczen zwraca nazwy z liczbą sesji', () => {
-    const out = executeCoachTool('lista_cwiczen', {}, { history })
+describe('executeCoachTool', async () => {
+  it('lista_cwiczen zwraca nazwy z liczbą sesji', async () => {
+    const out = await executeCoachTool('lista_cwiczen', {}, { history })
     expect(out).toContain('Wyciskanie sztangi na ławce poziomej')
     expect(out).toContain('3×')
   })
-  it('progres_cwiczenia zwraca chronologię i rekord', () => {
-    const out = executeCoachTool('progres_cwiczenia', { nazwa: 'Wyciskanie sztangi na ławce poziomej' }, { history })
+  it('progres_cwiczenia zwraca chronologię i rekord', async () => {
+    const out = await executeCoachTool('progres_cwiczenia', { nazwa: 'Wyciskanie sztangi na ławce poziomej' }, { history })
     expect(out).toContain('2026-07-05')
     expect(out).toContain('1RM')
     expect(out).toContain('Rekord')
   })
-  it('progres_cwiczenia dla nieznanego ćwiczenia → komunikat', () => {
-    const out = executeCoachTool('progres_cwiczenia', { nazwa: 'Nie istnieje' }, { history })
+  it('progres_cwiczenia dla nieznanego ćwiczenia → komunikat', async () => {
+    const out = await executeCoachTool('progres_cwiczenia', { nazwa: 'Nie istnieje' }, { history })
     expect(out).toContain('Brak danych')
   })
-  it('analiza_wzorcow zwraca sekcje balansu', () => {
-    const out = executeCoachTool('analiza_wzorcow', {}, { history })
+  it('analiza_wzorcow zwraca sekcje balansu', async () => {
+    const out = await executeCoachTool('analiza_wzorcow', {}, { history })
     expect(out).toContain('Compound/Isolation')
     expect(out).toContain('Push/Pull')
   })
-  it('sugestia_ciezaru zwraca ciężar i uzasadnienie', () => {
-    const out = executeCoachTool('sugestia_ciezaru', { nazwa: 'Wyciskanie sztangi na ławce poziomej' }, { history })
+  it('sugestia_ciezaru zwraca ciężar i uzasadnienie', async () => {
+    const out = await executeCoachTool('sugestia_ciezaru', { nazwa: 'Wyciskanie sztangi na ławce poziomej' }, { history })
     expect(out).toContain('Sugerowany ciężar')
     expect(out).toContain('kg')
   })
-  it('rekordy_osobiste listuje rekordy z 1RM', () => {
-    const out = executeCoachTool('rekordy_osobiste', {}, { history })
+  it('rekordy_osobiste listuje rekordy z 1RM', async () => {
+    const out = await executeCoachTool('rekordy_osobiste', {}, { history })
     expect(out).toContain('Wyciskanie sztangi na ławce poziomej')
     expect(out).toContain('1RM')
   })
-  it('podsumowanie zwraca liczbę treningów i tonaż', () => {
-    const out = executeCoachTool('podsumowanie', {}, { history })
+  it('podsumowanie zwraca liczbę treningów i tonaż', async () => {
+    const out = await executeCoachTool('podsumowanie', {}, { history })
     expect(out).toContain('Treningi: 3')
     expect(out).toContain('Tonaż')
   })
-  it('technika_cwiczenia zwraca arkusz z bazy', () => {
-    const out = executeCoachTool('technika_cwiczenia', { nazwa: 'Wyciskanie sztangi na ławce poziomej' }, { history })
+  it('technika_cwiczenia zwraca arkusz z bazy', async () => {
+    const out = await executeCoachTool('technika_cwiczenia', { nazwa: 'Wyciskanie sztangi na ławce poziomej' }, { history })
     expect(out).toContain('Sprzęt')
     expect(out).toContain('błędy')
   })
-  it('dziennik_wagi z wpisami zwraca trend', () => {
+  it('dziennik_wagi z wpisami zwraca trend', async () => {
     const body = [{ date: '2026-07-01', weight: 80 }, { date: '2026-07-10', weight: 79 }]
-    const out = executeCoachTool('dziennik_wagi', {}, { history, body })
+    const out = await executeCoachTool('dziennik_wagi', {}, { history, body })
     expect(out).toContain('80kg')
     expect(out).toContain('Trend')
   })
-  it('dziennik_wagi bez wpisów → komunikat', () => {
-    expect(executeCoachTool('dziennik_wagi', {}, { history })).toContain('Brak wpisów')
+  it('dziennik_wagi bez wpisów → komunikat', async () => {
+    expect(await executeCoachTool('dziennik_wagi', {}, { history })).toContain('Brak wpisów')
   })
-  it('wolumen_partii zwraca tonaż partii', () => {
-    const out = executeCoachTool('wolumen_partii', {}, { history })
+  it('wolumen_partii zwraca tonaż partii', async () => {
+    const out = await executeCoachTool('wolumen_partii', {}, { history })
     expect(out).toContain('kg')
   })
-  it('nieznane narzędzie → komunikat', () => {
-    expect(executeCoachTool('xyz', {}, { history })).toContain('Nieznane narzędzie')
+  it('nieznane narzędzie → komunikat', async () => {
+    expect(await executeCoachTool('xyz', {}, { history })).toContain('Nieznane narzędzie')
   })
   it('COACH_TOOLS ma 9 narzędzi z poprawnymi nazwami', () => {
     expect(COACH_TOOLS.map(t => t.name)).toEqual([

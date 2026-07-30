@@ -1,6 +1,6 @@
 <script setup>
-import { computed, watch, onBeforeUnmount } from 'vue'
-import { getExerciseDetailsByName } from '../lib/exerciseDetails'
+import { ref, computed, watch, onBeforeUnmount } from 'vue'
+import { loadExerciseDetailsByName } from '../lib/exerciseDetails'
 
 const props = defineProps({
   // Nazwa ćwiczenia (kanoniczna lub alias) — null/'' zamyka modal.
@@ -8,8 +8,17 @@ const props = defineProps({
 })
 const emit = defineEmits(['close'])
 
-const details = computed(() => props.name ? getExerciseDetailsByName(props.name) : null)
-const open = computed(() => !!props.name && !!details.value)
+// Arkusz techniki ładowany leniwie (dynamic import ~3000 linii danych) przy otwarciu.
+const details = ref(null)
+const open = computed(() => !!props.name)
+
+watch(() => props.name, async (name) => {
+  if (!name) { details.value = null; return }
+  details.value = null
+  const d = await loadExerciseDetailsByName(name)
+  // Ochrona przed wyścigiem — przyjmij wynik tylko jeśli nazwa się nie zmieniła.
+  if (props.name === name) details.value = d
+}, { immediate: true })
 
 function close() { emit('close') }
 
@@ -49,7 +58,11 @@ onBeforeUnmount(() => {
           </button>
         </div>
 
-        <div class="exi-body">
+        <div v-if="!details" class="exi-body exi-loading">
+          <i class="ti ti-loader-2 exi-spin"></i> Ładowanie…
+        </div>
+
+        <div v-else class="exi-body">
           <!-- Sprzęt + uchwyt -->
           <div class="exi-equip-row">
             <span class="exi-chip exi-chip-equip">
@@ -187,6 +200,16 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: var(--space-4);
 }
+.exi-loading {
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+  gap: 8px;
+  color: var(--text-muted);
+  padding: var(--space-6);
+}
+.exi-spin { animation: exi-spin 1s linear infinite; }
+@keyframes exi-spin { to { transform: rotate(360deg); } }
 
 .exi-equip-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .exi-chip {

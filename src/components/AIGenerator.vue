@@ -2,7 +2,7 @@
 import { ref, computed, onBeforeUnmount } from 'vue'
 import { generateAIPlan } from '../lib/ai'
 import { getExercisesForMuscle, findExerciseByName } from '../lib/exerciseDb'
-import { getExerciseDetailsByName } from '../lib/exerciseDetails'
+import { hasExerciseDetails } from '../lib/exerciseDetails'
 import { youtubeSearchUrl } from '../lib/substitutions'
 import ExerciseInfoModal from './ExerciseInfoModal.vue'
 import { useWorkoutsStore } from '../stores/workouts'
@@ -116,7 +116,7 @@ function start() {
 // Modal "?" ze szczegółami techniki. Dostępność liczona raz na zmianę planu.
 const infoName = ref(null)
 const infoByIndex = computed(() =>
-  plan.value ? plan.value.exercises.map(ex => !!getExerciseDetailsByName(ex.name)) : []
+  plan.value ? plan.value.exercises.map(ex => hasExerciseDetails(ex.name)) : []
 )
 
 // Podmiana ćwiczenia na inne z tej samej partii (muscleHead).

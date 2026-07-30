@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { useSessionStore } from '../stores/session'
 import { useSettingsStore } from '../stores/settings'
-import { getExerciseDetailsByName } from '../lib/exerciseDetails'
+import { hasExerciseDetails } from '../lib/exerciseDetails'
 import { isTimedExercise } from '../lib/workoutMath'
 import ExerciseInfoModal from './ExerciseInfoModal.vue'
 import StopwatchInput from './StopwatchInput.vue'
@@ -21,7 +21,7 @@ const exercise = computed(() => session.active?.exercises[props.exIdx])
 
 // Modal "?" ze szczegółami techniki — tylko gdy ćwiczenie jest w bazie.
 const infoName = ref(null)
-const hasInfo = computed(() => !!exercise.value && !!getExerciseDetailsByName(exercise.value.name))
+const hasInfo = computed(() => !!exercise.value && hasExerciseDetails(exercise.value.name))
 
 // Ćwiczenie czasowe (plank itp.) → kolumna „Sek." zamiast ciężaru.
 const timed = computed(() => !!exercise.value && isTimedExercise(exercise.value.name, exercise.value.reps))

@@ -2,10 +2,11 @@
 // Rozszerzają bazę exerciseDb o pełny arkusz techniczny: dokładny sprzęt i uchwyt,
 // pozycję startową, wykonanie krok po kroku, zakres ruchu, mięśnie, błędy i wskazówki.
 // Wyświetlane w UI w modalu "?" przy ćwiczeniu (ExerciseInfoModal).
+//
+// Dane (~3000 linii) są ŁADOWANE LENIWIE (dynamic import) — nie wchodzą do chunku
+// widoku Trening. Ścieżka na gorąco (przycisk „?") potrzebuje tylko `hasExerciseDetails`
+// (czy ćwiczenie jest w bazie), a pełny arkusz dociąga się przy otwarciu modala/coacha.
 import { findExerciseByName } from './exerciseDb'
-import { PUSH_DETAILS } from './exerciseDetailsPush'
-import { PULL_DETAILS } from './exerciseDetailsPull'
-import { LEGS_DETAILS } from './exerciseDetailsLegs'
 
 export interface ExerciseDetails {
   /** Dokładny rodzaj sprzętu, np. "sztanga prosta", "sztanga EZ", "wyciąg górny", "suwnica Smitha" */
@@ -28,18 +29,33 @@ export interface ExerciseDetails {
   tips: string[]
 }
 
-export const EXERCISE_DETAILS: Record<string, ExerciseDetails> = {
-  ...PUSH_DETAILS,
-  ...PULL_DETAILS,
-  ...LEGS_DETAILS
+// Lekki, synchroniczny check dla ścieżki na gorąco (przycisk „?"). Każde ćwiczenie
+// z bazy MA arkusz (niezmiennik pilnowany testem pokrycia), więc wystarczy sprawdzić
+// obecność w bazie — bez ładowania ciężkich danych.
+export function hasExerciseDetails(name: string): boolean {
+  return !!findExerciseByName(name)
 }
 
-export function getExerciseDetailsById(id: string): ExerciseDetails | null {
-  return EXERCISE_DETAILS[id] || null
+// Leniwe załadowanie + cache pełnej mapy arkuszy (dynamic import 3 plików danych).
+let _cache: Record<string, ExerciseDetails> | null = null
+async function loadMap(): Promise<Record<string, ExerciseDetails>> {
+  if (_cache) return _cache
+  const [push, pull, legs] = await Promise.all([
+    import('./exerciseDetailsPush'),
+    import('./exerciseDetailsPull'),
+    import('./exerciseDetailsLegs')
+  ])
+  _cache = { ...push.PUSH_DETAILS, ...pull.PULL_DETAILS, ...legs.LEGS_DETAILS }
+  return _cache
 }
 
-/** Szczegóły po nazwie ćwiczenia (kanonicznej lub aliasie) — null dla ćwiczeń spoza bazy. */
-export function getExerciseDetailsByName(name: string): ExerciseDetails | null {
+export async function loadExerciseDetailsById(id: string): Promise<ExerciseDetails | null> {
+  return (await loadMap())[id] || null
+}
+
+/** Szczegóły po nazwie (kanonicznej lub aliasie) — null dla ćwiczeń spoza bazy. Leniwe. */
+export async function loadExerciseDetailsByName(name: string): Promise<ExerciseDetails | null> {
   const ex = findExerciseByName(name)
-  return ex ? (EXERCISE_DETAILS[ex.id] || null) : null
+  if (!ex) return null
+  return (await loadMap())[ex.id] || null
 }

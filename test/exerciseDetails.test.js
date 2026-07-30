@@ -1,6 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import { ALL_EXERCISES } from '../src/lib/exerciseDb'
-import { EXERCISE_DETAILS, getExerciseDetailsById, getExerciseDetailsByName } from '../src/lib/exerciseDetails'
+import { hasExerciseDetails, loadExerciseDetailsById, loadExerciseDetailsByName } from '../src/lib/exerciseDetails'
+// Dane ładowane leniwie w aplikacji; w testach importujemy je wprost, by zweryfikować
+// pokrycie i kompletność (bez ścieżki dynamic-import).
+import { PUSH_DETAILS } from '../src/lib/exerciseDetailsPush'
+import { PULL_DETAILS } from '../src/lib/exerciseDetailsPull'
+import { LEGS_DETAILS } from '../src/lib/exerciseDetailsLegs'
+
+const EXERCISE_DETAILS = { ...PUSH_DETAILS, ...PULL_DETAILS, ...LEGS_DETAILS }
 
 describe('exerciseDetails — pokrycie i spójność z bazą', () => {
   it('każde ćwiczenie z bazy ma wpis szczegółów', () => {
@@ -36,17 +43,25 @@ describe('exerciseDetails — pokrycie i spójność z bazą', () => {
     }
     expect(problems, problems.join('\n')).toEqual([])
   })
+})
 
-  it('getExerciseDetailsById zwraca wpis lub null', () => {
-    expect(getExerciseDetailsById('wyciskanie-sztangi-na-lawce-poziomej')).toBeTruthy()
-    expect(getExerciseDetailsById('nie-istnieje')).toBeNull()
+describe('exerciseDetails — lekki check + leniwe ładowanie', () => {
+  it('hasExerciseDetails (sync) = obecność w bazie', () => {
+    expect(hasExerciseDetails('Wyciskanie sztangi na ławce poziomej')).toBe(true)
+    expect(hasExerciseDetails('bench press')).toBe(true) // alias
+    expect(hasExerciseDetails('Ćwiczenie spoza bazy')).toBe(false)
   })
 
-  it('getExerciseDetailsByName działa po nazwie kanonicznej i aliasie', () => {
-    const byName = getExerciseDetailsByName('Wyciskanie sztangi na ławce poziomej')
-    const byAlias = getExerciseDetailsByName('bench press')
+  it('loadExerciseDetailsById zwraca wpis lub null (async)', async () => {
+    expect(await loadExerciseDetailsById('wyciskanie-sztangi-na-lawce-poziomej')).toBeTruthy()
+    expect(await loadExerciseDetailsById('nie-istnieje')).toBeNull()
+  })
+
+  it('loadExerciseDetailsByName działa po nazwie kanonicznej i aliasie (async)', async () => {
+    const byName = await loadExerciseDetailsByName('Wyciskanie sztangi na ławce poziomej')
+    const byAlias = await loadExerciseDetailsByName('bench press')
     expect(byName).toBeTruthy()
-    expect(byAlias).toBe(byName)
-    expect(getExerciseDetailsByName('Ćwiczenie spoza bazy')).toBeNull()
+    expect(byAlias).toEqual(byName)
+    expect(await loadExerciseDetailsByName('Ćwiczenie spoza bazy')).toBeNull()
   })
 })

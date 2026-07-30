@@ -11,7 +11,7 @@ import {
   type Workout
 } from './analytics'
 import { suggestNextWeight } from './progression'
-import { getExerciseDetailsByName } from './exerciseDetails'
+import { loadExerciseDetailsByName } from './exerciseDetails'
 import { workoutVolume, totalSets } from './workoutMath'
 import { detectMuscle } from './muscles'
 import { MUSCLE_TO_GROUP, PRIMARY_TO_GROUP, GROUP_LABELS } from './workoutSchema'
@@ -278,7 +278,7 @@ export const COACH_TOOLS: ClaudeTool[] = [
 ]
 
 // Wykonanie narzędzia — czysta funkcja nad historią (testowalna, bez sieci).
-export function executeCoachTool(name: string, input: Record<string, any>, ctx: CoachToolCtx): string {
+export async function executeCoachTool(name: string, input: Record<string, any>, ctx: CoachToolCtx): Promise<string> {
   const history = ctx.history
   switch (name) {
     case 'lista_cwiczen': {
@@ -340,7 +340,7 @@ Tonaż: ${Math.round(vol).toLocaleString('pl-PL')} kg`
     case 'technika_cwiczenia': {
       const nazwa = String(input?.nazwa || '').trim()
       if (!nazwa) return 'Podaj nazwę ćwiczenia.'
-      const d = getExerciseDetailsByName(nazwa)
+      const d = await loadExerciseDetailsByName(nazwa)
       if (!d) return `Brak arkusza technicznego dla "${nazwa}" (ćwiczenie spoza bazy lub inna nazwa).`
       return [
         `Sprzęt: ${d.equipmentDetail}${d.attachment ? ` (${d.attachment})` : ''}`,
@@ -417,12 +417,12 @@ export async function runCoachChat(
 
     // Odłóż turę asystenta (z blokami tool_use), potem wyniki narzędzi jako turę użytkownika.
     messages.push({ role: 'assistant', content: res.content })
-    const results = toolUses.map(tu => {
+    const results = await Promise.all(toolUses.map(async tu => {
       let out: string
-      try { out = executeCoachTool(String(tu.name), tu.input || {}, ctx) }
+      try { out = await executeCoachTool(String(tu.name), tu.input || {}, ctx) }
       catch { out = 'Błąd narzędzia.' }
       return { type: 'tool_result', tool_use_id: tu.id, content: out }
-    })
+    }))
     messages.push({ role: 'user', content: results })
   }
 

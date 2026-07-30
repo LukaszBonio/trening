@@ -5,7 +5,7 @@ import { useSettingsStore } from '../stores/settings'
 import { useWorkoutsStore } from '../stores/workouts'
 import { detectMuscle, getMuscleName, detectEquipment } from '../lib/muscles'
 import { findSubstitutes, youtubeSearchUrl } from '../lib/substitutions'
-import { getExerciseDetailsByName } from '../lib/exerciseDetails'
+import { hasExerciseDetails } from '../lib/exerciseDetails'
 import { isTimedExercise } from '../lib/workoutMath'
 import ExerciseInfoModal from './ExerciseInfoModal.vue'
 import StopwatchInput from './StopwatchInput.vue'
@@ -57,7 +57,7 @@ const showRpeHelp = ref(false)
 
 // Modal "?" ze szczegółami techniki — tylko dla ćwiczeń z bazy (spoza bazy brak danych).
 const infoName = ref(null)
-const hasInfo = computed(() => !!currentEx.value && !!getExerciseDetailsByName(currentEx.value.name))
+const hasInfo = computed(() => !!currentEx.value && hasExerciseDetails(currentEx.value.name))
 
 // Ćwiczenie czasowe (plank, wall sit…) → mierzymy sekundy zamiast ciężaru/powtórzeń.
 const isTimed = computed(() => !!currentEx.value && isTimedExercise(currentEx.value.name, currentEx.value.reps))
