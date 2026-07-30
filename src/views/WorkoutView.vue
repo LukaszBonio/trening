@@ -456,7 +456,7 @@ async function discardWorkout() {
             <div class="dim repeat-label">Następny trening</div>
             <div class="repeat-name">
               {{ nextWorkout.label }}
-              <span class="repeat-tag" :style="{ color: nextWorkout.color, borderColor: nextWorkout.color }">{{ nextWorkout.desc }}</span>
+              <span class="repeat-tag">{{ nextWorkout.desc }}</span>
             </div>
           </div>
         </div>
