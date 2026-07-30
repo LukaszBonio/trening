@@ -3,7 +3,7 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import './styles/global.css'
-import '@tabler/icons-webfont/dist/tabler-icons.min.css'
+import './styles/tabler-icons.css'  // subset (tylko używane ikony) — zob. scripts/subset-icons.mjs
 import { migrateFromLegacy } from './lib/migration'
 
 // Link resetu hasła z e-maila ma tokeny w hashu (#access_token=...&type=recovery).

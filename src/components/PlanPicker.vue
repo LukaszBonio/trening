@@ -54,7 +54,7 @@ function toggleFav(plan, e) {
           :aria-label="favorites.isFavorite(type, plan) ? 'Usuń z ulubionych' : 'Dodaj do ulubionych'"
           :aria-pressed="favorites.isFavorite(type, plan)"
         >
-          <i class="ti" :class="favorites.isFavorite(type, plan) ? 'ti-star-filled' : 'ti-star'"></i>
+          <i class="ti ti-star"></i>
         </button>
       </div>
       <div class="plan-meta">

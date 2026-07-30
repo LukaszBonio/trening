@@ -44,9 +44,22 @@ export default defineConfig({
       workbox: {
         skipWaiting: true,
         clientsClaim: true,
-        globPatterns: ['**/*.{js,css,html,png,svg,ico,woff,woff2}'],
+        globPatterns: ['**/*.{js,css,html,png,svg,ico,woff2}'],
+        // Ciężkie biblioteki eksportu PDF (jspdf + html2canvas, ~580 KB) NIE trafiają do
+        // precache — ładują się runtime na żądanie (reguła niżej). Reszta (Supabase,
+        // DOMPurify) zostaje w precache, bo jest potrzebna do bootu/Coacha offline.
+        globIgnores: ['**/jspdf*.js', '**/html2canvas*.js'],
         ignoreURLParametersMatching: [/.*/],
         runtimeCaching: [
+          {
+            // PDF: cache po pierwszym (online) eksporcie → offline działa potem.
+            urlPattern: ({ url }) => /jspdf|html2canvas/.test(url.pathname),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'pdf-libs',
+              expiration: { maxEntries: 4, maxAgeSeconds: 60 * 60 * 24 * 90 }
+            }
+          },
           {
             urlPattern: ({ url }) =>
               url.hostname.endsWith('.supabase.co') ||

@@ -63,7 +63,7 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
       @click="toggle"
       :aria-label="running ? 'Zatrzymaj stoper' : 'Uruchom stoper'"
     >
-      <i class="ti" :class="running ? 'ti-player-stop-filled' : 'ti-player-play-filled'"></i>
+      <i class="ti" :class="running ? 'ti-player-stop' : 'ti-player-play'"></i>
       <span v-if="size === 'big'">{{ running ? 'Stop' : 'Start' }}</span>
     </button>
     <button

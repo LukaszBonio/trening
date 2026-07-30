@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "icons": "node scripts/subset-icons.mjs",
+    "prebuild": "node scripts/subset-icons.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
@@ -24,6 +26,7 @@
     "@types/node": "^26.1.0",
     "@vitejs/plugin-vue": "^5.1.0",
     "jsdom": "^25.0.1",
+    "subset-font": "^2.5.0",
     "typescript": "^6.0.3",
     "vite": "^5.4.0",
     "vite-plugin-pwa": "^0.20.5",

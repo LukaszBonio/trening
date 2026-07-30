@@ -380,7 +380,7 @@ function statusIcon(s)  { return STATUS_META[s]?.icon || 'ti-info-circle' }
           <i class="ti ti-refresh"></i> Generuj ponownie
         </button>
         <button class="btn btn-primary" @click="start" style="flex: 1;">
-          <i class="ti ti-play"></i> Rozpocznij ten trening
+          <i class="ti ti-player-play"></i> Rozpocznij ten trening
         </button>
       </div>
     </div>
