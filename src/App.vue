@@ -25,7 +25,7 @@ onMounted(() => {
   }
   // Show onboarding if first visit
   try {
-    if (!localStorage.getItem('tp_onboarding_done_v1')) {
+    if (!localStorage.getItem('tp_onboarding_done_v2')) {
       showOnboarding.value = true
     }
   } catch {}

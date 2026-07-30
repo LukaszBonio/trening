@@ -3,28 +3,33 @@ import { ref, computed } from 'vue'
 
 const emit = defineEmits(['done'])
 
-const STORAGE_KEY = 'tp_onboarding_done_v1'
+const STORAGE_KEY = 'tp_onboarding_done_v2'
 
 const steps = [
   {
     icon: 'ti-barbell',
     title: 'Witaj w Trening Pro',
-    body: 'Aplikacja do logowania treningu siłowego. Push/Pull/Legs, Upper/Lower, FBW — gotowe plany albo własne.'
+    body: 'Twój trener siłowy w kieszeni. W zakładce Trening masz trzy tryby: Program (cały tydzień), Pojedynczy (jeden trening) i Ania (plan korekcyjny).'
+  },
+  {
+    icon: 'ti-calendar-week',
+    title: 'Ułóż cały tydzień',
+    body: 'W trybie Program podaj, ile dni trenujesz — AI dobierze split (PPL, Upper/Lower, FBW, Arnold…), rozłoży objętość i ćwiczenia. Wolisz doraźnie? Wybierz Pojedynczy trening.'
   },
   {
     icon: 'ti-list-check',
     title: 'Loguj serie szybko',
-    body: 'Wpisz ciężar i powtórzenia, kliknij ⭕ — automatycznie startuje timer odpoczynku 90s. Opcjonalnie dodaj RPE i notatkę.'
+    body: 'Wpisz ciężar i powtórzenia, kliknij ⭕ — startuje timer odpoczynku. RPE i notatka opcjonalnie. Przy ćwiczeniach czasowych (np. plank) stoper liczy sekundy.'
   },
   {
     icon: 'ti-chart-line',
-    title: 'Zobacz postęp',
-    body: 'Statystyki pokazują rekordy, wolumen w czasie, streak tygodniowy i mapę cieplną treningowych dni.'
+    title: 'Śledź postęp',
+    body: 'Statystyki: rekordy, wolumen, streak i mapa cieplna. AI Coach analizuje trendy i odpowiada na pytania. Wszystko synchronizuje się między urządzeniami (działa też offline).'
   },
   {
-    icon: 'ti-cloud',
-    title: 'Synchronizuj między urządzeniami',
-    body: 'Załóż konto w zakładce "Ty" by synchronizować treningi między telefonem a laptopem. Albo zostań offline — działa też.'
+    icon: 'ti-bug',
+    title: 'Coś nie działa? Zgłoś to',
+    body: 'Kliknij ikonę 🐞 w prawym dolnym rogu — jest na każdym ekranie. Opisz problem i wyślij; zgłoszenie z kontekstem (widok, wersja) trafia prosto do nas i pomaga ulepszać aplikację.'
   }
 ]
 

@@ -64,7 +64,7 @@ async function submit() {
 }
 
 function showOnboardingTour() {
-  try { localStorage.removeItem('tp_onboarding_done_v1') } catch {}
+  try { localStorage.removeItem('tp_onboarding_done_v2') } catch {}
   window.dispatchEvent(new CustomEvent('show-onboarding'))
 }
 
