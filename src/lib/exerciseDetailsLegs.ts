@@ -476,6 +476,31 @@ export const LEGS_DETAILS: Record<string, ExerciseDetails> = {
       'Bez pada na biodrach ciężka sztanga będzie bolesna — nie pomijaj go.'
     ]
   },
+  'hip-thrust-na-maszynie': {
+    equipmentDetail: 'maszyna do wypychania bioder (glute drive / hip thrust machine)',
+    attachment: null,
+    startPosition: 'Usiądź w maszynie, oprzyj plecy o pad, stopy płasko na platformie na szerokość bioder. Opuść pad biodrowy na biodra i zabezpiecz. Ustaw ciężar.',
+    execution: [
+      'Napnij pośladki i wypchnij biodra w górę, popychając pad.',
+      'Dojdź do pełnego wyprostu bioder — tułów i uda w jednej linii.',
+      'Ściśnij pośladki na szczycie na 1-2 sekundy.',
+      'Opuść biodra kontrolowanie, nie odpuszczając całkowicie napięcia na dole.'
+    ],
+    rangeOfMotion: 'Od bioder opuszczonych poniżej linii kolan do pełnego wyprostu bioder z tułowiem i udami w jednej linii.',
+    musclesPrimary: ['pośladkowy wielki'],
+    musclesSecondary: ['dwugłowy uda', 'czworogłowy uda', 'przywodziciele'],
+    commonMistakes: [
+      'Przeprost lędźwi zamiast wyprostu w biodrach — ból dolnego odcinka.',
+      'Niepełny wyprost bioder na górze — ucięty skurcz pośladków.',
+      'Odpychanie palcami stóp zamiast całą stopą/piętami.',
+      'Zbyt szybkie opuszczanie bez kontroli.'
+    ],
+    tips: [
+      'Maszyna zdejmuje niewygodę układania sztangi na biodrach — świetna na dużą objętość pośladków.',
+      'Prowadź ruch piętami i skup się na ściśnięciu pośladków, nie na samym zakresie.',
+      'Broda lekko schowana, żebra w dół — to chroni odcinek lędźwiowy.'
+    ]
+  },
   'most-biodrowy': {
     equipmentDetail: 'masa ciała',
     attachment: null,
@@ -789,6 +814,31 @@ export const LEGS_DETAILS: Record<string, ExerciseDetails> = {
     tips: [
       'Ręce to tylko haki — trzymają linę, a ciągnie brzuch.',
       'Zablokuj biodra w jednej pozycji, ruch dzieje się wyłącznie w kręgosłupie piersiowym i lędźwiowym.'
+    ]
+  },
+  'brzuszki-na-maszynie': {
+    equipmentDetail: 'maszyna do brzuszków (ab crunch machine)',
+    attachment: null,
+    startPosition: 'Usiądź w maszynie, oprzyj plecy o oparcie, chwyć uchwyty nad barkami lub oprzyj klatkę o pad zgodnie z konstrukcją. Ustaw ciężar, stopy zahacz pod wałkami.',
+    execution: [
+      'Napnij brzuch i zwiń tułów w przód, prowadząc klatkę w stronę bioder.',
+      'Skup ruch na skracaniu odległości mostek–miednica, nie na pchaniu ramionami.',
+      'Zatrzymaj skurcz na sekundę w maksymalnym zwinięciu.',
+      'Wróć kontrolowanie do rozciągnięcia mięśni brzucha, nie odpuszczając napięcia.'
+    ],
+    rangeOfMotion: 'Od lekkiego rozciągnięcia (tułów wyprostowany) do maksymalnego zwinięcia tułowia w przód.',
+    musclesPrimary: ['prosty brzucha'],
+    musclesSecondary: ['skośne brzucha'],
+    commonMistakes: [
+      'Ciągnięcie uchwytów ramionami zamiast zwijania brzuchem.',
+      'Praca w biodrach (kiwanie tułowia) zamiast zginania kręgosłupa.',
+      'Zbyt duży ciężar i szarpanie na rozpęd.',
+      'Niepełny powrót — brak fazy rozciągnięcia brzucha.'
+    ],
+    tips: [
+      'Maszyna pozwala progresywnie obciążać brzuch ciężarem — więcej niż zwykłe brzuszki.',
+      'Wydech przy zwijaniu pomaga mocniej napiąć prosty brzucha.',
+      'Prowadź ruch mostkiem do miednicy, nie głową do kolan.'
     ]
   },
   'unoszenie-nog-w-zwisie': {

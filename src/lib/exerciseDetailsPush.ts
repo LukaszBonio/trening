@@ -1034,6 +1034,31 @@ export const PUSH_DETAILS: Record<string, ExerciseDetails> = {
   },
 
   // ===== TRICEPS — GŁOWA PRZYŚRODKOWA =====
+  'wyprosty-triceps-na-maszynie': {
+    equipmentDetail: 'maszyna do wyprostów tricepsa (seated triceps press)',
+    attachment: null,
+    startPosition: 'Usiądź w maszynie, oprzyj tylną część ramion (lub łokcie) o pad zgodnie z konstrukcją maszyny. Chwyć uchwyty, plecy o oparcie, stopy płasko na podłodze.',
+    execution: [
+      'Ustaw wysokość siedziska tak, by łokcie były na osi obrotu maszyny.',
+      'Wyprostuj ramiona, popychając uchwyty po torze maszyny.',
+      'Zatrzymaj pełny wyprost na sekundę, napinając triceps.',
+      'Wróć kontrolowanie do zgięcia, nie odpuszczając napięcia.'
+    ],
+    rangeOfMotion: 'Od zgięcia łokci około 90° do pełnego wyprostu ramion.',
+    musclesPrimary: ['triceps — głowa boczna'],
+    musclesSecondary: ['triceps — głowa przyśrodkowa', 'triceps — głowa długa'],
+    commonMistakes: [
+      'Unoszenie bioder z siedziska, by dopchnąć ciężar.',
+      'Niepełny wyprost — ucięty skurcz na końcu.',
+      'Zbyt szybki, niekontrolowany powrót.',
+      'Źle ustawiona wysokość siedziska — łokcie poza osią obrotu.'
+    ],
+    tips: [
+      'Stały tor maszyny ułatwia izolację tricepsa — dobry wybór na start lub na dobicie po ćwiczeniach wolnych.',
+      'Pauza sekundy w pełnym wyproście poprawia czucie mięśnia.',
+      'Dobierz ciężar tak, byś nie musiał odrywać pleców od oparcia.'
+    ]
+  },
   'wyciskanie-waskim-chwytem': {
     equipmentDetail: 'sztanga prosta + ławka pozioma',
     attachment: null,

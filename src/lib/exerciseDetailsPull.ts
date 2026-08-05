@@ -77,6 +77,31 @@ export const PULL_DETAILS: Record<string, ExerciseDetails> = {
       'Trzymaj napięty tułów przez cały ruch, jak w desce.'
     ]
   },
+  'podciaganie-na-maszynie': {
+    equipmentDetail: 'maszyna do asystowanych podciągnięć (grawitron)',
+    attachment: null,
+    startPosition: 'Ustaw ciężar wspomagania (im większy, tym łatwiej). Uklęknij lub stań na ruchomym padzie, chwyć górne uchwyty nachwytem szerzej niż barki. Wyprostuj ramiona, zwis na łopatkach.',
+    execution: [
+      'Ściągnij łopatki w dół i do siebie, inicjując ruch plecami.',
+      'Podciągnij ciało, prowadząc łokcie w dół, aż broda minie linię uchwytów.',
+      'Zatrzymaj skurcz na górze, klatka w stronę uchwytów.',
+      'Opuść się kontrolowanie do pełnego wyprostu ramion.'
+    ],
+    rangeOfMotion: 'Od pełnego zwisu na wyprostowanych ramionach do momentu, gdy broda mija linię uchwytów.',
+    musclesPrimary: ['najszerszy grzbietu'],
+    musclesSecondary: ['obły większy', 'czworoboczny — część dolna', 'biceps ramienia', 'ramienno-promieniowy'],
+    commonMistakes: [
+      'Zbyt duże wspomaganie — nogi wypychają ciało zamiast pracy pleców.',
+      'Bujanie ciała i podciąganie na rozpęd.',
+      'Niepełny zwis na dole — ucięty zakres.',
+      'Ciągnięcie samymi ramionami bez ściągnięcia łopatek.'
+    ],
+    tips: [
+      'Traktuj to jako progresję do podciągnięć — stopniowo zmniejszaj wspomaganie.',
+      'Prowadź ruch łokciami w dół, „do tylnych kieszeni", żeby czuć plecy, a nie biceps.',
+      'Utrzymuj lekkie napięcie brzucha, by nie bujać ciałem.'
+    ]
+  },
   'sciaganie-drazka-wyciagu-gornego': {
     equipmentDetail: 'wyciąg górny',
     attachment: 'drążek szeroki do ściągania',
@@ -402,6 +427,31 @@ export const PULL_DETAILS: Record<string, ExerciseDetails> = {
       'Wolne opuszczanie mocno zwiększa bodziec — licz do trzech w negatywie.'
     ]
   },
+  'wzruszenia-na-suwnicy': {
+    equipmentDetail: 'suwnica Smitha (gryf prowadzony)',
+    attachment: null,
+    startPosition: 'Ustaw gryf suwnicy na wysokości ud. Stań prosto, chwyć gryf nachwytem na szerokość barków, ramiona wyprostowane, barki opuszczone. Odblokuj gryf.',
+    execution: [
+      'Wzrusz barkami prosto do góry, prowadząc je w stronę uszu.',
+      'Zatrzymaj się w pełnym skurczu na 1-2 sekundy.',
+      'Opuść barki kontrolowanie do pełnego rozciągnięcia kaptura.',
+      'Utrzymuj ramiona wyprostowane przez cały ruch.'
+    ],
+    rangeOfMotion: 'Od pełnego opuszczenia barków (rozciągnięcie) do maksymalnego uniesienia w stronę uszu.',
+    musclesPrimary: ['czworoboczny — część górna'],
+    musclesSecondary: ['dźwigacz łopatki', 'czworoboczny — część środkowa'],
+    commonMistakes: [
+      'Obracanie barkami w kółko zamiast ruchu prosto w górę.',
+      'Uginanie ramion i pomaganie sobie bicepsem.',
+      'Zbyt mały zakres — brak pełnego uniesienia i opuszczenia.',
+      'Odchylanie tułowia do tyłu przy dużym ciężarze.'
+    ],
+    tips: [
+      'Prowadzony gryf suwnicy stabilizuje ciężar — możesz skupić się na samym kapturze.',
+      'Pauza 1-2 s na szczycie znacząco poprawia czucie mięśnia.',
+      'Nie kręć barkami — to nie zwiększa efektu, a obciąża stawy.'
+    ]
+  },
   'martwy-ciag-klasyczny': {
     equipmentDetail: 'sztanga prosta',
     attachment: null,
@@ -528,6 +578,31 @@ export const PULL_DETAILS: Record<string, ExerciseDetails> = {
       'Ruch kończy się w linii prostej — przeprost nic nie dodaje, a obciąża lędźwie.',
       'Chcesz mocniej poczuć pośladki? Skręć stopy lekko na zewnątrz i prowadź ruch biodrami.',
       'Gdy masa ciała przestaje wystarczać, przytul talerz do klatki.'
+    ]
+  },
+  'prostowniki-grzbietu-na-maszynie': {
+    equipmentDetail: 'maszyna do prostowania tułowia (back extension machine)',
+    attachment: null,
+    startPosition: 'Usiądź w maszynie, oprzyj górną część pleców o ruchomy pad, biodra i uda unieruchomione wałkami. Ustaw ciężar. Tułów wyprostowany lub lekko zgięty w przód, zależnie od maszyny.',
+    execution: [
+      'Napnij prostowniki i odchyl tułów do tyłu, popychając pad plecami.',
+      'Dojdź do linii wyprostu tułowia (bez przeprostu).',
+      'Zatrzymaj się na sekundę w pełnym skurczu.',
+      'Wróć kontrolowanie do pozycji startowej, nie odpuszczając napięcia.'
+    ],
+    rangeOfMotion: 'Od lekkiego zgięcia tułowia w przód do pełnego wyprostu tułowia w linii z biodrami.',
+    musclesPrimary: ['prostownik grzbietu'],
+    musclesSecondary: ['pośladkowy wielki', 'dwugłowy uda'],
+    commonMistakes: [
+      'Przeprostowanie tułowia do tyłu — przeciążenie odcinka lędźwiowego.',
+      'Gwałtowne szarpnięcie zamiast płynnego ruchu.',
+      'Zbyt duży ciężar wymuszający pracę na rozpęd.',
+      'Niepełny powrót — ucięta faza rozciągnięcia.'
+    ],
+    tips: [
+      'Maszyna daje kontrolowaną alternatywę dla ławki rzymskiej — dobra przy nauce wzorca.',
+      'Kończ ruch w linii prostej tułowia, nie wyginaj się w łuk do tyłu.',
+      'Zaczynaj od małego ciężaru — odcinek lędźwiowy lubi objętość, nie maksymalne ciężary.'
     ]
   },
   'wznosy-hantli-w-opadzie': {
@@ -828,6 +903,31 @@ export const PULL_DETAILS: Record<string, ExerciseDetails> = {
       'Wyciąg trzyma napięcie także w dolnej fazie, gdzie hantle odpuszczają — nie marnuj tego skracaniem zakresu.',
       'Krok w tył od bloczka zwiększa napięcie na starcie ruchu.',
       'Świetna opcja na pompujące serie na koniec treningu.'
+    ]
+  },
+  'uginanie-ramion-na-maszynie': {
+    equipmentDetail: 'maszyna do uginania ramion (biceps curl machine)',
+    attachment: null,
+    startPosition: 'Usiądź w maszynie, oprzyj tylną część ramion płasko o pad, pachy nad górną krawędzią. Chwyć uchwyty podchwytem, ramiona lekko ugięte, klatka wyprostowana.',
+    execution: [
+      'Ustaw wysokość siedziska tak, by łokcie były na osi obrotu maszyny.',
+      'Ugnij ramiona, prowadząc uchwyty w górę do pełnego skurczu bicepsa.',
+      'Zatrzymaj skurcz na sekundę na szczycie.',
+      'Opuść kontrolowanie do niemal pełnego wyprostu, nie odrywając ramion od padu.'
+    ],
+    rangeOfMotion: 'Od niemal pełnego wyprostu ramion do pełnego zgięcia w łokciach.',
+    musclesPrimary: ['biceps — głowa krótka'],
+    musclesSecondary: ['biceps — głowa długa', 'ramienny', 'ramienno-promieniowy'],
+    commonMistakes: [
+      'Odrywanie ramion od padu i pomaganie sobie barkami.',
+      'Niepełny wyprost na dole — praca w połowie zakresu.',
+      'Zbyt duży ciężar i szarpanie tułowiem.',
+      'Źle ustawiona wysokość siedziska — łokcie poza osią obrotu.'
+    ],
+    tips: [
+      'Pad eliminuje oszukiwanie — idealne na czysty skurcz bicepsa i dobicie.',
+      'Kontroluj fazę negatywną (opuszczanie) — tam rośnie większość mięśnia.',
+      'Nie odrywaj tylnej części ramion od oparcia przez całą serię.'
     ]
   },
   'uginanie-hantli-mlotkowo': {
