@@ -1,5 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { REQUIRE_AUTH } from '../lib/authConfig'
+import { isChunkLoadError, reloadForFreshChunks } from '../lib/chunkReload'
 
 const routes = [
   { path: '/', redirect: { name: 'workout' } },
@@ -37,22 +38,11 @@ router.beforeEach(async (to) => {
 // (skipWaiting + cleanupOutdatedCaches) czyści je z cache w trakcie sesji.
 // Wtedy leniwy import widoku pada i klik w zakładkę „nic nie robi". Łapiemy ten
 // błąd i przeładowujemy stronę na docelową trasę — świeży index.html poda nowe chunki.
-function isChunkLoadError(err: unknown): boolean {
-  const msg = err instanceof Error ? err.message : String(err)
-  return /dynamically imported module|Importing a module script failed|error loading dynamically imported|Failed to fetch dynamically/i.test(msg)
-}
-
+// Wspólna logika wykrywania/reloadu w lib/chunkReload (używana też przez ExerciseInfoModal).
 router.onError((error, to) => {
   if (!isChunkLoadError(error)) return
-  // Zabezpieczenie przed pętlą: przeładuj najwyżej raz na 10 s.
-  const KEY = 'tp_chunk_reload_at'
-  let last = 0
-  try { last = Number(sessionStorage.getItem(KEY) || 0) } catch { /* prywatny tryb */ }
-  const now = Date.now()
-  if (now - last < 10000) return
-  try { sessionStorage.setItem(KEY, String(now)) } catch { /* ignore */ }
   if (to?.fullPath) window.location.hash = to.fullPath
-  window.location.reload()
+  reloadForFreshChunks() // throttled: najwyżej raz na 10 s (ochrona przed pętlą)
 })
 
 export default router

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { loadExerciseDetailsByName } from '../lib/exerciseDetails'
+import { isChunkLoadError, reloadForFreshChunks } from '../lib/chunkReload'
 
 const props = defineProps({
   // Nazwa ćwiczenia (kanoniczna lub alias) — null/'' zamyka modal.
@@ -10,14 +11,38 @@ const emit = defineEmits(['close'])
 
 // Arkusz techniki ładowany leniwie (dynamic import ~3000 linii danych) przy otwarciu.
 const details = ref(null)
+const loading = ref(false)
+const error = ref(null) // null | 'retry' (błąd przejściowy) | 'reload' (nowa wersja po deployu)
 const open = computed(() => !!props.name)
 
-watch(() => props.name, async (name) => {
-  if (!name) { details.value = null; return }
+async function load(name) {
   details.value = null
-  const d = await loadExerciseDetailsByName(name)
-  // Ochrona przed wyścigiem — przyjmij wynik tylko jeśli nazwa się nie zmieniła.
-  if (props.name === name) details.value = d
+  error.value = null
+  loading.value = true
+  try {
+    const d = await loadExerciseDetailsByName(name)
+    if (props.name !== name) return // wyścig — w międzyczasie wybrano inne ćwiczenie
+    details.value = d // null → szablon pokaże stan „brak opisu"
+  } catch (e) {
+    if (props.name !== name) return
+    if (isChunkLoadError(e)) {
+      // Stary chunk zniknął po deployu PWA. Przeładuj na świeżą wersję (throttled).
+      // Jeśli reload pominięto (właśnie się wykonał, a nadal pada) → pokaż ręczny przycisk.
+      if (!reloadForFreshChunks()) error.value = 'reload'
+    } else {
+      error.value = 'retry'
+    }
+  } finally {
+    if (props.name === name) loading.value = false
+  }
+}
+
+function retry() { if (props.name) load(props.name) }
+function reloadApp() { reloadForFreshChunks(0) } // wymuś reload (pomiń throttling)
+
+watch(() => props.name, (name) => {
+  if (!name) { details.value = null; error.value = null; loading.value = false; return }
+  load(name)
 }, { immediate: true })
 
 function close() { emit('close') }
@@ -58,8 +83,29 @@ onBeforeUnmount(() => {
           </button>
         </div>
 
-        <div v-if="!details" class="exi-body exi-loading">
+        <div v-if="loading" class="exi-body exi-loading">
           <i class="ti ti-loader-2 exi-spin"></i> Ładowanie…
+        </div>
+
+        <div v-else-if="error === 'retry'" class="exi-body exi-state">
+          <i class="ti ti-alert-triangle exi-state-icon exi-warn-c"></i>
+          <p class="exi-state-text">Nie udało się załadować opisu techniki.</p>
+          <button class="exi-state-btn" @click="retry">
+            <i class="ti ti-refresh"></i> Spróbuj ponownie
+          </button>
+        </div>
+
+        <div v-else-if="error === 'reload'" class="exi-body exi-state">
+          <i class="ti ti-refresh exi-state-icon"></i>
+          <p class="exi-state-text">Aplikacja została zaktualizowana. Odśwież, aby wczytać najnowszą wersję.</p>
+          <button class="exi-state-btn" @click="reloadApp">
+            <i class="ti ti-refresh"></i> Odśwież aplikację
+          </button>
+        </div>
+
+        <div v-else-if="!details" class="exi-body exi-state">
+          <i class="ti ti-info-circle exi-state-icon"></i>
+          <p class="exi-state-text">Brak opisu techniki dla tego ćwiczenia.</p>
         </div>
 
         <div v-else class="exi-body">
@@ -210,6 +256,33 @@ onBeforeUnmount(() => {
 }
 .exi-spin { animation: exi-spin 1s linear infinite; }
 @keyframes exi-spin { to { transform: rotate(360deg); } }
+
+.exi-state {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: var(--space-3);
+  padding: var(--space-6);
+}
+.exi-state-icon { font-size: 30px; color: var(--text-muted); }
+.exi-state-icon.exi-warn-c { color: var(--warning); }
+.exi-state-text { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--text-muted); max-width: 340px; }
+.exi-state-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elev-2);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--dur), color var(--dur);
+}
+.exi-state-btn:hover { border-color: var(--accent); color: var(--accent); }
+.exi-state-btn .ti { font-size: 15px; }
 
 .exi-equip-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .exi-chip {
