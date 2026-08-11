@@ -648,6 +648,54 @@ export const LEGS_DETAILS: Record<string, ExerciseDetails> = {
       'Kolana rozpychaj na zewnątrz przez cały ruch, śladem palców stóp.'
     ]
   },
+  'przywodzenie-nogi-na-wyciagu': {
+    equipmentDetail: 'wyciąg dolny',
+    attachment: 'mankiet na kostkę',
+    startPosition: 'Zapnij mankiet na kostce nogi bliższej maszynie, stań bokiem do wyciągu dolnego. Odsuń się, by uzyskać napięcie linki, przytrzymaj się ramy dla równowagi.',
+    execution: [
+      'Przyciągnij pracującą nogę w poprzek ciała, przed nogę podporową.',
+      'Zatrzymaj się w pełnym przywiedzeniu na sekundę, napinając przywodziciele.',
+      'Wróć kontrolowanie do rozciągnięcia, nie puszczając napięcia.',
+      'Utrzymuj nogę wyprostowaną i tułów nieruchomy.'
+    ],
+    rangeOfMotion: 'Od odwiedzenia nogi w bok (rozciągnięcie) do pełnego przywiedzenia w poprzek ciała.',
+    musclesPrimary: ['przywodziciele uda'],
+    musclesSecondary: ['mięsień smukły', 'mięsień grzebieniowy'],
+    commonMistakes: [
+      'Bujanie tułowiem zamiast pracy samej nogi.',
+      'Zginanie kolana pracującej nogi.',
+      'Zbyt duży ciężar i ucięty zakres.',
+      'Brak pauzy w skurczu.'
+    ],
+    tips: [
+      'Stały opór wyciągu utrzymuje napięcie w całym zakresie — inaczej niż maszyna siedząca.',
+      'Ustaw się dostatecznie daleko, by w rozciągnięciu czuć przywodziciele.'
+    ]
+  },
+  'copenhagen-plank': {
+    equipmentDetail: 'masa ciała + ławka/podwyższenie',
+    attachment: null,
+    startPosition: 'Ułóż się bokiem, oprzyj górną (wierzchnią) nogę wewnętrzną częścią stopy lub łydki na ławce. Podeprzyj się na przedramieniu, dolna noga pod ławką lub uniesiona.',
+    execution: [
+      'Unieś biodra, tworząc ciałem prostą linię od barku do stóp.',
+      'Napnij przywodziciele górnej nogi, dociskając ją do ławki.',
+      'Utrzymaj pozycję izometrycznie zadany czas.',
+      'Wersja łatwiejsza: kolano górnej nogi na ławce (krótsze ramię dźwigni).'
+    ],
+    rangeOfMotion: 'Izometryczne utrzymanie bioder w linii ciała (bez opadania).',
+    musclesPrimary: ['przywodziciele uda'],
+    musclesSecondary: ['mięśnie skośne brzucha', 'mięśnie głębokie brzucha'],
+    commonMistakes: [
+      'Opadanie bioder w dół w trakcie utrzymania.',
+      'Rotacja tułowia do przodu lub do tyłu.',
+      'Zbyt długie ramię dźwigni na start (od razu wersja na stopę).',
+      'Wstrzymywanie oddechu zamiast spokojnego oddychania.'
+    ],
+    tips: [
+      'Zacznij od wersji z kolanem na ławce, potem przejdź na oparcie o stopę.',
+      'To jeden z najsilniejszych bodźców na przywodziciele — świetny prewencyjnie na pachwiny.'
+    ]
+  },
   'wspięcia-na-palce-stojac': {
     equipmentDetail: 'maszyna do wspięć łydek (stojąc)',
     attachment: null,
@@ -863,6 +911,126 @@ export const LEGS_DETAILS: Record<string, ExerciseDetails> = {
     tips: [
       'Klucz to ruch miednicy: na górze podwiń ją jak przy zwijaniu — wtedy pracuje brzuch.',
       'Za trudne? Zacznij od unoszenia kolan do klatki i stopniowo prostuj nogi.'
+    ]
+  },
+  'deska-bokiem': {
+    equipmentDetail: 'masa ciała',
+    attachment: null,
+    startPosition: 'Połóż się na boku, oprzyj się na przedramieniu ustawionym pod barkiem. Nogi wyprostowane, jedna na drugiej. Druga ręka na biodrze lub uniesiona w górę.',
+    execution: [
+      'Unieś biodra, tworząc ciałem prostą linię od głowy do stóp.',
+      'Napnij boczne mięśnie brzucha i utrzymaj pozycję.',
+      'Nie pozwól biodrom opaść ani zrotować się do przodu.',
+      'Utrzymaj zadany czas, potem zmień stronę.'
+    ],
+    rangeOfMotion: 'Izometryczne utrzymanie bioder uniesionych w linii ciała.',
+    musclesPrimary: ['mięśnie skośne brzucha'],
+    musclesSecondary: ['mięsień czworoboczny lędźwi', 'pośladkowy średni', 'mięśnie głębokie brzucha'],
+    commonMistakes: [
+      'Opadanie bioder w dół.',
+      'Rotacja tułowia do przodu.',
+      'Bark „wpadający" — brak podparcia łopatki.',
+      'Wstrzymywanie oddechu.'
+    ],
+    tips: [
+      'Ugięte kolana (podpór na kolanie) ułatwiają start.',
+      'Unoszenie górnej nogi zwiększa trudność i angażuje pośladek średni.'
+    ]
+  },
+  'rowerek': {
+    equipmentDetail: 'masa ciała',
+    attachment: null,
+    startPosition: 'Połóż się na plecach, dłonie przy skroniach, łopatki lekko uniesione, nogi w powietrzu ugięte pod kątem 90°. Lędźwie dociśnięte do podłogi.',
+    execution: [
+      'Przyciągnij prawy łokieć do lewego kolana, prostując prawą nogę.',
+      'Płynnie zmień strony ruchem „pedałowania".',
+      'Skręcaj tułowiem (nie ciągnij łokciem za szyję).',
+      'Utrzymuj wolne, kontrolowane tempo, brzuch napięty.'
+    ],
+    rangeOfMotion: 'Naprzemienna rotacja tułowia z przyciągnięciem przeciwnego kolana do łokcia.',
+    musclesPrimary: ['mięśnie skośne brzucha', 'mięsień prosty brzucha'],
+    musclesSecondary: ['mięśnie głębokie brzucha', 'zginacze bioder'],
+    commonMistakes: [
+      'Ciągnięcie głowy rękami (napięcie szyi).',
+      'Zbyt szybkie, niekontrolowane pedałowanie.',
+      'Odrywanie lędźwi od podłogi.',
+      'Ruch samymi łokciami bez rotacji tułowia.'
+    ],
+    tips: [
+      'Liczy się rotacja tułowia, nie prędkość — zwolnij i czuj skośne.',
+      'Im niżej prowadzisz wyprostowaną nogę, tym mocniej pracuje brzuch.'
+    ]
+  },
+  'drwal-na-wyciagu': {
+    equipmentDetail: 'wyciąg górny (wariant góra→dół)',
+    attachment: 'uchwyt pojedynczy lub lina',
+    startPosition: 'Ustaw wyciąg wysoko. Stań bokiem, chwyć uchwyt oburącz nad barkiem od strony maszyny. Stopy na szerokość barków, lekko ugięte kolana, brzuch napięty.',
+    execution: [
+      'Pociągnij uchwyt po skosie w dół, do przeciwległego biodra.',
+      'Obrót inicjuj tułowiem, ramiona trzymaj wyprostowane.',
+      'Zatrzymaj się w skręcie na sekundę.',
+      'Wróć kontrolowanie do pozycji startowej, nie puszczając napięcia.'
+    ],
+    rangeOfMotion: 'Od uchwytu nad barkiem do przeciwległego biodra, po przekątnej tułowia.',
+    musclesPrimary: ['mięśnie skośne brzucha'],
+    musclesSecondary: ['mięsień prosty brzucha', 'mięśnie głębokie brzucha', 'naramienne'],
+    commonMistakes: [
+      'Ciągnięcie samymi ramionami zamiast rotacji tułowia.',
+      'Zginanie łokci w trakcie ruchu.',
+      'Zbyt duży ciężar i szarpanie.',
+      'Sztywne biodra — brak przeniesienia ciężaru na nogi.'
+    ],
+    tips: [
+      'Wyobraź sobie rąbanie drewna po skosie — ruch płynie z tułowia.',
+      'Wariant dół→góra (wyciąg nisko) akcentuje górną część skośnych.'
+    ]
+  },
+  'pallof-press': {
+    equipmentDetail: 'wyciąg na wysokości klatki',
+    attachment: 'uchwyt pojedynczy (D-handle)',
+    startPosition: 'Ustaw wyciąg na wysokości klatki. Stań bokiem, chwyć uchwyt oburącz przy mostku. Odsuń się dla napięcia linki, stopy na szerokość barków, brzuch napięty.',
+    execution: [
+      'Wypchnij uchwyt prosto przed siebie do wyprostu ramion.',
+      'Opieraj się rotacji tułowia, którą wymusza linka — utrzymaj klatkę na wprost.',
+      'Przytrzymaj 1-2 sekundy w wyproście.',
+      'Przyciągnij uchwyt z powrotem do mostka, dalej opierając się skręceniu.'
+    ],
+    rangeOfMotion: 'Od uchwytu przy mostku do pełnego wyprostu ramion przed sobą (bez rotacji tułowia).',
+    musclesPrimary: ['mięśnie głębokie brzucha (anty-rotacja)', 'mięśnie skośne brzucha'],
+    musclesSecondary: ['mięsień prosty brzucha', 'pośladkowy średni'],
+    commonMistakes: [
+      'Pozwalanie tułowiowi na obrót w stronę wyciągu.',
+      'Zbyt duży ciężar uniemożliwiający kontrolę.',
+      'Unoszenie barków do uszu.',
+      'Wstrzymywanie oddechu zamiast spokojnego wydechu przy wypychaniu.'
+    ],
+    tips: [
+      'To ćwiczenie anty-rotacyjne — celem jest OPIERANIE się skręceniu, nie ruch.',
+      'Im dalej od maszyny stoisz, tym większe ramię dźwigni i trudniej.'
+    ]
+  },
+  'dead-bug': {
+    equipmentDetail: 'masa ciała',
+    attachment: null,
+    startPosition: 'Połóż się na plecach, ręce wyprostowane pionowo nad barkami, biodra i kolana ugięte pod kątem 90° (uda pionowo). Lędźwie dociśnięte do podłogi.',
+    execution: [
+      'Powoli opuszczaj przeciwną rękę i nogę (np. prawa ręka + lewa noga) w stronę podłogi.',
+      'Zatrzymaj tuż nad podłogą, nie dotykając jej.',
+      'Wróć do startu i powtórz drugą przekątną.',
+      'Przez cały czas dociskaj lędźwie do podłogi.'
+    ],
+    rangeOfMotion: 'Od kończyn nad tułowiem do niemal wyprostu przeciwległej ręki i nogi tuż nad podłogą.',
+    musclesPrimary: ['mięśnie głębokie brzucha', 'mięsień prosty brzucha'],
+    musclesSecondary: ['mięśnie skośne brzucha', 'zginacze bioder'],
+    commonMistakes: [
+      'Odrywanie lędźwi od podłogi (łuk w plecach).',
+      'Zbyt szybkie tempo i utrata kontroli.',
+      'Wstrzymywanie oddechu.',
+      'Opuszczanie kończyn zbyt nisko kosztem pozycji lędźwi.'
+    ],
+    tips: [
+      'Wydech przy opuszczaniu kończyn pomaga utrzymać docisk lędźwi.',
+      'Jeśli lędźwie się unoszą, zmniejsz zakres — nie opuszczaj kończyn tak nisko.'
     ]
   },
   'skrety-rosyjskie': {

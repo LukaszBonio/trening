@@ -1059,6 +1059,55 @@ export const PUSH_DETAILS: Record<string, ExerciseDetails> = {
       'Dobierz ciężar tak, byś nie musiał odrywać pleców od oparcia.'
     ]
   },
+  'pushdown-podchwytem': {
+    equipmentDetail: 'wyciąg górny',
+    attachment: 'drążek prosty lub EZ',
+    startPosition: 'Stań przodem do wyciągu górnego, chwyć drążek PODCHWYTEM (dłonie do góry) na szerokość barków. Łokcie przyklejone do tułowia, tułów lekko pochylony, stopy stabilnie.',
+    execution: [
+      'Dociśnij łokcie do tułowia i utrzymaj je nieruchomo.',
+      'Wyprostuj ramiona, prowadząc drążek w dół do ud.',
+      'Zatrzymaj pełny wyprost na sekundę, napinając triceps.',
+      'Wróć kontrolowanie do przedramion powyżej równoległych.'
+    ],
+    rangeOfMotion: 'Od przedramion uniesionych powyżej równoległych do pełnego wyprostu ramion przy udach.',
+    musclesPrimary: ['triceps — głowa przyśrodkowa'],
+    musclesSecondary: ['triceps — głowa boczna', 'triceps — głowa długa'],
+    commonMistakes: [
+      'Łokcie odklejające się od tułowia i wędrujące w przód.',
+      'Dopychanie ciężaru masą ciała i pochylaniem się.',
+      'Niepełny wyprost na dole — ucięty skurcz.',
+      'Zbyt duży ciężar (podchwyt jest słabszy niż nachwyt).'
+    ],
+    tips: [
+      'Podchwyt mocniej akcentuje głowę przyśrodkową tricepsa — dobra odmiana od klasycznego pushdown.',
+      'Użyj mniejszego ciężaru niż w nachwycie — pozycja nadgarstka jest słabsza.',
+      'Pauza sekundy w pełnym wyproście poprawia czucie mięśnia.'
+    ]
+  },
+  'pompki-na-lawce': {
+    equipmentDetail: 'masa ciała + ławka (opcjonalnie druga pod stopy)',
+    attachment: null,
+    startPosition: 'Usiądź na krawędzi ławki, oprzyj dłonie tuż obok bioder palcami do przodu. Przesuń biodra poza ławkę, nogi wyprostuj lub ugnij (łatwiej), pięty na podłodze.',
+    execution: [
+      'Opuszczaj biodra w dół, zginając łokcie do około 90°.',
+      'Trzymaj łokcie skierowane do tyłu, blisko ciała (nie na boki).',
+      'Wypchnij się z powrotem do wyprostu ramion, napinając triceps.',
+      'Utrzymuj biodra blisko ławki przez cały ruch.'
+    ],
+    rangeOfMotion: 'Od wyprostu ramion do zgięcia łokci około 90° (ramiona równoległe do podłogi).',
+    musclesPrimary: ['triceps — głowa przyśrodkowa', 'triceps — głowa boczna'],
+    musclesSecondary: ['naramienny — część przednia', 'piersiowy większy'],
+    commonMistakes: [
+      'Odchodzenie biodrami za daleko od ławki (przeciąża barki).',
+      'Rozchylanie łokci na boki zamiast do tyłu.',
+      'Zbyt płytki zakres — łokcie nie schodzą do 90°.',
+      'Wzruszanie barków do uszu w dolnej fazie.'
+    ],
+    tips: [
+      'Ugięte nogi = łatwiej, wyprostowane lub stopy na drugiej ławce = trudniej.',
+      'Trzymaj klatkę wysoko i barki ściągnięte, żeby chronić staw barkowy.'
+    ]
+  },
   'wyciskanie-waskim-chwytem': {
     equipmentDetail: 'sztanga prosta + ławka pozioma',
     attachment: null,

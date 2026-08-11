@@ -980,6 +980,78 @@ export const PULL_DETAILS: Record<string, ExerciseDetails> = {
       'Na górze możesz lekko rozsunąć końce liny dla mocniejszego skurczu.'
     ]
   },
+  'uginanie-nachwytem': {
+    equipmentDetail: 'sztanga prosta lub EZ',
+    attachment: null,
+    startPosition: 'Stań prosto, chwyć sztangę NACHWYTEM (dłonie w dół) na szerokość barków. Ramiona wyprostowane, łokcie przy tułowiu, klatka wysoko.',
+    execution: [
+      'Uginaj ramiona, prowadząc sztangę w górę bez ruszania łokciami.',
+      'Utrzymuj nadgarstki proste i sztywne przez cały ruch.',
+      'Zatrzymaj się w pełnym skurczu na sekundę.',
+      'Opuść kontrolowanie do pełnego wyprostu.'
+    ],
+    rangeOfMotion: 'Od pełnego wyprostu ramion do pełnego zgięcia w łokciach przy chwycie nachwytem.',
+    musclesPrimary: ['ramienno-promieniowy', 'ramienny'],
+    musclesSecondary: ['biceps ramienia', 'prostowniki nadgarstka'],
+    commonMistakes: [
+      'Zginanie nadgarstków zamiast trzymania ich prosto.',
+      'Bujanie tułowiem i zarzucanie ciężaru.',
+      'Zbyt duży ciężar (nachwyt jest słabszy niż podchwyt).',
+      'Ruch łokci w przód zamiast trzymania ich przy tułowiu.'
+    ],
+    tips: [
+      'Użyj mniejszego ciężaru niż w klasycznym uginaniu — chwyt nachwytem jest znacznie słabszy.',
+      'Gryf EZ odciąża nadgarstki, jeśli prosty sprawia dyskomfort.'
+    ]
+  },
+  'uginanie-nadgarstkow-nachwytem': {
+    equipmentDetail: 'sztanga prosta (mały ciężar)',
+    attachment: null,
+    startPosition: 'Usiądź, oprzyj przedramiona na udach, nadgarstki tuż za kolanami. Chwyć sztangę NACHWYTEM (dłonie w dół), pozwól jej opaść w dół.',
+    execution: [
+      'Unieś sztangę, prostując nadgarstki w górę (grzbiet dłoni do góry).',
+      'Zatrzymaj się w szczytowym skurczu na sekundę.',
+      'Opuść kontrolowanie do pełnego rozciągnięcia prostowników.',
+      'Ruch tylko w nadgarstkach — przedramiona nieruchome na udach.'
+    ],
+    rangeOfMotion: 'Od pełnego zgięcia nadgarstków w dół do maksymalnego wyprostu w górę.',
+    musclesPrimary: ['prostowniki nadgarstka (przedramię)'],
+    musclesSecondary: ['ramienno-promieniowy'],
+    commonMistakes: [
+      'Zbyt duży ciężar — skraca zakres i angażuje ramię.',
+      'Unoszenie przedramion z ud zamiast pracy samych nadgarstków.',
+      'Zbyt mały zakres ruchu.',
+      'Szarpanie zamiast płynnego ruchu.'
+    ],
+    tips: [
+      'Prostowniki są słabe — użyj wyraźnie mniejszego ciężaru niż przy uginaniu nadgarstków podchwytem.',
+      'Wolne tempo i pełny zakres dają lepszy efekt niż ciężar.'
+    ]
+  },
+  'spacer-farmera': {
+    equipmentDetail: 'ciężkie hantle (lub kettlebell / uchwyty farmerskie)',
+    attachment: null,
+    startPosition: 'Postaw ciężkie hantle po bokach, przykucnij z prostymi plecami i chwyć je pewnie. Wstań z napiętym brzuchem, barki ściągnięte, ręce wyprostowane wzdłuż ciała.',
+    execution: [
+      'Idź prosto krótkimi, kontrolowanymi krokami.',
+      'Utrzymuj tułów pionowo, brzuch napięty, barki ściągnięte w dół i do tyłu.',
+      'Nie kołysz się na boki — opieraj się przechylaniu tułowia.',
+      'Odłóż ciężary kontrolowanie, przysiadem z prostymi plecami.'
+    ],
+    rangeOfMotion: 'Marsz na zadany dystans lub czas z pełnym utrzymaniem postawy (izometria chwytu i tułowia).',
+    musclesPrimary: ['mięśnie chwytne przedramienia'],
+    musclesSecondary: ['czworoboczny — część górna', 'mięśnie głębokie brzucha', 'naramienne'],
+    commonMistakes: [
+      'Kołysanie tułowiem na boki przy każdym kroku.',
+      'Garbienie się i opadanie barków pod ciężarem.',
+      'Za długie kroki i utrata równowagi.',
+      'Zbyt lekki ciężar, by realnie obciążyć chwyt.'
+    ],
+    tips: [
+      'Dobierz ciężar tak, by ostatnie sekundy chwytu były wyzwaniem.',
+      'Magnezja pomaga, gdy chwyt puszcza przed innymi mięśniami.'
+    ]
+  },
   'uginanie-zottmana': {
     equipmentDetail: 'hantle',
     attachment: null,

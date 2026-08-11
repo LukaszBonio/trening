@@ -325,12 +325,12 @@ describe('plan Ani (typ ania)', () => {
     expect(out.exercises[2].muscleHead).toBe('glutes')
     expect(out.exercises[2].primaryMuscle).toBe('glutes')
   })
-  it('ćwiczenie korekcyjne spoza bazy (Martwy robak) zachowuje dozwoloną głowę core', () => {
+  it('ćwiczenie korekcyjne spoza bazy (Ptak-pies) zachowuje dozwoloną głowę core', () => {
     const plan = aniaPlan()
-    plan.exercises[0].name = 'Martwy robak'
+    plan.exercises[0].name = 'Ptak-pies'
     plan.exercises[0].muscleHead = 'core'
     const out = normalizePlan(plan, { type: 'ania', goal: 'mass' })
-    expect(out.exercises[0].name).toBe('Martwy robak')
+    expect(out.exercises[0].name).toBe('Ptak-pies')
     expect(out.exercises[0].muscleHead).toBe('core')
   })
 })
