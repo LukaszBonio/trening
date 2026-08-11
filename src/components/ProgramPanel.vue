@@ -5,6 +5,7 @@ import { useProgramsStore } from '../stores/programs'
 import { useSessionStore } from '../stores/session'
 import { useSettingsStore } from '../stores/settings'
 import { SPLIT_OPTIONS, weeklyTargets, volumeStatus, estimateWeeklyVolume, analyzeProgram } from '../lib/weeklyVolume'
+import { isSameTrainingWeek } from '../lib/weekTracking'
 import { GROUP_LABELS } from '../lib/workoutSchema'
 import { useToast } from '../composables/useToast'
 import BaseCard from './BaseCard.vue'
@@ -53,6 +54,20 @@ const volumeRows = computed(() => {
 // Walidacja programu (partie poza normą) — mocniej eksponowana w Strict Mode.
 const analysis = computed(() => program.value ? analyzeProgram(program.value.days, program.value.level) : null)
 
+// Które dni wykonano w BIEŻĄCYM tygodniu treningowym (pon–niedz). Reset co poniedziałek.
+// `weekTick` wymusza przeliczenie po zmianie ukończeń (completions jest reaktywne).
+const doneThisWeek = computed(() => {
+  const map = {}
+  const comp = program.value?.completions
+  if (!comp) return map
+  const now = Date.now()
+  for (const [idx, ts] of Object.entries(comp)) {
+    if (isSameTrainingWeek(ts, now)) map[idx] = true
+  }
+  return map
+})
+const doneCount = computed(() => Object.keys(doneThisWeek.value).length)
+
 async function generate() {
   if (abortCtrl) { try { abortCtrl.abort() } catch {} }
   generating.value = true
@@ -84,8 +99,9 @@ async function generate() {
 
 function cancel() { if (abortCtrl) abortCtrl.abort() }
 
-function startDay(day) {
-  session.startSession(day.plan, day.type, 'ai')
+function startDay(day, i) {
+  const id = program.value?.id
+  session.startSession(day.plan, day.type, 'ai', id ? { programId: id, dayIndex: i } : undefined)
 }
 
 // Regeneracja pojedynczego dnia (wyklucza ćwiczenia z pozostałych dni).
@@ -99,6 +115,8 @@ async function regenDay(i) {
     const updatedDays = [...p.days]
     updatedDays[i] = newDay
     programs.save({ ...p, days: updatedDays, volumeByGroup: estimateWeeklyVolume(updatedDays) })
+    // Inne ćwiczenia = świeży start: cofnij ewentualne „wykonano" dla tego dnia.
+    programs.clearDayCompletion(i)
   } catch (e) {
     if (e.name !== 'AbortError') toast.error(e.message || 'Nie udało się zregenerować dnia.')
   } finally {
@@ -153,6 +171,13 @@ const STATUS_META = {
         <span v-if="program.strict" class="prog-chip prog-chip-strict"><i class="ti ti-shield-check"></i> Strict</span>
       </div>
 
+      <!-- Postęp bieżącego tygodnia (reset co poniedziałek) -->
+      <div class="prog-week" :class="{ 'all-done': doneCount === program.days.length }">
+        <i class="ti" :class="doneCount === program.days.length ? 'ti-check' : 'ti-calendar-week'"></i>
+        <span v-if="doneCount === program.days.length">Tydzień ukończony! 🎉 Reset w poniedziałek.</span>
+        <span v-else>Ten tydzień: <strong>{{ doneCount }}/{{ program.days.length }}</strong> wykonane<span class="prog-week-reset"> · reset w poniedziałek</span></span>
+      </div>
+
       <!-- Walidacja: partie poza normą objętości -->
       <div v-if="analysis && !analysis.ok" class="prog-issues" :class="{ strict: program.strict }">
         <i class="ti ti-alert-triangle"></i>
@@ -163,9 +188,12 @@ const STATUS_META = {
       </div>
 
       <div class="prog-days">
-        <div v-for="(day, i) in program.days" :key="i" class="prog-day">
+        <div v-for="(day, i) in program.days" :key="i" class="prog-day" :class="{ 'is-done': doneThisWeek[i] }">
           <div class="prog-day-info">
-            <span class="prog-day-num">{{ i + 1 }}</span>
+            <span class="prog-day-num">
+              <i v-if="doneThisWeek[i]" class="ti ti-check"></i>
+              <template v-else>{{ i + 1 }}</template>
+            </span>
             <div>
               <div class="prog-day-label">{{ day.label }}</div>
               <div class="prog-day-sub">{{ day.plan.exercises.length }} ćwiczeń</div>
@@ -181,7 +209,15 @@ const STATUS_META = {
             >
               <i class="ti" :class="regeneratingIdx === i ? 'ti-loader-2 spin' : 'ti-refresh'"></i>
             </button>
-            <button class="btn btn-primary prog-day-btn" @click="startDay(day)">
+            <button
+              v-if="doneThisWeek[i]"
+              class="btn prog-day-btn prog-day-done"
+              @click="startDay(day, i)"
+              title="Wykonane w tym tygodniu — kliknij, aby powtórzyć"
+            >
+              <i class="ti ti-check"></i> Wykonano
+            </button>
+            <button v-else class="btn btn-primary prog-day-btn" @click="startDay(day, i)">
               <i class="ti ti-player-play"></i> Trenuj
             </button>
           </div>
@@ -343,6 +379,22 @@ const STATUS_META = {
 .prog-issues-text strong { color: var(--text); font-size: 12px; }
 .prog-issues-text span { color: var(--text-muted); }
 
+.prog-week {
+  display: flex; align-items: center; gap: 7px;
+  padding: 8px 12px; margin-bottom: var(--space-3);
+  background: var(--bg-elev-2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); font-size: 12.5px; color: var(--text-muted);
+}
+.prog-week > i { font-size: 15px; color: var(--accent); flex-shrink: 0; }
+.prog-week strong { color: var(--text); font-variant-numeric: tabular-nums; }
+.prog-week-reset { color: var(--text-dim); }
+.prog-week.all-done {
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  border-color: color-mix(in srgb, var(--success) 35%, transparent);
+  color: var(--text);
+}
+.prog-week.all-done > i { color: var(--success); }
+
 .prog-days { display: flex; flex-direction: column; gap: 6px; margin-bottom: var(--space-3); }
 .prog-day {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
@@ -366,6 +418,19 @@ const STATUS_META = {
 .prog-day-label { font-weight: 600; font-size: 14px; }
 .prog-day-sub { font-size: 12px; color: var(--text-muted); }
 .prog-day-btn { padding: 8px 14px; }
+
+/* Dzień wykonany w tym tygodniu */
+.prog-day.is-done { border-color: color-mix(in srgb, var(--success) 40%, var(--border)); }
+.prog-day.is-done .prog-day-num {
+  background: color-mix(in srgb, var(--success) 20%, transparent);
+  color: var(--success);
+}
+.prog-day-done {
+  color: var(--success);
+  border: 1px solid color-mix(in srgb, var(--success) 45%, transparent);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+}
+.prog-day-done:hover { background: color-mix(in srgb, var(--success) 20%, transparent); }
 
 .prog-volume { margin-bottom: var(--space-3); }
 .prog-volume summary {

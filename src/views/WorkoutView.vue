@@ -2,6 +2,7 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useSessionStore } from '../stores/session'
 import { useWorkoutsStore } from '../stores/workouts'
+import { useProgramsStore } from '../stores/programs'
 import { useSettingsStore } from '../stores/settings'
 import PlanPicker from '../components/PlanPicker.vue'
 import PlanEditor from '../components/PlanEditor.vue'
@@ -22,6 +23,7 @@ const toast = useToast()
 
 const session = useSessionStore()
 const workouts = useWorkoutsStore()
+const programs = useProgramsStore()
 const settings = useSettingsStore()
 const customPlans = useCustomPlansStore()
 
@@ -256,7 +258,11 @@ async function finishWorkout() {
     dobitkaAsked.value = false
     return
   }
+  // Powiązanie z dniem programu — odczytaj PRZED discard (czyści active).
+  const progId = session.active?.programId
+  const progDay = session.active?.programDayIndex
   workouts.addWorkout(payload)
+  if (progId != null && progDay != null) programs.markDayDone(progId, progDay)
   session.discard()
   dobitkaAsked.value = false
   completionWorkout.value = payload

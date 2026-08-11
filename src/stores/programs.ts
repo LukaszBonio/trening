@@ -14,6 +14,9 @@ export interface StoredProgram extends GeneratedProgram {
   name: string
   createdAt: number
   updatedAt: number
+  // Ukończenia dni: indeks dnia (jako string) → znacznik czasu ostatniego wykonania.
+  // ProgramPanel liczy z tego „wykonano w tym tygodniu" (reset co poniedziałek).
+  completions?: Record<string, number>
 }
 
 function loadLocal(): StoredProgram | null {
@@ -85,6 +88,29 @@ export const useProgramsStore = defineStore('programs', () => {
     return p
   }
 
+  // Oznacz dzień programu jako wykonany (na teraz). Wywoływane po zakończeniu treningu
+  // startowanego z programu. Ignoruje, gdy id programu się nie zgadza (program zmieniony).
+  function markDayDone(programId: string, dayIndex: number): void {
+    const p = current.value
+    if (!p || p.id !== programId) return
+    const now = Date.now()
+    const completions = { ...(p.completions || {}), [String(dayIndex)]: now }
+    current.value = { ...p, completions, updatedAt: now }
+    persist()
+    void syncUp(current.value)
+  }
+
+  // Wyczyść ukończenie dnia (np. po regeneracji dnia — inne ćwiczenia = świeży start).
+  function clearDayCompletion(dayIndex: number): void {
+    const p = current.value
+    if (!p || !p.completions || !(String(dayIndex) in p.completions)) return
+    const completions = { ...p.completions }
+    delete completions[String(dayIndex)]
+    current.value = { ...p, completions }
+    persist()
+    void syncUp(current.value)
+  }
+
   async function clear(): Promise<void> {
     const id = current.value?.id
     current.value = null
@@ -116,5 +142,5 @@ export const useProgramsStore = defineStore('programs', () => {
     } catch { /* offline / brak tabeli — zostajemy przy lokalnym */ }
   }
 
-  return { current, hasProgram, save, clear, pull }
+  return { current, hasProgram, save, clear, pull, markDayDone, clearDayCompletion }
 })

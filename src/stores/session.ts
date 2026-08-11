@@ -36,6 +36,10 @@ interface ActiveSession {
   exercises: SessionExercise[]
   // Uwaga do treningu wpisywana na koniec (obecnie tylko plany Ani). Zasila AI.
   note?: string
+  // Powiązanie z dniem programu tygodniowego (gdy sesja startuje z ProgramPanel).
+  // Po zakończeniu treningu oznacza ten dzień jako „wykonano w tym tygodniu".
+  programId?: string
+  programDayIndex?: number
 }
 
 interface PlanExercise {
@@ -84,7 +88,12 @@ export const useSessionStore = defineStore('session', () => {
     return active.value.exercises.reduce((sum, ex) => sum + ex.sets.length, 0)
   })
 
-  function startSession(plan: Plan, type: string, source = 'library'): void {
+  function startSession(
+    plan: Plan,
+    type: string,
+    source = 'library',
+    meta?: { programId?: string; dayIndex?: number }
+  ): void {
     const history = useWorkoutsStore().history
 
     active.value = {
@@ -93,6 +102,8 @@ export const useSessionStore = defineStore('session', () => {
       planName: plan.name,
       source,
       startedAt: Date.now(),
+      ...(meta?.programId != null ? { programId: meta.programId } : {}),
+      ...(meta?.dayIndex != null ? { programDayIndex: meta.dayIndex } : {}),
       exercises: plan.exercises.map(ex => {
         const sets = Array.from({ length: ex.sets }, () => emptySet())
 
