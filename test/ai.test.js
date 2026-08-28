@@ -213,8 +213,19 @@ describe('buildExerciseCatalog', () => {
     expect(cat.strict).toBe(true)
     expect(cat.text).toContain('WYŁĄCZNIE')
     expect(cat.text).toContain('[chest_middle]')
-    expect(cat.text).toContain('Wyciskanie sztangi na ławce poziomej (sztanga, compound)')
+    // Format wpisu: nazwa (sprzęt, typ, movementPattern) — wzorzec surową wartością enum,
+    // dokładnie w formie, jakiej model ma użyć w polu "movementPattern".
+    expect(cat.text).toContain('Wyciskanie sztangi na ławce poziomej (sztanga, compound, horizontal_push)')
     expect(cat.text).toContain('[triceps_long]')
+  })
+  it('każdy wpis katalogu podaje movementPattern (domknięcie slotów struktury)', () => {
+    const cat = buildExerciseCatalog('push', 'siłownia')
+    const entries = cat.text.split('\n').filter(l => l.startsWith('- '))
+    expect(entries.length).toBeGreaterThan(10)
+    for (const line of entries) {
+      // "- Nazwa (sprzęt, typ, wzorzec)" → trzy pola w nawiasie
+      expect(line, line).toMatch(/\((?:[^(),]+, ){2}[a-z_]+\)$/)
+    }
   })
   it('dom bez sprzętu → tylko własna waga, tryb miękki (za mało ćwiczeń na strict)', () => {
     const cat = buildExerciseCatalog('push', 'dom bez sprzętu (calisthenics)')
@@ -434,6 +445,26 @@ describe('buildPrompt — split system/user (prompt caching)', () => {
     expect(user).not.toContain('ANALIZA HISTORII')
     expect(user).not.toContain('"analysis"')
     expect(system).toContain('BAZA ĆWICZEŃ')
+  })
+  it('reguła podobieństwa jest precyzyjna (muscleHead + movementPattern)', () => {
+    const { system } = buildPrompt(base)
+    expect(system).toContain('muscleHead + movementPattern')
+    // stara, nieprecyzyjna formuła nie może wrócić
+    expect(system).not.toContain('bardzo podobnych ćwiczeń')
+  })
+  it('fallback zachowuje wzorzec ruchowy zamiast podmieniać go na inny', () => {
+    const { system } = buildPrompt(base)
+    expect(system).toContain('zachowujący ten sam movementPattern')
+    expect(system).toContain('NIE zastępuj go innym wzorcem ruchowym')
+  })
+  it('kalistenika: reguły wymagające sztangi/hantli są jawnie unieważnione', () => {
+    const { system } = buildPrompt({ ...base, equipment: 'dom bez sprzętu (calisthenics)' })
+    expect(system).toContain('WYŁĄCZNIE masa ciała')
+    expect(system).toContain('NIE OBOWIĄZUJĄ')
+  })
+  it('siłownia/hantle: brak klauzuli o samej masie ciała (bez zbędnych tokenów)', () => {
+    expect(buildPrompt(base).system).not.toContain('NIE OBOWIĄZUJĄ')
+    expect(buildPrompt({ ...base, equipment: 'dom z hantlami' }).system).not.toContain('NIE OBOWIĄZUJĄ')
   })
   it('typ "ania" → system pusty, całość w user (bez cache)', () => {
     const { system, user } = buildPrompt({ type: 'ania', goal: 'mass', equipment: '', avoid: '', recentSessions: [], equipmentTags: ['masa_ciala'] })

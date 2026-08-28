@@ -302,7 +302,7 @@ const TYPE_DETAILS: Record<string, TypeDetail> = {
       'Nie twórz planów opartych wyłącznie na maszynach — pierwsze wyciskanie powinno być ze sztangą lub hantlami.',
       'Łącz wyciskania poziome, skośne i ruchy nad głowę dla balansu klatki i barków.',
       'NIE umieszczaj ćwiczeń na tylny bark (shoulder_rear) — to jest na PULL day.',
-      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
+      'Nie wybieraj więcej niż 2 ćwiczeń o tej samej kombinacji muscleHead + movementPattern (np. trzech wariantów wyciskania poziomego na chest_middle). Różne głowy tego samego wzorca są dozwolone.'
     ]
   },
   pull: {
@@ -314,7 +314,7 @@ const TYPE_DETAILS: Record<string, TypeDetail> = {
       'Co najmniej 2 ćwiczenia muszą być ćwiczeniami bazowymi.',
       'Łącz ruchy pionowe (podciąganie, wyciąg górny) i poziome (wiosłowania).',
       'Unikaj planów opartych wyłącznie na wyciągach.',
-      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
+      'Nie wybieraj więcej niż 2 ćwiczeń o tej samej kombinacji muscleHead + movementPattern (np. trzech wariantów wyciskania poziomego na chest_middle). Różne głowy tego samego wzorca są dozwolone.'
     ]
   },
   legs: {
@@ -326,7 +326,7 @@ const TYPE_DETAILS: Record<string, TypeDetail> = {
       'Co najmniej 2 ćwiczenia muszą być ćwiczeniami bazowymi.',
       'Zachowaj balans pomiędzy przednią i tylną taśmą mięśniową.',
       'Zachowuj balans pomiędzy maszynami i wolnymi ciężarami.',
-      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
+      'Nie wybieraj więcej niż 2 ćwiczeń o tej samej kombinacji muscleHead + movementPattern (np. trzech wariantów wyciskania poziomego na chest_middle). Różne głowy tego samego wzorca są dozwolone.'
     ]
   },
   upper_a: {
@@ -344,7 +344,7 @@ const TYPE_DETAILS: Record<string, TypeDetail> = {
       'Pozycje 1-4 muszą być compound. Pozycje 5-7 to izolacja.',
       'Zachowaj balans push/pull (2 klatka+bark pchający : 2 plecy) i łącz ruchy poziome z pionowymi.',
       'Nie twórz planu wyłącznie na maszynach — pierwsze wyciskanie i wiosłowanie ze sztangą lub hantlami.',
-      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
+      'Nie wybieraj więcej niż 2 ćwiczeń o tej samej kombinacji muscleHead + movementPattern (np. trzech wariantów wyciskania poziomego na chest_middle). Różne głowy tego samego wzorca są dozwolone.'
     ]
   },
   upper_b: {
@@ -362,7 +362,7 @@ const TYPE_DETAILS: Record<string, TypeDetail> = {
       'Pozycje 1, 2, 4 muszą być compound. Pozycje 3, 5, 6, 7 to izolacja.',
       'Wybieraj warianty z większą objętością (8-15 powt).',
       'OBOWIĄZKOWO uwzględnij tylny bark (shoulder_rear) — dopełnia Upper A, który go nie ma.',
-      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
+      'Nie wybieraj więcej niż 2 ćwiczeń o tej samej kombinacji muscleHead + movementPattern (np. trzech wariantów wyciskania poziomego na chest_middle). Różne głowy tego samego wzorca są dozwolone.'
     ]
   },
   lower_a: {
@@ -379,7 +379,7 @@ const TYPE_DETAILS: Record<string, TypeDetail> = {
       'Pozycja 1 to przysiad, pozycja 2 to hip hinge (RDL/martwy ciąg) — obie compound.',
       'Pozycja 3 MUSI być ruchem jednostronnym (jednonóż) — wykroki, przysiad bułgarski lub wchodzenie na skrzynię.',
       'Zachowaj balans przód/tył uda.',
-      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
+      'Nie wybieraj więcej niż 2 ćwiczeń o tej samej kombinacji muscleHead + movementPattern (np. trzech wariantów wyciskania poziomego na chest_middle). Różne głowy tego samego wzorca są dozwolone.'
     ]
   },
   lower_b: {
@@ -396,7 +396,7 @@ const TYPE_DETAILS: Record<string, TypeDetail> = {
       'Pozycja 1 to martwy ciąg / hip hinge, pozycja 2 to akcent na pośladki — obie compound.',
       'Zachowaj balans przód/tył uda z przewagą tylnej taśmy.',
       'Łącz ruchy obustronne i jednostronne.',
-      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
+      'Nie wybieraj więcej niż 2 ćwiczeń o tej samej kombinacji muscleHead + movementPattern (np. trzech wariantów wyciskania poziomego na chest_middle). Różne głowy tego samego wzorca są dozwolone.'
     ]
   },
   fbw_a: {
@@ -449,7 +449,7 @@ const TYPE_DETAILS: Record<string, TypeDetail> = {
       'Pozycje 1-4 muszą być compound. Balans klatka:plecy dokładnie 4:4.',
       'Łącz wzorce poziome i pionowe zarówno dla klatki, jak i pleców.',
       'Nie twórz planu wyłącznie na maszynach — pierwsze wyciskanie i wiosłowanie ze sztangą lub hantlami.',
-      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
+      'Nie wybieraj więcej niż 2 ćwiczeń o tej samej kombinacji muscleHead + movementPattern (np. trzech wariantów wyciskania poziomego na chest_middle). Różne głowy tego samego wzorca są dozwolone.'
     ]
   },
   // Arnold Split — dzień BARKI + RAMIONA.
@@ -468,7 +468,7 @@ const TYPE_DETAILS: Record<string, TypeDetail> = {
       'Pozycja 1 to compound (wyciskanie nad głowę); pozostałe to izolacja.',
       'Biceps i triceps mają po dwa RÓŻNE warianty (inny kąt/chwyt).',
       'Bark boczny i tylny obowiązkowo — dopełniają barki po dniu wyciskań.',
-      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
+      'Nie wybieraj więcej niż 2 ćwiczeń o tej samej kombinacji muscleHead + movementPattern (np. trzech wariantów wyciskania poziomego na chest_middle). Różne głowy tego samego wzorca są dozwolone.'
     ]
   },
   // Bro Split — dzień KLATKA.
@@ -484,7 +484,7 @@ const TYPE_DETAILS: Record<string, TypeDetail> = {
     selection: [
       'Pozycje 1-3 muszą być compound, pod różnymi kątami (poziom, skos, dół).',
       'Pierwsze wyciskanie ze sztangą lub hantlami (nie maszyna).',
-      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
+      'Nie wybieraj więcej niż 2 ćwiczeń o tej samej kombinacji muscleHead + movementPattern (np. trzech wariantów wyciskania poziomego na chest_middle). Różne głowy tego samego wzorca są dozwolone.'
     ]
   },
   // Bro Split — dzień PLECY.
@@ -501,7 +501,7 @@ const TYPE_DETAILS: Record<string, TypeDetail> = {
     selection: [
       'Pozycje 1-4 muszą być compound; łącz ciągi pionowe i poziome.',
       'Co najmniej 2 różne wzorce ciągnięcia (pion + poziom).',
-      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
+      'Nie wybieraj więcej niż 2 ćwiczeń o tej samej kombinacji muscleHead + movementPattern (np. trzech wariantów wyciskania poziomego na chest_middle). Różne głowy tego samego wzorca są dozwolone.'
     ]
   },
   // Bro Split — dzień BARKI.
@@ -517,7 +517,7 @@ const TYPE_DETAILS: Record<string, TypeDetail> = {
     selection: [
       'Pozycja 1 to compound; reszta izolacja z akcentem na bok i tył (szerokość + postawa).',
       'Bok i tył po dwa warianty — najczęściej zaniedbane aktony.',
-      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
+      'Nie wybieraj więcej niż 2 ćwiczeń o tej samej kombinacji muscleHead + movementPattern (np. trzech wariantów wyciskania poziomego na chest_middle). Różne głowy tego samego wzorca są dozwolone.'
     ]
   },
   // Bro Split — dzień RAMIONA.
@@ -534,7 +534,7 @@ const TYPE_DETAILS: Record<string, TypeDetail> = {
     selection: [
       'Balans biceps:triceps dokładnie 3:3; każdy pod różnymi kątami.',
       'Łącz warianty ze sztangą, hantlami i wyciągiem.',
-      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
+      'Nie wybieraj więcej niż 2 ćwiczeń o tej samej kombinacji muscleHead + movementPattern (np. trzech wariantów wyciskania poziomego na chest_middle). Różne głowy tego samego wzorca są dozwolone.'
     ]
   },
   // Torso / Limbs — dzień TUŁÓW (klatka + plecy + barki).
@@ -553,7 +553,7 @@ const TYPE_DETAILS: Record<string, TypeDetail> = {
     selection: [
       'Pozycje 1-5 muszą być compound; balans push/pull na górze.',
       'Łącz wzorce poziome i pionowe dla klatki i pleców.',
-      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
+      'Nie wybieraj więcej niż 2 ćwiczeń o tej samej kombinacji muscleHead + movementPattern (np. trzech wariantów wyciskania poziomego na chest_middle). Różne głowy tego samego wzorca są dozwolone.'
     ]
   },
   // Torso / Limbs — dzień KOŃCZYNY (nogi + ramiona).
@@ -572,7 +572,7 @@ const TYPE_DETAILS: Record<string, TypeDetail> = {
     selection: [
       'Pozycje 1-3 to nogi compound (przysiad + hinge + accessory).',
       'Ramiona: po jednym-dwa biceps/triceps; łydki obowiązkowo.',
-      'Nie wybieraj więcej niż dwóch bardzo podobnych ćwiczeń.'
+      'Nie wybieraj więcej niż 2 ćwiczeń o tej samej kombinacji muscleHead + movementPattern (np. trzech wariantów wyciskania poziomego na chest_middle). Różne głowy tego samego wzorca są dozwolone.'
     ]
   },
   // Plan korekcyjno-wzmacniający dla Ani. Ma własny builder promptu (buildAniaPrompt),
@@ -694,7 +694,10 @@ export function buildExerciseCatalog(
     exs.sort((a, b) => eqRank(a) - eqRank(b) || fit(b) - fit(a))
     lines.push(`[${head}]`)
     for (const ex of exs) {
-      lines.push(`- ${ex.name} (${EQUIPMENT_LABEL[ex.equipment]}, ${ex.exerciseType})`)
+      // movementPattern podawany surową wartością enum — dokładnie w formie, jakiej
+      // model ma użyć w polu "movementPattern" JSON-a. Sloty struktury opisane są
+      // wzorcem („ciąg pionowy"), więc bez tego model musiałby zgadywać z nazwy.
+      lines.push(`- ${ex.name} (${EQUIPMENT_LABEL[ex.equipment]}, ${ex.exerciseType}, ${ex.movementPattern})`)
     }
   }
 
@@ -1035,9 +1038,22 @@ export function buildPrompt(opts: BuildPromptOptions): { system: string; user: s
 
   if (catalog) sys.push(catalog.text)
 
-  sys.push(`DOBÓR ĆWICZEŃ:
-${td.selection.map((s: string) => `- ${s}`).join('\n')}
-- Nie duplikuj tego samego ćwiczenia w planie.`)
+  // Reguły doboru + fallback. Przy samej masie ciała reguły typu „pierwsze wyciskanie
+  // ze sztangą lub hantlami" są NIEWYKONALNE (katalog ma wtedy wyłącznie własna_waga),
+  // więc jawnie je unieważniamy — inaczej model dostaje sprzeczne polecenie.
+  const allowedEq = EQUIPMENT_ACCESS[equipment] || ALL_EQUIPMENT
+  const onlyBodyweight = allowedEq.length === 1 && allowedEq[0] === 'własna_waga'
+
+  const selectionRules = [
+    ...td.selection.map((s: string) => `- ${s}`),
+    '- Nie duplikuj tego samego ćwiczenia w planie.',
+    '- Jeżeli dla danej pozycji brak ćwiczenia spełniającego wymagany sprzęt, wybierz odpowiednik zachowujący ten sam movementPattern i muscleHead — NIE zastępuj go innym wzorcem ruchowym (np. brak ciągu pionowego nie uzasadnia drugiego wiosłowania).'
+  ]
+  if (onlyBodyweight) {
+    selectionRules.push('- SPRZĘT: dostępna jest WYŁĄCZNIE masa ciała. Reguły powyżej wymagające sztangi, hantli, maszyn lub wyciągu NIE OBOWIĄZUJĄ — zamiast nich wybierz najtrudniejszy sensowny wariant z masą ciała, zachowując wymagany wzorzec ruchowy.')
+  }
+
+  sys.push(`DOBÓR ĆWICZEŃ:\n${selectionRules.join('\n')}`)
 
   sys.push(`Zwróć WYŁĄCZNIE poprawny JSON w formacie (bez markdown, bez komentarzy):
 {
