@@ -450,6 +450,31 @@ export const PUSH_DETAILS: Record<string, ExerciseDetails> = {
       'Buduj głębokość stopniowo — pełny zakres pod kontrolą jest wart więcej niż głęboki i szarpany.'
     ]
   },
+  'dipy-na-maszynie': {
+    equipmentDetail: 'maszyna do asystowanych dipów/podciągnięć (grawitron) — dolne poręcze',
+    attachment: null,
+    startPosition: 'Ustaw ciężar wspomagania (im większy, tym łatwiej). Uklęknij lub stań na ruchomym padzie, chwyć dolne poręcze neutralnie i wyprostuj ramiona do podporu.',
+    execution: [
+      'Pochyl tułów w przód około 20-30° — to kieruje pracę na dolną klatkę.',
+      'Opuszczaj się kontrolowanie, uginając łokcie lekko na zewnątrz.',
+      'Zejdź, aż barki znajdą się mniej więcej na wysokości łokci.',
+      'Wypchnij się do wyprostu ramion, utrzymując pochylenie tułowia.'
+    ],
+    rangeOfMotion: 'Od podporu na wyprostowanych ramionach do barków na wysokości łokci i z powrotem.',
+    musclesPrimary: ['klatka piersiowa — część brzuszna (dolna)'],
+    musclesSecondary: ['triceps — głowa boczna', 'triceps — głowa przyśrodkowa', 'przedni akton barków'],
+    commonMistakes: [
+      'Zbyt duże wspomaganie — pad wypycha ciało zamiast pracy klatki i tricepsa.',
+      'Pionowy tułów — akcent ucieka na triceps zamiast dolnej klatki.',
+      'Wzruszanie barków do uszu w dolnej pozycji.',
+      'Ucięty zakres — brak zejścia do poziomu łokci.'
+    ],
+    tips: [
+      'Traktuj to jako progresję do pełnych dipów — stopniowo zmniejszaj wspomaganie.',
+      'Pochylenie tułowia decyduje o akcencie: przód = klatka, pion = triceps.',
+      'Ta sama maszyna co do asystowanych podciągnięć — wystarczy przełożyć chwyt na dolne poręcze.'
+    ]
+  },
   'krzyzowanie-linek-gorne': {
     equipmentDetail: 'brama (dwa wyciągi) — bloczki w górnej pozycji',
     attachment: 'uchwyty pojedyncze (D-handle)',

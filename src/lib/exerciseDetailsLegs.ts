@@ -985,6 +985,32 @@ export const LEGS_DETAILS: Record<string, ExerciseDetails> = {
       'Wariant dół→góra (wyciąg nisko) akcentuje górną część skośnych.'
     ]
   },
+  'skrety-tulowia-na-maszynie': {
+    equipmentDetail: 'maszyna do rotacji tułowia (torso rotation)',
+    attachment: null,
+    startPosition: 'Usiądź w maszynie, oprzyj klatkę lub plecy o pad zgodnie z konstrukcją, uda unieruchomione wałkami. Ustaw zakres startowy z tułowiem skręconym lekko w bok i wybierz ciężar.',
+    execution: [
+      'Obróć tułów w przeciwną stronę siłą mięśni skośnych.',
+      'Utrzymuj biodra i uda nieruchomo — obraca się tylko tułów.',
+      'Zatrzymaj się na sekundę w pełnym skręcie.',
+      'Wróć kontrolowanie do pozycji startowej, nie puszczając napięcia.',
+      'Po serii przełóż maszynę i wykonaj tyle samo powtórzeń w drugą stronę.'
+    ],
+    rangeOfMotion: 'Od lekkiego skrętu w jedną stronę do pełnego skrętu w przeciwną, w komfortowym zakresie.',
+    musclesPrimary: ['mięśnie skośne brzucha'],
+    musclesSecondary: ['mięsień prosty brzucha', 'mięśnie głębokie brzucha'],
+    commonMistakes: [
+      'Obracanie biodrami i nogami zamiast samego tułowia.',
+      'Zbyt duży ciężar i szarpanie na rozpęd.',
+      'Praca w nadmiernym zakresie — kręgosłup lędźwiowy nie lubi głębokiej rotacji pod obciążeniem.',
+      'Pomijanie drugiej strony lub nierówna liczba powtórzeń.'
+    ],
+    tips: [
+      'Mały ciężar i pełna kontrola — rotacja pod obciążeniem wymaga ostrożności dla lędźwi.',
+      'Wydech przy skręcie pomaga mocniej napiąć skośne.',
+      'Trenuj obie strony tą samą liczbą powtórzeń, zaczynając od słabszej.'
+    ]
+  },
   'pallof-press': {
     equipmentDetail: 'wyciąg na wysokości klatki',
     attachment: 'uchwyt pojedynczy (D-handle)',
