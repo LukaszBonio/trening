@@ -74,21 +74,27 @@ export const WORKOUT_SCHEMA: Record<WorkoutType, SchemaGroup[]> = {
     { id: 'łydki',       count: 1, muscles: ['calves'] },
     { id: 'core',        count: 1, muscles: ['abs', 'obliques', 'core'] },
   ],
+  // upper_a: 8 ćwiczeń — klatka 1, plecy 2, barki 3 (OHP + bocz + tylny), biceps 1, triceps 1
   upper_a: [
-    { id: 'klatka', count: 2 }, { id: 'plecy', count: 2 },
-    { id: 'barki', count: 1 }, { id: 'biceps', count: 1 }, { id: 'triceps', count: 1 },
+    { id: 'klatka', count: 1 }, { id: 'plecy', count: 2 },
+    { id: 'barki', count: 3 }, { id: 'biceps', count: 1 }, { id: 'triceps', count: 1 },
   ],
+  // upper_b: 7 — klatka 2 (skos + dolna), plecy 2, barki 1 (tylny), biceps 1, triceps 1
   upper_b: [
     { id: 'klatka', count: 2 }, { id: 'plecy', count: 2 },
     { id: 'barki', count: 1 }, { id: 'biceps', count: 1 }, { id: 'triceps', count: 1 },
   ],
+  // lower_a: 7 — czworogłowy 2 (przysiad + jednostronne), hamstring 2 (RDL + uginanie),
+  // pośladki 1 (hip thrust), łydki 1, core 1
   lower_a: [
     { id: 'czworogłowy', count: 2 }, { id: 'hamstring', count: 2 },
     { id: 'pośladki', count: 1 }, { id: 'łydki', count: 1 }, { id: 'core', count: 1 },
   ],
+  // lower_b: 7 — hamstring 2 (hinge + uginanie), pośladki 2 (hip thrust + odwodzenie),
+  // czworogłowy 1, łydki 1, core 1 (skośne)
   lower_b: [
-    { id: 'czworogłowy', count: 2 }, { id: 'hamstring', count: 2 },
-    { id: 'pośladki', count: 1 }, { id: 'łydki', count: 1 }, { id: 'core', count: 1 },
+    { id: 'czworogłowy', count: 1 }, { id: 'hamstring', count: 2 },
+    { id: 'pośladki', count: 2 }, { id: 'łydki', count: 1 }, { id: 'core', count: 1 },
   ],
   fbw_a: [
     { id: 'czworogłowy', count: 1 }, { id: 'klatka', count: 1 }, { id: 'plecy', count: 1 },

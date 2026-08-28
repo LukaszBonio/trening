@@ -331,18 +331,20 @@ const TYPE_DETAILS: Record<string, TypeDetail> = {
   },
   upper_a: {
     label: 'UPPER A',
-    expectedCount: 7,
+    expectedCount: 8,
     structure: `Zbalansowany push/pull (kolejność musi być zachowana):
 1. KLATKA — wyciskanie poziome (muscleHead: "chest_middle", compound): sztanga lub hantle, ławka pozioma.
 2. PLECY — ciąg pionowy (muscleHead: "back_lats", compound): podciąganie lub ściąganie drążka wyciągu górnego.
 3. BARK — wyciskanie nad głowę (muscleHead: "shoulder_front", compound): OHP / wyciskanie hantli nad głowę / Arnold.
 4. PLECY — wiosłowanie poziome (muscleHead: "back_middle", compound): wiosłowanie sztangą/hantlą/na maszynie.
 5. BARK BOCZNY (muscleHead: "shoulder_side", isolation): wznosy bokiem — szerokość barków.
-6. BICEPS (muscleHead: "biceps_short" lub "biceps_long", isolation): uginanie ze sztangą/hantlami.
-7. TRICEPS (muscleHead: "triceps_long" lub "triceps_lat", isolation): pushdown / francuskie / wąski chwyt.`,
+6. BARK TYLNY (muscleHead: "shoulder_rear", isolation): face pull / odwrotne rozpiętki — zdrowie barku i postawa, obowiązkowy przeciwciężar dla wyciskań.
+7. BICEPS (muscleHead: "biceps_short" lub "biceps_long", isolation): uginanie ze sztangą/hantlami.
+8. TRICEPS (muscleHead: "triceps_long" lub "triceps_lat", isolation): pushdown / francuskie / wąski chwyt.`,
     selection: [
-      'Pozycje 1-4 muszą być compound. Pozycje 5-7 to izolacja.',
+      'Pozycje 1-4 muszą być compound. Pozycje 5-8 to izolacja.',
       'Zachowaj balans push/pull (2 klatka+bark pchający : 2 plecy) i łącz ruchy poziome z pionowymi.',
+      'OBOWIĄZKOWO uwzględnij tylny bark (shoulder_rear) — bez niego dzień górny jest niezbalansowany względem objętości wyciskań.',
       'Nie twórz planu wyłącznie na maszynach — pierwsze wyciskanie i wiosłowanie ze sztangą lub hantlami.',
       'Nie wybieraj więcej niż 2 ćwiczeń o tej samej kombinacji muscleHead + movementPattern (np. trzech wariantów wyciskania poziomego na chest_middle). Różne głowy tego samego wzorca są dozwolone.'
     ]
@@ -353,47 +355,52 @@ const TYPE_DETAILS: Record<string, TypeDetail> = {
     structure: `Wariant objętościowy z akcentem na skos i tylny bark (kolejność zachowana, inne ćwiczenia niż Upper A):
 1. KLATKA GÓRNA — skos dodatni (muscleHead: "chest_upper", compound): wyciskanie skośne sztangą/hantlami.
 2. PLECY — wiosłowanie poziome (muscleHead: "back_middle", compound).
-3. KLATKA ISOLATION (muscleHead: dowolny "chest_*", isolation): rozpiętki / cable crossover.
+3. KLATKA DOLNA / pełne rozciągnięcie (muscleHead: "chest_lower", isolation lub compound): dip / high cable crossover / ławka ujemna — głowa pomijana na Upper A.
 4. PLECY — ciąg pionowy (muscleHead: "back_lats", compound): podciąganie / ściąganie drążka.
-5. BARK TYLNY (muscleHead: "shoulder_rear", isolation): face pull / odwrotne rozpiętki — priorytet, brak go na Upper A.
+5. BARK TYLNY (muscleHead: "shoulder_rear", isolation): face pull / odwrotne rozpiętki — inny wariant niż na Upper A.
 6. BICEPS (muscleHead: "biceps_long" lub "biceps_brach", isolation): uginanie na skosie / młotkowe.
 7. TRICEPS (muscleHead: "triceps_long" lub "triceps_lat", isolation).`,
     selection: [
-      'Pozycje 1, 2, 4 muszą być compound. Pozycje 3, 5, 6, 7 to izolacja.',
+      'Pozycje 1, 2, 4 muszą być compound. Pozycje 5, 6, 7 to izolacja (pozycja 3 może być dowolna).',
       'Wybieraj warianty z większą objętością (8-15 powt).',
-      'OBOWIĄZKOWO uwzględnij tylny bark (shoulder_rear) — dopełnia Upper A, który go nie ma.',
+      'OBOWIĄZKOWO uwzględnij klatkę dolną (chest_lower) — tej głowy nie ma na Upper A.',
       'Nie wybieraj więcej niż 2 ćwiczeń o tej samej kombinacji muscleHead + movementPattern (np. trzech wariantów wyciskania poziomego na chest_middle). Różne głowy tego samego wzorca są dozwolone.'
     ]
   },
   lower_a: {
     label: 'LOWER A',
-    expectedCount: 6,
+    expectedCount: 7,
     structure: `Priorytet czworogłowy (kolejność zachowana):
 1. PRZYSIAD (muscleHead: "quads", compound): przysiad ze sztangą / przedni / hack / suwnica.
 2. HIP HINGE (muscleHead: "back_lower" lub "hamstrings", compound): martwy ciąg rumuński (RDL).
-3. JEDNOSTRONNE (muscleHead: "quads", compound): wykroki / przysiad bułgarski / wchodzenie na skrzynię — praca jednonóż (stabilizacja, pośladki, przywodziciele).
-4. HAMSTRING (muscleHead: "hamstrings", isolation): uginanie nóg leżąc/siedząc / nordic.
-5. ŁYDKI (muscleHead: "calves", isolation): wspięcia na palce.
-6. CORE (muscleHead: "core" lub "abs", isolation): deska / brzuszki / unoszenie nóg.`,
+3. POŚLADKI (muscleHead: "glutes", compound): hip thrust / most biodrowy ze sztangą / hip thrust na maszynie — DEDYKOWANY bodziec na pośladki, nie licz na to, że wystarczy praca poboczna.
+4. JEDNOSTRONNE (muscleHead: "quads", compound): wykroki / przysiad bułgarski / wchodzenie na skrzynię — praca jednonóż (stabilizacja, pośladki, przywodziciele).
+5. HAMSTRING (muscleHead: "hamstrings", isolation): uginanie nóg leżąc/siedząc / nordic.
+6. ŁYDKI (muscleHead: "calves", isolation): wspięcia na palce.
+7. CORE (muscleHead: "core" lub "abs", isolation): deska / brzuszki / unoszenie nóg.`,
     selection: [
       'Pozycja 1 to przysiad, pozycja 2 to hip hinge (RDL/martwy ciąg) — obie compound.',
-      'Pozycja 3 MUSI być ruchem jednostronnym (jednonóż) — wykroki, przysiad bułgarski lub wchodzenie na skrzynię.',
+      'Pozycja 3 MUSI być dedykowanym ćwiczeniem na pośladki (glutes) — hip thrust lub most biodrowy z obciążeniem.',
+      'Pozycja 4 MUSI być ruchem jednostronnym (jednonóż) — wykroki, przysiad bułgarski lub wchodzenie na skrzynię.',
       'Zachowaj balans przód/tył uda.',
       'Nie wybieraj więcej niż 2 ćwiczeń o tej samej kombinacji muscleHead + movementPattern (np. trzech wariantów wyciskania poziomego na chest_middle). Różne głowy tego samego wzorca są dozwolone.'
     ]
   },
   lower_b: {
     label: 'LOWER B',
-    expectedCount: 6,
+    expectedCount: 7,
     structure: `Priorytet hip hinge / tylna taśma (kolejność zachowana, inne ćwiczenia niż Lower A):
 1. MARTWY CIĄG / HIP HINGE (muscleHead: "back_lower", compound): martwy ciąg klasyczny / rumuński / sumo.
-2. POŚLADKI (muscleHead: "glutes", compound): hip thrust / most biodrowy ze sztangą.
+2. POŚLADKI (muscleHead: "glutes", compound): hip thrust / most biodrowy ze sztangą — inny wariant niż na Lower A.
 3. CZWOROGŁOWY (muscleHead: "quads", compound): przysiad przedni / leg press / hack.
 4. HAMSTRING (muscleHead: "hamstrings", isolation): uginanie nóg / glute ham raise.
-5. ŁYDKI (muscleHead: "calves", isolation).
-6. CORE (muscleHead: "core" lub "abs", isolation).`,
+5. BIODRA — ODWODZENIE lub PRZYWODZENIE (muscleHead: "glutes" lub "adductors", isolation): odwodzenie/przywodzenie nóg na maszynie lub wyciągu — stabilizatory biodra, pomijane w ruchach obustronnych.
+6. ŁYDKI (muscleHead: "calves", isolation).
+7. CORE — akcent na SKOŚNE (muscleHead: "obliques" lub "core", isolation): drwal na wyciągu / deska bokiem / Pallof press.`,
     selection: [
       'Pozycja 1 to martwy ciąg / hip hinge, pozycja 2 to akcent na pośladki — obie compound.',
+      'Pozycja 5 to izolacja stabilizatorów biodra (odwodzenie lub przywodzenie).',
+      'Pozycja 7 ma trafiać w skośne lub głęboką stabilizację (obliques/core), nie w zwykłe brzuszki — te są na Lower A.',
       'Zachowaj balans przód/tył uda z przewagą tylnej taśmy.',
       'Łącz ruchy obustronne i jednostronne.',
       'Nie wybieraj więcej niż 2 ćwiczeń o tej samej kombinacji muscleHead + movementPattern (np. trzech wariantów wyciskania poziomego na chest_middle). Różne głowy tego samego wzorca są dozwolone.'
