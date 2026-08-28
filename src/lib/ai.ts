@@ -1092,6 +1092,10 @@ export function buildPrompt(opts: BuildPromptOptions): { system: string; user: s
 - Wszystkie pola są wymagane.
 ${setsRule}
 - "reps" musi być stringiem z zakresem ('6-8', '10-12', '12-15').
+- RÓŻNICUJ "reps"${goal === 'cut' ? '' : ' i "sets"'} wg charakteru ćwiczenia — NIE przypisuj tej samej wartości wszystkim pozycjom. Wewnątrz widełek celu:
+  • ciężkie wielostawowe (compound, pozycje otwierające: przysiad, martwy ciąg, wyciskanie, wiosłowanie) → DOLNA część zakresu powtórzeń${goal === 'cut' ? '' : ', więcej serii'};
+  • izolacja i małe partie (wznosy bokiem, uginanie ramion, łydki, core) → GÓRNA część zakresu${goal === 'cut' ? '' : ', mniej serii'};
+  • ćwiczenia izometryczne (deska, Copenhagen plank, Pallof press) → "reps" jako czas ('30-45s'), nie liczba powtórzeń.
 ${nameRule}
 - "primaryMuscle" musi być jedną z: ${PRIMARY_MUSCLES.map((m: string) => `"${m}"`).join(', ')}.
 - "muscleHead" musi być jedną z (dozwolone dla typu ${td.label}): ${allowedHeads.map((h: string) => `"${h}"`).join(', ')}.
@@ -1352,9 +1356,14 @@ export interface GenerateProgramOptions {
 // Buduje opis kontekstu dnia dla promptu (współdzielony przez generateProgram i regenerateDay).
 function programContextFor(
   dayLabel: string, splitLabel: string, total: number,
-  strict?: boolean, sessionMinutes?: number
+  strict?: boolean, sessionMinutes?: number, goal?: string
 ): string {
-  const base = `${total} dni/tydzień, split ${splitLabel}. Ten dzień to „${dayLabel}". Dobierz liczbę serii na ćwiczenie (3–4) tak, aby tygodniowa objętość każdej partii mieściła się w normie hipertrofii. Nie powtarzaj ćwiczeń z innych dni programu.`
+  // Przy celu „siła" główny bój ma się POWTARZAĆ między dniami (progresja siłowa),
+  // więc reguła rotacji nie może go obejmować — inaczej prompt przeczy wykluczeniom.
+  const rotation = goal === 'strength'
+    ? 'Nie powtarzaj ćwiczeń pomocniczych z innych dni programu, ALE główny bój (pozycja 1) możesz — i powinieneś — powtórzyć, jeśli służy progresji siłowej.'
+    : 'Nie powtarzaj ćwiczeń z innych dni programu.'
+  const base = `${total} dni/tydzień, split ${splitLabel}. Ten dzień to „${dayLabel}". Dobierz liczbę serii na ćwiczenie (3–4) tak, aby tygodniowa objętość każdej partii mieściła się w normie hipertrofii. ${rotation}`
   const time = sessionMinutes ? ` Budżet czasu sesji ~${sessionMinutes} min — dobierz liczbę serii tak, aby sesja się w nim zmieściła.` : ''
   const strictNote = strict
     ? ' TRYB STRICT: bezwzględnie trzymaj się limitów objętości i częstotliwości oraz kolejności ćwiczeń zgodnej z wiedzą o hipertrofii. Jeżeli wymagania są sprzeczne — popraw je i wybierz naukowo optymalny wariant zamiast realizować ślepo.'
@@ -1380,11 +1389,19 @@ export async function generateProgram(opts: GenerateProgramOptions): Promise<Gen
       injuries,
       recentSessions: [],
       excludeExercises: [...used],
-      programContext: programContextFor(d.label, split.splitLabel, total, strict, sessionMinutes),
+      programContext: programContextFor(d.label, split.splitLabel, total, strict, sessionMinutes, goal),
       signal
     })
     days.push({ type: d.type, label: d.label, plan })
-    for (const ex of plan.exercises) used.push(ex.name)
+    // Rotacja ćwiczeń między dniami. WYJĄTEK dla celu „siła": główny bój (slot 1)
+    // NIE trafia do wykluczeń — w treningu siłowym powtarzanie tego samego boju
+    // 2×/tydzień (przysiad, wyciskanie, martwy) jest fundamentem progresji, a nie
+    // błędem. Pozostałe ćwiczenia dnia rotują normalnie.
+    const skipFirst = goal === 'strength'
+    for (const [j, ex] of plan.exercises.entries()) {
+      if (skipFirst && j === 0) continue
+      used.push(ex.name)
+    }
   }
   onProgress?.(total, total, '')
 
@@ -1409,9 +1426,12 @@ export async function regenerateDay(
   opts: { strict?: boolean; sessionMinutes?: number; signal?: AbortSignal } = {}
 ): Promise<ProgramDay> {
   const day = program.days[index]
+  // Przy celu „siła" główne boje (pozycja 1) innych dni nie blokują tego dnia —
+  // spójne z regułą rotacji w generateProgram.
+  const skipFirst = program.goal === 'strength'
   const used = program.days
     .filter((_, i) => i !== index)
-    .flatMap(d => d.plan.exercises.map(e => e.name))
+    .flatMap(d => d.plan.exercises.filter((_, j) => !(skipFirst && j === 0)).map(e => e.name))
   const plan = await generateAIPlan({
     type: day.type,
     goal: program.goal,
@@ -1419,7 +1439,7 @@ export async function regenerateDay(
     level: program.level,
     recentSessions: [],
     excludeExercises: used,
-    programContext: programContextFor(day.label, program.splitLabel, program.days.length, opts.strict, opts.sessionMinutes),
+    programContext: programContextFor(day.label, program.splitLabel, program.days.length, opts.strict, opts.sessionMinutes, program.goal),
     signal: opts.signal
   })
   return { type: day.type, label: day.label, plan }

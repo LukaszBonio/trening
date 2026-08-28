@@ -466,6 +466,20 @@ describe('buildPrompt — split system/user (prompt caching)', () => {
     expect(buildPrompt(base).system).not.toContain('NIE OBOWIĄZUJĄ')
     expect(buildPrompt({ ...base, equipment: 'dom z hantlami' }).system).not.toContain('NIE OBOWIĄZUJĄ')
   })
+  it('wymusza różnicowanie powtórzeń wg charakteru ćwiczenia (nie 3x12 wszędzie)', () => {
+    const { system } = buildPrompt(base)
+    expect(system).toContain('RÓŻNICUJ')
+    expect(system).toContain('DOLNA część zakresu')
+    expect(system).toContain('GÓRNA część zakresu')
+    expect(system).toContain('izometryczne')
+  })
+  it('redukcja: różnicowanie NIE dotyczy serii (kolizja z regułą „dokładnie 3 serie")', () => {
+    const { system } = buildPrompt({ ...base, goal: 'cut' })
+    expect(system).toContain('DOKŁADNIE 3')
+    expect(system).toContain('RÓŻNICUJ "reps" wg charakteru')
+    expect(system).not.toContain('więcej serii')
+    expect(system).not.toContain('mniej serii')
+  })
   it('typ "ania" → system pusty, całość w user (bez cache)', () => {
     const { system, user } = buildPrompt({ type: 'ania', goal: 'mass', equipment: '', avoid: '', recentSessions: [], equipmentTags: ['masa_ciala'] })
     expect(system).toBe('')
