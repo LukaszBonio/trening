@@ -372,8 +372,8 @@ describe('buildAniaPrompt — dwudniowy podział', () => {
     const p = buildAniaPrompt({ ...baseB, equipmentTags: ALL })
     expect(p).toContain('Dzień 2')
     expect(p).toContain('Hip thrust')                // hantle
-    expect(p).toContain('Uginanie nóg leżąc')        // maszyna
-    expect(p).toContain('Odwodzenie nóg na maszynie')
+    expect(p).toContain('Lying leg curl')            // maszyna (nazwa kanoniczna EN)
+    expect(p).toContain('Hip abduction machine')
     expect(p).not.toContain('Band pull-apart')       // to Dzień 1
   })
   it('tylko masa ciała → bez gum, hantli, maszyn', () => {

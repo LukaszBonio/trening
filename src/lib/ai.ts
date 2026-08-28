@@ -795,7 +795,7 @@ const ANIA_A_SLOTS: AniaSlot[] = [
     title: 'Głęboka stabilizacja lędźwi (anti-extension, kręgosłup neutralny)',
     primaryMuscle: 'core', muscleHead: 'core', exerciseType: 'isolation', movementPattern: 'core',
     options: [
-      { name: 'Martwy robak', equip: 'masa_ciala', level: 'baza' },
+      { name: 'Dead bug', equip: 'masa_ciala', level: 'baza' },
       { name: 'Martwy robak z wyprostem nogi', equip: 'masa_ciala', level: 'progresja' },
       { name: 'Ptak-pies', equip: 'masa_ciala', level: 'anty-rotacja' }
     ]
@@ -816,7 +816,7 @@ const ANIA_A_SLOTS: AniaSlot[] = [
       { name: 'Wiosłowanie australijskie', equip: 'masa_ciala', level: 'baza (masa ciała)' },
       { name: 'Wiosłowanie z gumą', equip: 'guma', level: 'z oporem' },
       { name: 'Wiosłowanie hantlą w podparciu', equip: 'hantle', level: 'wariant z hantlami' },
-      { name: 'Wiosłowanie na maszynie', equip: 'maszyna', level: 'wariant na siłowni' }
+      { name: 'Machine row', equip: 'maszyna', level: 'wariant na siłowni' }
     ]
   },
   {
@@ -824,7 +824,7 @@ const ANIA_A_SLOTS: AniaSlot[] = [
     primaryMuscle: 'back', muscleHead: 'back_upper', exerciseType: 'compound', movementPattern: 'vertical_pull',
     options: [
       { name: 'Wznosy T-Y-W leżąc', equip: 'masa_ciala', level: 'baza (postawa)' },
-      { name: 'Ściąganie drążka wyciągu górnego', equip: 'maszyna', level: 'wariant na siłowni' }
+      { name: 'Lat pulldown', equip: 'maszyna', level: 'wariant na siłowni' }
     ]
   },
   {
@@ -845,7 +845,7 @@ const ANIA_B_SLOTS: AniaSlot[] = [
     title: 'Aktywacja core (leżąc, kręgosłup neutralny)',
     primaryMuscle: 'core', muscleHead: 'core', exerciseType: 'isolation', movementPattern: 'core',
     options: [
-      { name: 'Martwy robak', equip: 'masa_ciala', level: 'baza' },
+      { name: 'Dead bug', equip: 'masa_ciala', level: 'baza' },
       { name: 'Martwy robak z wyprostem nogi', equip: 'masa_ciala', level: 'progresja' },
       { name: 'Pallof press', equip: 'guma', level: 'anty-rotacja' }
     ]
@@ -876,7 +876,7 @@ const ANIA_B_SLOTS: AniaSlot[] = [
       { name: 'Muszelka', equip: 'masa_ciala', level: 'baza' },
       { name: 'Odwodzenie nogi leżąc bokiem', equip: 'masa_ciala', level: 'progresja' },
       { name: 'Muszelka z gumą', equip: 'guma', level: 'progresja z oporem' },
-      { name: 'Odwodzenie nóg na maszynie', equip: 'maszyna', level: 'wariant na siłowni' }
+      { name: 'Hip abduction machine', equip: 'maszyna', level: 'wariant na siłowni' }
     ]
   },
   {
@@ -885,8 +885,8 @@ const ANIA_B_SLOTS: AniaSlot[] = [
     options: [
       { name: 'Most biodrowy ze zsuwaniem pięt', equip: 'masa_ciala', level: 'baza' },
       { name: 'Uginanie nóg z gumą', equip: 'guma', level: 'z oporem' },
-      { name: 'Uginanie nóg leżąc', equip: 'maszyna', level: 'wariant na siłowni' },
-      { name: 'Uginanie nóg siedząc', equip: 'maszyna', level: 'wariant na siłowni' }
+      { name: 'Lying leg curl', equip: 'maszyna', level: 'wariant na siłowni' },
+      { name: 'Seated leg curl', equip: 'maszyna', level: 'wariant na siłowni' }
     ]
   }
 ]

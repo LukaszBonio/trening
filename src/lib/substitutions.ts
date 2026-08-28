@@ -274,8 +274,20 @@ const _enToPl = new Map<string, string>(
   Object.entries(EN_TO_PL).map(([k, v]) => [k.toLowerCase(), v])
 )
 
+/**
+ * Sprowadza nazwę ćwiczenia do postaci KANONICZNEJ (tej z bazy).
+ *
+ * Baza jest jedynym źródłem prawdy: `findExerciseByName` rozwiązuje nazwę kanoniczną
+ * ORAZ wszystkie aliasy (PL i EN, także historyczne nazwy sprzed przemianowania), więc
+ * „Ściąganie drążka wyciągu górnego", „lat pulldown" i „Lat pulldown" dają ten sam wynik.
+ * Dzięki temu nazwy z AI, z biblioteki planów i z historii wyświetlają się spójnie.
+ *
+ * Mapa EN_TO_PL została tylko jako fallback dla ćwiczeń spoza bazy (np. własne plany
+ * użytkownika z angielską nazwą, której baza nie zna).
+ */
 export function translateExerciseName(name: string): string {
   if (!name) return name
-  const lower = name.toLowerCase().trim()
-  return _enToPl.get(lower) || name
+  const db = findExerciseByName(name)
+  if (db) return db.name
+  return _enToPl.get(name.toLowerCase().trim()) || name
 }
