@@ -821,32 +821,6 @@ export const PUSH_DETAILS: Record<string, ExerciseDetails> = {
       'Jeśli proste ramię sztangi męczy nadgarstki, przejdź na wariant ze sztangą EZ.'
     ]
   },
-  'francuskie-wyciskanie-sztanga-ez': {
-    equipmentDetail: 'sztanga EZ + ławka pozioma',
-    attachment: null,
-    startPosition: 'Połóż się na ławce poziomej ze sztangą EZ w wyprostowanych ramionach nad klatką, chwyt za wewnętrzne skosy gryfu. Ramiona lekko odchylone w stronę głowy, stopy płasko na podłodze.',
-    execution: [
-      'Ustaw ramiona nieruchomo, lekko za pionem.',
-      'Uginając wyłącznie łokcie, opuść gryf za głowę.',
-      'Poczuj rozciągnięcie tricepsa w dolnej pozycji.',
-      'Wyprostuj łokcie do pozycji wyjściowej, nie ruszając ramionami.',
-      'Utrzymuj łokcie zwarte, mniej więcej na szerokość barków.'
-    ],
-    rangeOfMotion: 'Od wyprostowanych ramion lekko za pionem do gryfu opuszczonego za głowę i z powrotem.',
-    musclesPrimary: ['triceps — głowa długa'],
-    musclesSecondary: ['triceps — głowa boczna', 'triceps — głowa przyśrodkowa'],
-    commonMistakes: [
-      'Zamiana ćwiczenia w wyciskanie — ramiona wędrują w przód przy prostowaniu.',
-      'Opuszczanie gryfu na twarz lub czoło.',
-      'Rozjeżdżanie łokci na zewnątrz pod ciężarem.',
-      'Szarpany negatyw bez kontroli.'
-    ],
-    tips: [
-      'Skośny chwyt gryfu EZ ustawia nadgarstki w naturalnej pozycji — wybór pierwszej potrzeby przy bólu nadgarstków.',
-      'Trzymaj ciężar umiarkowany: francuskie wyciskanie obciąża przyczep tricepsa przy łokciu.',
-      'Seria kończy się, gdy nie umiesz utrzymać nieruchomych ramion — nie dociskaj oszukanych powtórzeń.'
-    ]
-  },
   'francuskie-wyciskanie-hantli': {
     equipmentDetail: 'hantle + ławka pozioma',
     attachment: null,
@@ -923,32 +897,6 @@ export const PUSH_DETAILS: Record<string, ExerciseDetails> = {
       'Ułóż dłonie płasko pod górnym talerzem, kciuki wokół gryfu — pewny chwyt to podstawa bezpieczeństwa.',
       'Wersja siedząca z oparciem stabilizuje tułów i pozwala lepiej czuć triceps.',
       'Pracuj w pełnym zakresie: to rozciągnięcie za głową buduje głowę długą, nie sam wyprost.'
-    ]
-  },
-  'wyprosty-triceps-nad-glowa-jednorecz': {
-    equipmentDetail: 'hantla',
-    attachment: null,
-    startPosition: 'Usiądź lub stań z hantlą w jednej dłoni, wyprostuj ramię nad głową, łokieć przy uchu. Wolną ręką możesz podtrzymać łokieć pracującego ramienia od wewnątrz.',
-    execution: [
-      'Ustaw łokieć nieruchomo, skierowany w górę.',
-      'Opuść hantlę kontrolowanie za głowę, w stronę przeciwległej łopatki.',
-      'Zejdź do pełnego rozciągnięcia tricepsa.',
-      'Wyprostuj ramię w pełni nad głową.',
-      'Po serii zmień rękę i wykonaj tyle samo powtórzeń.'
-    ],
-    rangeOfMotion: 'Od pełnego wyprostu ramienia nad głową do hantli za głową na wysokości karku i z powrotem.',
-    musclesPrimary: ['triceps — głowa długa'],
-    musclesSecondary: ['triceps — głowa boczna', 'triceps — głowa przyśrodkowa'],
-    commonMistakes: [
-      'Uciekanie łokcia w bok i w dół w trakcie serii.',
-      'Pochylanie tułowia w stronę pracującego ramienia.',
-      'Niepełny wyprost na górze.',
-      'Za duży ciężar — jednorącz wymaga wyraźnie lżejszej hantli niż oburącz.'
-    ],
-    tips: [
-      'Stabilizacja łokcia wolną ręką pomaga utrzymać idealny tor — korzystaj z niej zwłaszcza na początku.',
-      'Wariant jednorącz ujawnia i wyrównuje różnice sił między ramionami.',
-      'Pełne rozciągnięcie na dole jest ważniejsze niż ciężar — dobieraj hantlę pod zakres, nie pod ego.'
     ]
   },
 

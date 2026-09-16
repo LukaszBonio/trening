@@ -36,9 +36,9 @@ describe('uniqueExercises', () => {
     const out = uniqueExercises(history)
     expect(out).toHaveLength(2)
     // aliasy 'Bench Press'/'bench press' → jedno ćwiczenie, nazwa kanoniczna z bazy
-    expect(out[0].name).toBe('Wyciskanie sztangi na ławce poziomej')
+    expect(out[0].name).toBe('Bench press')
     expect(out[0].count).toBe(2)
-    expect(out[1].name).toBe('Przysiad ze sztangą')
+    expect(out[1].name).toBe('Back squat')
     expect(out[1].count).toBe(1)
   })
   it('scala różne nazwy tego samego ćwiczenia (alias/rename → 1 wpis)', () => {
@@ -197,7 +197,7 @@ const historyWithMeta = [
     date: '2026-06-02',
     exercises: [
       { name: 'Wiosłowanie', sets: [{ weight: 70, reps: 8 }, { weight: 70, reps: 8 }], exerciseType: 'compound', movementPattern: 'horizontal_pull' },
-      { name: 'Podciąganie', sets: [{ weight: 0, reps: 10 }], exerciseType: 'compound', movementPattern: 'vertical_pull' },
+      { name: 'Pull-up', sets: [{ weight: 0, reps: 10 }], exerciseType: 'compound', movementPattern: 'vertical_pull' },
       { name: 'Uginanie ramion', sets: [{ weight: 14, reps: 12 }], exerciseType: 'isolation', movementPattern: 'elbow_flexion' }
     ]
   }

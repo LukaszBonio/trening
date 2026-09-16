@@ -47,7 +47,7 @@ describe('exerciseDetails — pokrycie i spójność z bazą', () => {
 
 describe('exerciseDetails — lekki check + leniwe ładowanie', () => {
   it('hasExerciseDetails (sync) = obecność w bazie', () => {
-    expect(hasExerciseDetails('Wyciskanie sztangi na ławce poziomej')).toBe(true)
+    expect(hasExerciseDetails('Bench press')).toBe(true)
     expect(hasExerciseDetails('bench press')).toBe(true) // alias
     expect(hasExerciseDetails('Ćwiczenie spoza bazy')).toBe(false)
   })
@@ -58,7 +58,7 @@ describe('exerciseDetails — lekki check + leniwe ładowanie', () => {
   })
 
   it('loadExerciseDetailsByName działa po nazwie kanonicznej i aliasie (async)', async () => {
-    const byName = await loadExerciseDetailsByName('Wyciskanie sztangi na ławce poziomej')
+    const byName = await loadExerciseDetailsByName('Bench press')
     const byAlias = await loadExerciseDetailsByName('bench press')
     expect(byName).toBeTruthy()
     expect(byAlias).toEqual(byName)

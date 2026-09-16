@@ -804,8 +804,8 @@ const ANIA_A_SLOTS: AniaSlot[] = [
     title: 'Izometria tułowia (stabilizacja anty-rotacyjna/boczna)',
     primaryMuscle: 'core', muscleHead: 'core', exerciseType: 'isolation', movementPattern: 'core',
     options: [
-      { name: 'Deska', equip: 'masa_ciala', level: 'izometria' },
-      { name: 'Deska bokiem', equip: 'masa_ciala', level: 'progresja (skolioza/skośne)' },
+      { name: 'Plank', equip: 'masa_ciala', level: 'izometria' },
+      { name: 'Side plank', equip: 'masa_ciala', level: 'progresja (skolioza/skośne)' },
       { name: 'Pallof press', equip: 'guma', level: 'anty-rotacja z oporem' }
     ]
   },
@@ -813,7 +813,7 @@ const ANIA_A_SLOTS: AniaSlot[] = [
     title: 'Górne plecy — wiosłowanie (retrakcja łopatek)',
     primaryMuscle: 'back', muscleHead: 'back_middle', exerciseType: 'compound', movementPattern: 'horizontal_pull',
     options: [
-      { name: 'Wiosłowanie australijskie', equip: 'masa_ciala', level: 'baza (masa ciała)' },
+      { name: 'Inverted row', equip: 'masa_ciala', level: 'baza (masa ciała)' },
       { name: 'Wiosłowanie z gumą', equip: 'guma', level: 'z oporem' },
       { name: 'Wiosłowanie hantlą w podparciu', equip: 'hantle', level: 'wariant z hantlami' },
       { name: 'Machine row', equip: 'maszyna', level: 'wariant na siłowni' }
@@ -833,7 +833,7 @@ const ANIA_A_SLOTS: AniaSlot[] = [
     options: [
       { name: 'Wall angels', equip: 'masa_ciala', level: 'korekcja głowy/łopatek' },
       { name: 'Band pull-apart', equip: 'guma', level: 'baza z gumą' },
-      { name: 'Wznosy hantli w opadzie', equip: 'hantle', level: 'wariant z hantlami' },
+      { name: 'Bent-over reverse fly', equip: 'hantle', level: 'wariant z hantlami' },
       { name: 'Face pull', equip: 'maszyna', level: 'wariant na siłowni' }
     ]
   }
@@ -855,15 +855,15 @@ const ANIA_B_SLOTS: AniaSlot[] = [
     primaryMuscle: 'core', muscleHead: 'core', exerciseType: 'isolation', movementPattern: 'core',
     options: [
       { name: 'Ptak-pies', equip: 'masa_ciala', level: 'baza' },
-      { name: 'Deska', equip: 'masa_ciala', level: 'izometria' },
-      { name: 'Deska bokiem', equip: 'masa_ciala', level: 'progresja (skolioza/skośne)' }
+      { name: 'Plank', equip: 'masa_ciala', level: 'izometria' },
+      { name: 'Side plank', equip: 'masa_ciala', level: 'progresja (skolioza/skośne)' }
     ]
   },
   {
     title: 'Pośladki — wyprost bioder (neutralne lędźwie)',
     primaryMuscle: 'glutes', muscleHead: 'glutes', exerciseType: 'compound', movementPattern: 'hinge',
     options: [
-      { name: 'Most biodrowy', equip: 'masa_ciala', level: 'baza' },
+      { name: 'Glute bridge', equip: 'masa_ciala', level: 'baza' },
       { name: 'Most biodrowy jednonóż', equip: 'masa_ciala', level: 'progresja' },
       { name: 'Most biodrowy z gumą', equip: 'guma', level: 'progresja z oporem' },
       { name: 'Hip thrust', equip: 'hantle', level: 'progresja z obciążeniem' }

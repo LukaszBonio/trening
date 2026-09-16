@@ -63,11 +63,9 @@ export const EXERCISE_PREMIUM: Record<string, PremiumExerciseFields> = {
 
   // ── TRICEPS — GŁOWA DŁUGA ──
   'francuskie-wyciskanie-sztangi':        p('stretch',    7, { shoulder: 3, elbow: 6, wrist: 3, lowerBack: 2 }, 'medium',   ['elbow_pain']),
-  'francuskie-wyciskanie-sztanga-ez':     p('stretch',    7, { shoulder: 3, elbow: 5, wrist: 2, lowerBack: 2 }, 'low',      ['elbow_pain']),
   'francuskie-wyciskanie-hantli':         p('stretch',    7, { shoulder: 3, elbow: 5, wrist: 2, lowerBack: 2 }, 'low',      ['elbow_pain']),
   'wyprosty-triceps-nad-glowa-na-wyciagu': p('stretch',   8, { shoulder: 4, elbow: 5, wrist: 2, lowerBack: 2 }, 'low',      ['elbow_pain']),
   'wyprosty-triceps-nad-glowa-z-hantla':  p('stretch',    8, { shoulder: 4, elbow: 5, wrist: 2, lowerBack: 3 }, 'low',      ['elbow_pain', 'shoulder_impingement']),
-  'wyprosty-triceps-nad-glowa-jednorecz': p('stretch',    8, { shoulder: 4, elbow: 5, wrist: 2, lowerBack: 2 }, 'low',      ['elbow_pain']),
 
   // ── TRICEPS — GŁOWA BOCZNA ──
   'wyprosty-triceps-na-wyciagu':          p('contraction', 3, { shoulder: 2, elbow: 4, wrist: 2, lowerBack: 1 }, 'very_low', ['elbow_pain']),
@@ -118,7 +116,6 @@ export const EXERCISE_PREMIUM: Record<string, PremiumExerciseFields> = {
   'uginanie-koncentryczne':               p('contraction', 4, { elbow: 3 }, 'very_low'),
   'spider-curl':                          p('contraction', 5, { elbow: 4 }, 'low'),
   'uginanie-ramion-ze-sztanga':           p('mid',        4, { elbow: 4, wrist: 3, lowerBack: 2 }, 'low'),
-  'uginanie-ze-sztanga-ez':               p('mid',        4, { elbow: 3, wrist: 2 }, 'very_low'),
   'uginanie-ramion-z-hantlami':           p('mid',        4, { elbow: 3 }, 'very_low'),
   'uginanie-ramion-na-wyciagu':           p('contraction', 4, { elbow: 3 }, 'very_low'),
   'uginanie-hantli-mlotkowo':             p('mid',        4, { elbow: 3 }, 'very_low'),

@@ -16,16 +16,16 @@ function ex(name, sets) {
 }
 
 const history = [
-  workout('2026-07-01', 'push', [ex('Wyciskanie sztangi na ławce poziomej', [[60, 10], [60, 8]])]),
-  workout('2026-07-03', 'push', [ex('Wyciskanie sztangi na ławce poziomej', [[60, 10], [60, 9]])]),
-  workout('2026-07-05', 'push', [ex('Wyciskanie sztangi na ławce poziomej', [[62.5, 8]])]),
+  workout('2026-07-01', 'push', [ex('Bench press', [[60, 10], [60, 8]])]),
+  workout('2026-07-03', 'push', [ex('Bench press', [[60, 10], [60, 9]])]),
+  workout('2026-07-05', 'push', [ex('Bench press', [[62.5, 8]])]),
 ]
 
 describe('buildCoachAnalysisPrompt', () => {
   it('zawiera dane, nazwę ćwiczenia i format JSON', () => {
     const p = buildCoachAnalysisPrompt(history)
     expect(p).toContain('Łącznie treningów: 3')
-    expect(p).toContain('Wyciskanie sztangi na ławce poziomej')
+    expect(p).toContain('Bench press')
     expect(p).toContain('"insights"')
     expect(p).toContain('warning|progress|tip|success')
     expect(p).toContain('Stagnacja')
@@ -37,10 +37,10 @@ describe('buildCoachAnalysisPrompt', () => {
   it('pomija ćwiczenia z <2 sesjami', () => {
     const h = [
       ...history,
-      workout('2026-07-06', 'legs', [ex('Przysiad ze sztangą', [[80, 5]])]) // tylko 1 sesja
+      workout('2026-07-06', 'legs', [ex('Back squat', [[80, 5]])]) // tylko 1 sesja
     ]
     const p = buildCoachAnalysisPrompt(h)
-    expect(p).not.toContain('Przysiad ze sztangą')
+    expect(p).not.toContain('Back squat')
   })
 })
 
@@ -84,7 +84,7 @@ describe('buildCoachChatSystem', () => {
   it('zawiera cel, historię, wskazówkę o narzędziach i "bez markdown"', () => {
     const p = buildCoachChatSystem({ goalLabel: 'Redukcja', history })
     expect(p).toContain('CEL UŻYTKOWNIKA: Redukcja')
-    expect(p).toContain('Wyciskanie sztangi na ławce poziomej')
+    expect(p).toContain('Bench press')
     expect(p).toContain('bez markdown')
     expect(p).toContain('narzędzia')
   })
@@ -101,11 +101,11 @@ describe('buildCoachChatSystem', () => {
 describe('executeCoachTool', async () => {
   it('lista_cwiczen zwraca nazwy z liczbą sesji', async () => {
     const out = await executeCoachTool('lista_cwiczen', {}, { history })
-    expect(out).toContain('Wyciskanie sztangi na ławce poziomej')
+    expect(out).toContain('Bench press')
     expect(out).toContain('3×')
   })
   it('progres_cwiczenia zwraca chronologię i rekord', async () => {
-    const out = await executeCoachTool('progres_cwiczenia', { nazwa: 'Wyciskanie sztangi na ławce poziomej' }, { history })
+    const out = await executeCoachTool('progres_cwiczenia', { nazwa: 'Bench press' }, { history })
     expect(out).toContain('2026-07-05')
     expect(out).toContain('1RM')
     expect(out).toContain('Rekord')
@@ -120,13 +120,13 @@ describe('executeCoachTool', async () => {
     expect(out).toContain('Push/Pull')
   })
   it('sugestia_ciezaru zwraca ciężar i uzasadnienie', async () => {
-    const out = await executeCoachTool('sugestia_ciezaru', { nazwa: 'Wyciskanie sztangi na ławce poziomej' }, { history })
+    const out = await executeCoachTool('sugestia_ciezaru', { nazwa: 'Bench press' }, { history })
     expect(out).toContain('Sugerowany ciężar')
     expect(out).toContain('kg')
   })
   it('rekordy_osobiste listuje rekordy z 1RM', async () => {
     const out = await executeCoachTool('rekordy_osobiste', {}, { history })
-    expect(out).toContain('Wyciskanie sztangi na ławce poziomej')
+    expect(out).toContain('Bench press')
     expect(out).toContain('1RM')
   })
   it('podsumowanie zwraca liczbę treningów i tonaż', async () => {
@@ -135,7 +135,7 @@ describe('executeCoachTool', async () => {
     expect(out).toContain('Tonaż')
   })
   it('technika_cwiczenia zwraca arkusz z bazy', async () => {
-    const out = await executeCoachTool('technika_cwiczenia', { nazwa: 'Wyciskanie sztangi na ławce poziomej' }, { history })
+    const out = await executeCoachTool('technika_cwiczenia', { nazwa: 'Bench press' }, { history })
     expect(out).toContain('Sprzęt')
     expect(out).toContain('błędy')
   })

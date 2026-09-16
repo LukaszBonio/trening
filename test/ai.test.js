@@ -166,15 +166,15 @@ describe('normalizePlan — tłumaczenie EN→PL', () => {
     plan.exercises[1].name = 'Incline Dumbbell Press'
     plan.exercises[2].name = 'Cable Crossover'
     const out = normalizePlan(plan, { type: 'push', goal: 'mass' })
-    expect(out.exercises[0].name).toBe('Wyciskanie sztangi na ławce poziomej')
-    expect(out.exercises[1].name).toBe('Wyciskanie hantli na ławce skośnej')
+    expect(out.exercises[0].name).toBe('Bench press')
+    expect(out.exercises[1].name).toBe('Incline dumbbell press')
     expect(out.exercises[2].name).toBe('Cable crossover')
   })
   it('nie zmienia polskich nazw', () => {
     const plan = pushPlan()
-    plan.exercises[0].name = 'Wyciskanie sztangi na ławce poziomej'
+    plan.exercises[0].name = 'Bench press'
     const out = normalizePlan(plan, { type: 'push', goal: 'mass' })
-    expect(out.exercises[0].name).toBe('Wyciskanie sztangi na ławce poziomej')
+    expect(out.exercises[0].name).toBe('Bench press')
   })
   it('nie zmienia nieznanych nazw', () => {
     const plan = pushPlan()
@@ -215,7 +215,7 @@ describe('buildExerciseCatalog', () => {
     expect(cat.text).toContain('[chest_middle]')
     // Format wpisu: nazwa (sprzęt, typ, movementPattern) — wzorzec surową wartością enum,
     // dokładnie w formie, jakiej model ma użyć w polu "movementPattern".
-    expect(cat.text).toContain('Wyciskanie sztangi na ławce poziomej (sztanga, compound, horizontal_push)')
+    expect(cat.text).toContain('Bench press (sztanga, compound, horizontal_push)')
     expect(cat.text).toContain('[triceps_long]')
   })
   it('każdy wpis katalogu podaje movementPattern (domknięcie slotów struktury)', () => {
@@ -231,14 +231,14 @@ describe('buildExerciseCatalog', () => {
     const cat = buildExerciseCatalog('push', 'dom bez sprzętu (calisthenics)')
     expect(cat).not.toBeNull()
     expect(cat.strict).toBe(false)
-    expect(cat.text).toContain('Pompki klasyczne')
+    expect(cat.text).toContain('Push-up')
     expect(cat.text).not.toContain('sztanga,')
     expect(cat.text).not.toContain('maszyna,')
   })
   it('dom z hantlami → bez maszyn, wyciągów i sztangi', () => {
     const cat = buildExerciseCatalog('pull', 'dom z hantlami')
     expect(cat).not.toBeNull()
-    expect(cat.text).toContain('Wiosłowanie hantla jedną ręką')
+    expect(cat.text).toContain('One-arm dumbbell row')
     expect(cat.text).not.toContain('(sztanga')
     expect(cat.text).not.toContain('(wyciąg')
     expect(cat.text).not.toContain('(maszyna')
@@ -247,12 +247,12 @@ describe('buildExerciseCatalog', () => {
     const cat = buildExerciseCatalog('legs', 'cokolwiek')
     expect(cat).not.toBeNull()
     expect(cat.strict).toBe(true)
-    expect(cat.text).toContain('Przysiad ze sztangą')
+    expect(cat.text).toContain('Back squat')
   })
   it('cel siła: w grupie klatki wielostawowa sztanga przed izolacją (rozpiętki)', () => {
     const cat = buildExerciseCatalog('push', 'siłownia', 'strength')
-    const iPress = cat.text.indexOf('Wyciskanie sztangi na ławce poziomej')
-    const iFly = cat.text.indexOf('Rozpiętki hantlami na ławce poziomej')
+    const iPress = cat.text.indexOf('Bench press')
+    const iFly = cat.text.indexOf('Dumbbell fly')
     expect(iPress).toBeGreaterThan(-1)
     expect(iFly).toBeGreaterThan(-1)
     expect(iPress).toBeLessThan(iFly) // uszeregowane od najlepiej dopasowanego do celu
@@ -263,21 +263,21 @@ describe('buildExerciseCatalog', () => {
   it('kontuzja lumbar_disc: OHP (przeciwwskazany) usunięty z katalogu', () => {
     const zdrowy = buildExerciseCatalog('push', 'siłownia', 'mass', 'intermediate', [])
     const kontuzja = buildExerciseCatalog('push', 'siłownia', 'mass', 'intermediate', ['lumbar_disc'])
-    expect(zdrowy.text).toContain('Wyciskanie sztangi nad głowę')
-    expect(kontuzja.text).not.toContain('Wyciskanie sztangi nad głowę')
+    expect(zdrowy.text).toContain('Overhead press')
+    expect(kontuzja.text).not.toContain('Overhead press')
     expect(kontuzja.text).toContain('pominięte')
   })
   it('kontuzja knee_pain w Legs: przysiad ze sztangą usunięty, most biodrowy zostaje', () => {
     const cat = buildExerciseCatalog('legs', 'siłownia', 'mass', 'intermediate', ['knee_pain'])
-    expect(cat.text).not.toContain('Przysiad ze sztangą')
-    expect(cat.text).toContain('Most biodrowy')
+    expect(cat.text).not.toContain('Back squat')
+    expect(cat.text).toContain('Glute bridge')
   })
 })
 
 describe('normalizePlan — metadata z bazy ćwiczeń', () => {
   it('ćwiczenie z bazy → metadata nadpisane wartościami z bazy', () => {
     const plan = pushPlan()
-    plan.exercises[0].name = 'Wyciskanie sztangi na ławce poziomej'
+    plan.exercises[0].name = 'Bench press'
     plan.exercises[0].primaryMuscle = 'back'          // AI się pomyliło
     plan.exercises[0].muscleHead = 'triceps_long'      // AI się pomyliło
     plan.exercises[0].exerciseType = 'isolation'       // AI się pomyliło
@@ -291,7 +291,7 @@ describe('normalizePlan — metadata z bazy ćwiczeń', () => {
     const plan = pushPlan()
     plan.exercises[0].name = 'Arnold Press'
     const out = normalizePlan(plan, { type: 'push', goal: 'mass' })
-    expect(out.exercises[0].name).toBe('Wyciskanie Arnolda')
+    expect(out.exercises[0].name).toBe('Arnold press')
     expect(out.exercises[0].muscleHead).toBe('shoulder_front')
   })
   it('ćwiczenie spoza bazy → dotychczasowa miękka walidacja', () => {
@@ -331,7 +331,7 @@ describe('plan Ani (typ ania)', () => {
   })
   it('ćwiczenie z bazy (Most biodrowy) → metadata z bazy', () => {
     const plan = aniaPlan()
-    plan.exercises[2].name = 'Most biodrowy'
+    plan.exercises[2].name = 'Glute bridge'
     const out = normalizePlan(plan, { type: 'ania', goal: 'mass' })
     expect(out.exercises[2].muscleHead).toBe('glutes')
     expect(out.exercises[2].primaryMuscle).toBe('glutes')
@@ -363,7 +363,7 @@ describe('buildAniaPrompt — dwudniowy podział', () => {
   it('Dzień 1 = kręgosłup / górne plecy / postawa', () => {
     const p = buildAniaPrompt({ ...baseA, equipmentTags: ALL })
     expect(p).toContain('Dzień 1')
-    expect(p).toContain('Wiosłowanie australijskie') // masa ciała — górne plecy
+    expect(p).toContain('Inverted row') // masa ciała — górne plecy
     expect(p).toContain('Band pull-apart')           // guma — łopatki
     expect(p).toContain('Face pull')                 // maszyna
     expect(p).not.toContain('Hip thrust')            // to Dzień 2
@@ -379,7 +379,7 @@ describe('buildAniaPrompt — dwudniowy podział', () => {
   it('tylko masa ciała → bez gum, hantli, maszyn', () => {
     const p = buildAniaPrompt({ ...baseB, equipmentTags: ['masa_ciala'] })
     expect(p).toContain('Martwy robak')
-    expect(p).toContain('Most biodrowy')
+    expect(p).toContain('Glute bridge')
     expect(p).not.toContain('Uginanie nóg leżąc')
     expect(p).not.toContain('Hip thrust')
   })
@@ -423,13 +423,13 @@ describe('buildPrompt — split system/user (prompt caching)', () => {
   it('system NIE zależy od historii ani avoid (stały prefiks = cache hit)', () => {
     const a = buildPrompt(base).system
     const b = buildPrompt({ ...base, avoid: 'przysiady', recentSessions: [
-      { id: 's1', date: '2026-07-01', exercises: [{ name: 'Wyciskanie sztangi na ławce poziomej', sets: [{ weight: 80, reps: 8 }] }] }
+      { id: 's1', date: '2026-07-01', exercises: [{ name: 'Bench press', sets: [{ weight: 80, reps: 8 }] }] }
     ] }).system
     expect(a).toBe(b)
   })
   it('user zawiera dynamikę: trigger, avoid, historię i analizę', () => {
     const { system, user } = buildPrompt({ ...base, avoid: 'przysiady', recentSessions: [
-      { id: 's1', date: '2026-07-01', exercises: [{ name: 'Wyciskanie sztangi na ławce poziomej', sets: [{ weight: 80, reps: 8 }] }] }
+      { id: 's1', date: '2026-07-01', exercises: [{ name: 'Bench press', sets: [{ weight: 80, reps: 8 }] }] }
     ] })
     expect(user).toContain('Wygeneruj teraz')
     expect(user).toContain('UNIKAJ: przysiady')

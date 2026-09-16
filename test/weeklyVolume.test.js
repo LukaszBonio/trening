@@ -86,11 +86,11 @@ describe('estimateWeeklyVolume', () => {
   it('sumuje serie per partia po primaryMuscle (mapa grup)', () => {
     const days = [
       { plan: { exercises: [
-        { name: 'Wyciskanie sztangi na ławce poziomej', primaryMuscle: 'chest', sets: 4 },
-        { name: 'Wznosy hantli bokiem', primaryMuscle: 'shoulders', sets: 3 }
+        { name: 'Bench press', primaryMuscle: 'chest', sets: 4 },
+        { name: 'Lateral raise', primaryMuscle: 'shoulders', sets: 3 }
       ] } },
       { plan: { exercises: [
-        { name: 'Rozpiętki hantlami na ławce poziomej', primaryMuscle: 'chest', sets: 3 }
+        { name: 'Dumbbell fly', primaryMuscle: 'chest', sets: 3 }
       ] } }
     ]
     const vol = estimateWeeklyVolume(days)
@@ -98,7 +98,7 @@ describe('estimateWeeklyVolume', () => {
     expect(vol.barki).toBe(3)
   })
   it('fallback na detekcję z nazwy gdy brak primaryMuscle', () => {
-    const days = [{ plan: { exercises: [{ name: 'Przysiad ze sztangą', sets: 5 }] } }]
+    const days = [{ plan: { exercises: [{ name: 'Back squat', sets: 5 }] } }]
     expect(estimateWeeklyVolume(days)['czworogłowy']).toBe(5)
   })
 })

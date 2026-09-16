@@ -47,7 +47,7 @@ describe('GROUP_ORDER', () => {
 describe('groupExercisesByMuscle', () => {
   it('grupuje rozpoznane ćwiczenia push do klatka/barki/triceps', () => {
     const exercises = [
-      { name: 'Wyciskanie sztangi na ławce poziomej' },
+      { name: 'Bench press' },
       { name: 'Wyciskanie żołnierskie' },
       { name: 'Pushdown' }
     ]
@@ -59,7 +59,7 @@ describe('groupExercisesByMuscle', () => {
   })
   it('nieznane ćwiczenia trafiają do sąsiedniej grupy zamiast "inne"', () => {
     const exercises = [
-      { name: 'Wyciskanie sztangi na ławce poziomej' },
+      { name: 'Bench press' },
       { name: 'Pies-jaszczurka XYZ' } // unknown
     ]
     const groups = groupExercisesByMuscle(exercises, 'push', 'library')

@@ -44,18 +44,18 @@ describe('totalSets', () => {
 
 describe('isTimedExercise', () => {
   it('wykrywa czas z pola reps', () => {
-    expect(isTimedExercise('Deska', '20-30s')).toBe(true)
+    expect(isTimedExercise('Plank', '20-30s')).toBe(true)
     expect(isTimedExercise('Coś', '30s')).toBe(true)
     expect(isTimedExercise('Coś', '45 sek')).toBe(true)
   })
   it('wykrywa izometrię po nazwie mimo braku jednostki', () => {
-    expect(isTimedExercise('Deska bokiem', '30')).toBe(true)
+    expect(isTimedExercise('Side plank', '30')).toBe(true)
     expect(isTimedExercise('Wall sit', '')).toBe(true)
     expect(isTimedExercise('Martwy zwis', null)).toBe(true)
   })
   it('nie oznacza zwykłych ćwiczeń jako czasowe', () => {
-    expect(isTimedExercise('Wyciskanie sztangi na ławce poziomej', '8-12')).toBe(false)
-    expect(isTimedExercise('Przysiad ze sztangą', '5')).toBe(false)
+    expect(isTimedExercise('Bench press', '8-12')).toBe(false)
+    expect(isTimedExercise('Back squat', '5')).toBe(false)
     expect(isTimedExercise(null, null)).toBe(false)
   })
 })

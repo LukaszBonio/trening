@@ -830,31 +830,6 @@ export const PULL_DETAILS: Record<string, ExerciseDetails> = {
       'Oprzyj plecy o ścianę na serię kontrolną — od razu zobaczysz, ile robił rozpęd.'
     ]
   },
-  'uginanie-ze-sztanga-ez': {
-    equipmentDetail: 'sztanga EZ',
-    attachment: null,
-    startPosition: 'Stań prosto ze sztangą EZ trzymaną podchwytem na zewnętrznych skosach gryfu, nieco szerzej niż barki. Ramiona wyprostowane, łokcie przy tułowiu.',
-    execution: [
-      'Ugnij ramiona, unosząc gryf łukiem do góry.',
-      'Utrzymuj łokcie nieruchomo przy żebrach.',
-      'Zatrzymaj skurcz na moment w górnej pozycji.',
-      'Opuszczaj gryf kontrolowanie do pełnego wyprostu łokci.'
-    ],
-    rangeOfMotion: 'Od pełnego wyprostu ramion do gryfu na wysokości górnej części klatki.',
-    musclesPrimary: ['biceps — głowa krótka'],
-    musclesSecondary: ['ramienny', 'ramienno-promieniowy'],
-    commonMistakes: [
-      'Bujanie tułowiem przy cięższych seriach.',
-      'Unoszenie łokci i barków w górnej fazie.',
-      'Opuszczanie gryfu bez kontroli.',
-      'Zbyt wąski chwyt na skosach, który przenosi akcent poza głowę krótką.'
-    ],
-    tips: [
-      'Skośne chwyty EZ odciążają nadgarstki — dobry wybór, gdy prosta sztanga je przeciąża.',
-      'Szerszy chwyt na gryfie akcentuje głowę krótką, węższy przenosi pracę na długą.',
-      'Prowadź negatyw 2-3 sekundy — to połowa efektu tego ćwiczenia.'
-    ]
-  },
   'uginanie-ramion-z-hantlami': {
     equipmentDetail: 'hantle',
     attachment: null,

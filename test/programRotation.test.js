@@ -6,10 +6,10 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { generateProgram } from '../src/lib/ai.ts'
 
 // Realne ćwiczenia z bazy — pierwsze w każdej liście to „główny bój" (slot 1).
-const UPPER = ['Wyciskanie sztangi na ławce poziomej', 'Podciąganie', 'Wiosłowanie sztangą w opadzie',
-  'Wyciskanie żołnierskie', 'Wznosy bokiem', 'Uginanie ramion ze sztangą', 'Pushdown z liną', 'Face pull']
-const LOWER = ['Przysiad ze sztangą', 'Martwy ciąg rumuński', 'Wykroki', 'Uginanie nóg leżąc',
-  'Wspięcia na palce stojąc', 'Deska', 'Leg press', 'Hip thrust']
+const UPPER = ['Bench press', 'Pull-up', 'Barbell row',
+  'Wyciskanie żołnierskie', 'Wznosy bokiem', 'Barbell curl', 'Pushdown z liną', 'Face pull']
+const LOWER = ['Back squat', 'Romanian deadlift', 'Lunge', 'Uginanie nóg leżąc',
+  'Wspięcia na palce stojąc', 'Plank', 'Leg press', 'Hip thrust']
 
 // Plan zwracany przez „AI" — dopasowany do wymagań odczytanych z promptu
 // (liczba ćwiczeń i typ dnia), żeby przejść walidację generateAIPlan.
@@ -63,8 +63,8 @@ describe('generateProgram — rotacja ćwiczeń między dniami', () => {
   })
   afterEach(() => { vi.restoreAllMocks() })
 
-  const MAIN_D1 = 'Wyciskanie sztangi na ławce poziomej' // slot 1 dnia 1 (UPPER)
-  const HELPER_D1 = 'Podciąganie'                        // pomocnicze dnia 1
+  const MAIN_D1 = 'Bench press' // slot 1 dnia 1 (UPPER)
+  const HELPER_D1 = 'Pull-up'                        // pomocnicze dnia 1
 
   it('cel masa: główny bój dnia 1 JEST wykluczony w kolejnych dniach', async () => {
     await generateProgram({ daysPerWeek: 2, goal: 'mass', equipment: 'siłownia', level: 'intermediate', injuries: [] })

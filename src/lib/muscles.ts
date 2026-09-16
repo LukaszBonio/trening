@@ -374,8 +374,15 @@ export function detectMuscle(exerciseName: string | null | undefined): MuscleKey
   const name: string = exerciseName.toLowerCase().trim();
   if (_muscleCache.has(name)) return _muscleCache.get(name)!;
   let result: MuscleKey | null = null;
-  for (const key of SORTED_MUSCLE_KEYS) {
-    if (name.includes(key)) { result = EXERCISE_TO_MUSCLE[key]; break; }
+  // BAZA NAJPIERW — findExerciseByName rozwiązuje nazwę kanoniczną i wszystkie aliasy
+  // (PL i EN), więc detekcja nie zależy od języka nazwy. Mapa słów kluczowych niżej
+  // jest tylko fallbackiem dla ćwiczeń spoza bazy (własne plany użytkownika).
+  const db = findExerciseByName(name);
+  if (db) result = db.muscleHead as MuscleKey;
+  else {
+    for (const key of SORTED_MUSCLE_KEYS) {
+      if (name.includes(key)) { result = EXERCISE_TO_MUSCLE[key]; break; }
+    }
   }
   _muscleCache.set(name, result);
   return result;

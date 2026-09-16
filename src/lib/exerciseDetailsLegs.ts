@@ -1130,5 +1130,77 @@ export const LEGS_DETAILS: Record<string, ExerciseDetails> = {
       'Zakres zwiększaj stopniowo — wyjeżdżaj tylko tak daleko, jak utrzymasz podwiniętą miednicę.',
       'Ścianę przed sobą możesz użyć jako ogranicznika zakresu na początku nauki.'
     ]
-  }
+  },
+  'reverse-crunch': {
+    equipmentDetail: 'masa ciała (mata)',
+    attachment: null,
+    startPosition: 'Połóż się na plecach, ręce wzdłuż tułowia lub pod pośladkami. Nogi ugnij w kolanach pod kątem 90°, uda pionowo nad biodrami. Lędźwie dociśnięte do podłogi.',
+    execution: [
+      'Zwiń miednicę w stronę klatki, odrywając pośladki od podłogi.',
+      'Prowadź kolana do klatki siłą dolnej części brzucha, nie rozpędem nóg.',
+      'Zatrzymaj skurcz na sekundę w najwyższym punkcie.',
+      'Opuść miednicę kontrolowanie, nie odrywając lędźwi od podłogi.'
+    ],
+    rangeOfMotion: 'Od bioder na podłodze do maksymalnego zwinięcia miednicy z pośladkami uniesionymi.',
+    musclesPrimary: ['mięsień prosty brzucha — część dolna'],
+    musclesSecondary: ['mięśnie skośne brzucha', 'mięśnie głębokie brzucha'],
+    commonMistakes: [
+      'Machanie nogami zamiast zwijania miednicy.',
+      'Odrywanie lędźwi od podłogi w fazie opuszczania.',
+      'Zbyt szybkie tempo i praca na rozpęd.',
+      'Odpychanie się rękami od podłogi.'
+    ],
+    tips: [
+      'Wyobraź sobie, że chcesz dotknąć miednicą żeber — to zwijanie, nie unoszenie nóg.',
+      'Dłonie pod pośladkami ułatwiają utrzymanie lędźwi przy podłodze na start.'
+    ]
+  },
+  'hollow-hold': {
+    equipmentDetail: 'masa ciała (mata)',
+    attachment: null,
+    startPosition: 'Połóż się na plecach, ręce wyprostowane za głową, nogi wyprostowane. Wciśnij lędźwie w podłogę i unieś jednocześnie łopatki oraz nogi kilka centymetrów nad matę.',
+    execution: [
+      'Utrzymuj lędźwie DOCIŚNIĘTE do podłogi przez cały czas — to warunek ćwiczenia.',
+      'Napnij brzuch i pośladki, ciało tworzy płytką „łódkę".',
+      'Oddychaj spokojnie, nie wstrzymuj powietrza.',
+      'Utrzymaj pozycję zadany czas, potem opuść kontrolowanie.'
+    ],
+    rangeOfMotion: 'Izometryczne utrzymanie łopatek i nóg nad podłogą przy lędźwiach dociśniętych do maty.',
+    musclesPrimary: ['mięsień prosty brzucha', 'mięśnie głębokie brzucha'],
+    musclesSecondary: ['zginacze bioder', 'mięśnie skośne brzucha'],
+    commonMistakes: [
+      'Odrywanie lędźwi od podłogi (łuk w plecach) — najczęstszy i najgroźniejszy błąd.',
+      'Zbyt niskie opuszczenie nóg na starcie, zanim opanujesz pozycję.',
+      'Wstrzymywanie oddechu.',
+      'Napinanie szyi zamiast brzucha.'
+    ],
+    tips: [
+      'Jeśli lędźwie się unoszą — ugnij kolana lub trzymaj nogi wyżej. Pozycja ma być trudna, ale bezpieczna.',
+      'Progresja: kolana ugięte → nogi proste wysoko → nogi proste nisko → ręce za głowę.'
+    ]
+  },
+  'dumbbell-side-bend': {
+    equipmentDetail: 'jedna hantla (umiarkowany ciężar)',
+    attachment: null,
+    startPosition: 'Stań prosto, stopy na szerokość bioder. Chwyć hantlę w jedną rękę wzdłuż tułowia, druga ręka na biodrze lub przy skroni. Barki równo, klatka wyprostowana.',
+    execution: [
+      'Pochyl tułów w bok w stronę hantli, opuszczając ją wzdłuż uda.',
+      'Wróć do pionu, napinając skośne po przeciwnej stronie.',
+      'Ruch odbywa się TYLKO w płaszczyźnie bocznej — bez rotacji i bez pochylania w przód.',
+      'Wykonaj tyle samo powtórzeń na drugą stronę.'
+    ],
+    rangeOfMotion: 'Od skłonu bocznego z hantlą przy kolanie do pełnego wyprostu tułowia (bez przeginania w drugą stronę).',
+    musclesPrimary: ['mięśnie skośne brzucha'],
+    musclesSecondary: ['mięsień czworoboczny lędźwi', 'mięsień prosty brzucha'],
+    commonMistakes: [
+      'Rotacja tułowia zamiast czystego skłonu w bok.',
+      'Hantle w obu rękach naraz — obciążenia znoszą się i ćwiczenie traci sens.',
+      'Zbyt duży ciężar i szarpanie.',
+      'Pochylanie się w przód zamiast na bok.'
+    ],
+    tips: [
+      'Trzymaj hantlę tylko po jednej stronie — to asymetria wymusza pracę skośnych.',
+      'Umiarkowany ciężar i pełny zakres; skośne nie potrzebują rekordów.'
+    ]
+  },
 }

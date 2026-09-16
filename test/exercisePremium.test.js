@@ -10,8 +10,8 @@ describe('EXERCISE_PREMIUM — integralność', () => {
       expect(findExerciseById(id), `nieznane id: ${id}`).toBeTruthy()
     }
   })
-  it('pokrywa pełną bazę (108 wpisów: Push+Pull+Legs)', () => {
-    expect(Object.keys(EXERCISE_PREMIUM).length).toBe(108)
+  it('ma dane premium dla 105 ćwiczeń (podzbiór bazy — reszta działa bez nich)', () => {
+    expect(Object.keys(EXERCISE_PREMIUM).length).toBe(105)
   })
 })
 

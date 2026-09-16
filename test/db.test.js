@@ -6,12 +6,12 @@ import { buildExerciseCatalog } from '../src/lib/ai'
 
 describe('detectMuscle', () => {
   it('rozpoznaje klatkę po keyword', () => {
-    expect(detectMuscle('Wyciskanie sztangi na ławce poziomej')).toBe('chest_middle')
+    expect(detectMuscle('Bench press')).toBe('chest_middle')
     expect(detectMuscle('Wyciskanie sztangi na ławce skośnej dodatniej')).toBe('chest_upper')
   })
   it('rozpoznaje plecy', () => {
-    expect(detectMuscle('Wiosłowanie sztangą w opadzie')).toBe('back_middle')
-    expect(detectMuscle('Martwy ciąg klasyczny')).toBe('back_lower')
+    expect(detectMuscle('Barbell row')).toBe('back_middle')
+    expect(detectMuscle('Deadlift')).toBe('back_lower')
   })
   it('rozpoznaje hamstring (RDL bug fix z 4511e55)', () => {
     expect(detectMuscle('Rumuński martwy ciąg ze sztangą (RDL)')).toBe('hamstrings')
@@ -33,12 +33,12 @@ describe('detectMuscle', () => {
 
 describe('detectEquipment', () => {
   it('rozpoznaje sztangę', () => {
-    const r = detectEquipment('Wyciskanie sztangi na ławce poziomej')
+    const r = detectEquipment('Bench press')
     expect(r).not.toBeNull()
     expect(r.label).toBe('Sztanga')
   })
   it('rozpoznaje hantle', () => {
-    expect(detectEquipment('Uginanie hantli na ławce skośnej').label).toBe('Hantle')
+    expect(detectEquipment('Incline dumbbell curl').label).toBe('Hantle')
   })
   it('zwraca null gdy brak match', () => {
     expect(detectEquipment('XYZ')).toBeNull()
@@ -46,7 +46,7 @@ describe('detectEquipment', () => {
   // Regresja: „Przysiad bułgarski" to ćwiczenie z hantlami, nie ze sztangą.
   // Generyczny wzorzec „przysiad"→Sztanga dawał zły chip; baza jest źródłem prawdy.
   it('bierze sprzęt z bazy zamiast generycznego wzorca (bułgarski przysiad = hantle)', () => {
-    expect(detectEquipment('Przysiad bułgarski').label).toBe('Hantle')
+    expect(detectEquipment('Bulgarian split squat').label).toBe('Hantle')
     expect(detectEquipment('bułgarski przysiad').label).toBe('Hantle')
   })
   it('nadal działa heurystyka słów dla ćwiczeń spoza bazy', () => {
@@ -56,12 +56,12 @@ describe('detectEquipment', () => {
 
 describe('findSubstitutes', () => {
   it('zwraca alternatywy z tej samej partii mięśniowej', () => {
-    const r = findSubstitutes('Wyciskanie sztangi na ławce poziomej', 3)
+    const r = findSubstitutes('Bench press', 3)
     expect(r).toHaveLength(3)
-    expect(r).not.toContain('Wyciskanie sztangi na ławce poziomej')
+    expect(r).not.toContain('Bench press')
   })
   it('respektuje limit', () => {
-    expect(findSubstitutes('Wyciskanie sztangi na ławce poziomej', 1)).toHaveLength(1)
+    expect(findSubstitutes('Bench press', 1)).toHaveLength(1)
   })
   it('zwraca [] gdy nie wykryto partii', () => {
     expect(findSubstitutes('Pies-jaszczurka turbo XYZ', 3)).toEqual([])
@@ -102,15 +102,15 @@ describe('findSubstitutes', () => {
     const groups = ['shoulder_side', 'shoulder_front', 'triceps_lat', 'back_lower', 'quads']
     for (const g of groups) {
       // reprezentatywne ćwiczenie z każdej partii, pełna lista bez limitu
-      const seed = { shoulder_side: 'Wznosy hantli bokiem', shoulder_front: 'Wznosy hantli przodem',
-        triceps_lat: 'Wyprosty triceps na wyciągu', back_lower: 'Martwy ciąg rumuński', quads: 'Przysiad bułgarski' }[g]
+      const seed = { shoulder_side: 'Lateral raise', shoulder_front: 'Front raise',
+        triceps_lat: 'Wyprosty triceps na wyciągu', back_lower: 'Romanian deadlift', quads: 'Bulgarian split squat' }[g]
       const r = findSubstitutes(seed, 30, g)
       const cores = r.map(core)
       expect(new Set(cores).size).toBe(cores.length)
     }
   })
   it('nazwy z bazy wyświetlane są w formie kanonicznej', () => {
-    const r = findSubstitutes('Wyciskanie sztangi na ławce poziomej', 30, 'chest_middle')
+    const r = findSubstitutes('Bench press', 30, 'chest_middle')
     for (const name of r) {
       const e = findExerciseByName(name)
       if (e) expect(name).toBe(e.name)
@@ -120,13 +120,13 @@ describe('findSubstitutes', () => {
 
 describe('fundamentalne ćwiczenia w bazie (luki wykryte w audycie)', () => {
   it('zawiera podciąganie i podciąganie podchwytem', () => {
-    expect(findExerciseByName('Podciąganie')?.equipment).toBe('własna_waga')
+    expect(findExerciseByName('Pull-up')?.equipment).toBe('własna_waga')
     expect(findExerciseByName('pull up')?.id).toBe('podciaganie')
     expect(findExerciseByName('chin up')?.id).toBe('podciaganie-podchwytem')
   })
   it('zawiera przysiad z masą ciała i wykroki bez obciążenia', () => {
     expect(findExerciseByName('bodyweight squat')?.id).toBe('przysiad-masa-ciala')
-    expect(findExerciseByName('Przysiad z masą ciała')?.muscleHead).toBe('quads')
+    expect(findExerciseByName('Bodyweight squat')?.muscleHead).toBe('quads')
     expect(findExerciseByName('bodyweight lunge')?.id).toBe('wykroki-masa-ciala')
   })
   it('zawiera pike push-up i wiosłowanie australijskie', () => {
@@ -140,8 +140,8 @@ describe('buildExerciseCatalog — sprzęt', () => {
   it('kalistenika ma teraz ćwiczenia na uda i plecy', () => {
     const legs = buildExerciseCatalog('legs', 'dom bez sprzętu (calisthenics)', 'mass', 'beginner', [])
     const pull = buildExerciseCatalog('pull', 'dom bez sprzętu (calisthenics)', 'mass', 'beginner', [])
-    expect(legs.text).toContain('Przysiad z masą ciała')
-    expect(pull.text).toContain('Podciąganie')
+    expect(legs.text).toContain('Bodyweight squat')
+    expect(pull.text).toContain('Pull-up')
   })
   // Preferencja usera: na siłowni ćwiczenia obciążeniowe wyżej niż masa ciała.
   it('na siłowni masa ciała jest niżej w grupie niż sprzęt obciążeniowy', () => {
@@ -156,17 +156,17 @@ describe('buildExerciseCatalog — sprzęt', () => {
 
 describe('translateExerciseName', () => {
   it('tłumaczy angielskie nazwy na polskie', () => {
-    expect(translateExerciseName('Bench Press')).toBe('Wyciskanie sztangi na ławce poziomej')
-    expect(translateExerciseName('Lateral Raise')).toBe('Wznosy hantli bokiem')
-    expect(translateExerciseName('Romanian Deadlift')).toBe('Martwy ciąg rumuński')
-    expect(translateExerciseName('Skull Crusher')).toBe('Francuskie wyciskanie sztangi')
+    expect(translateExerciseName('Bench Press')).toBe('Bench press')
+    expect(translateExerciseName('Lateral Raise')).toBe('Lateral raise')
+    expect(translateExerciseName('Romanian Deadlift')).toBe('Romanian deadlift')
+    expect(translateExerciseName('Skull Crusher')).toBe('Skullcrusher')
   })
   it('jest case-insensitive', () => {
-    expect(translateExerciseName('bench press')).toBe('Wyciskanie sztangi na ławce poziomej')
-    expect(translateExerciseName('BENCH PRESS')).toBe('Wyciskanie sztangi na ławce poziomej')
+    expect(translateExerciseName('bench press')).toBe('Bench press')
+    expect(translateExerciseName('BENCH PRESS')).toBe('Bench press')
   })
   it('nie zmienia polskich nazw', () => {
-    expect(translateExerciseName('Wyciskanie sztangi na ławce poziomej')).toBe('Wyciskanie sztangi na ławce poziomej')
+    expect(translateExerciseName('Bench press')).toBe('Bench press')
   })
   it('nie zmienia nieznanych nazw', () => {
     expect(translateExerciseName('Jakieś nieznane')).toBe('Jakieś nieznane')
