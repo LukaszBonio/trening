@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useWorkoutsStore } from '../stores/workouts'
 import { useBodyStore } from '../stores/body'
 import { computeAchievements, unlockedCount } from '../lib/achievements'
@@ -20,6 +20,18 @@ const sorted = computed(() => {
     return 0
   })
 })
+
+// Domyślnie: zdobyte + dwa najbliższe do zdobycia; resztę pokazujemy na żądanie,
+// żeby lista nie spychała ustawień na sam dół zakładki „Ty".
+const showAll = ref(false)
+const NEXT_COUNT = 2
+const visible = computed(() => {
+  if (showAll.value) return sorted.value
+  const got = sorted.value.filter(a => a.unlockedAt)
+  const next = sorted.value.filter(a => !a.unlockedAt).slice(0, NEXT_COUNT)
+  return [...got, ...next]
+})
+const hiddenCount = computed(() => sorted.value.length - visible.value.length)
 </script>
 
 <template>
@@ -30,7 +42,7 @@ const sorted = computed(() => {
 
     <div class="ach-grid">
       <div
-        v-for="a in sorted"
+        v-for="a in visible"
         :key="a.id"
         class="ach-card"
         :class="{ locked: !a.unlockedAt }"
@@ -53,10 +65,21 @@ const sorted = computed(() => {
         </div>
       </div>
     </div>
+
+    <button
+      v-if="hiddenCount > 0 || showAll"
+      class="btn ach-toggle"
+      @click="showAll = !showAll"
+      :aria-expanded="showAll"
+    >
+      <i class="ti" :class="showAll ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
+      {{ showAll ? 'Pokaż mniej' : `Pokaż wszystkie (${sorted.length})` }}
+    </button>
   </div>
 </template>
 
 <style scoped>
+.ach-toggle { margin-top: var(--space-3); width: 100%; min-height: 44px; font-size: 13px; }
 .achievements-header {
   display: flex;
   justify-content: space-between;

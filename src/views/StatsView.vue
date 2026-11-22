@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { RouterLink } from 'vue-router'
 import { useWorkoutsStore } from '../stores/workouts'
 import { detectMuscle } from '../lib/muscles'
 import { MUSCLE_TO_GROUP, GROUP_LABELS, PRIMARY_TO_GROUP } from '../lib/workoutSchema'
@@ -98,7 +99,7 @@ const hasPushPullData = computed(() => ppStats.value.ratio !== null)
 
 <template>
   <div class="stats-view">
-    <div class="stats-grid">
+    <div v-if="totalWorkouts" class="stats-grid">
       <div class="stat-card">
         <div class="stat-label">Treningi</div>
         <div class="stat-value">{{ totalWorkouts }}</div>
@@ -302,8 +303,13 @@ const hasPushPullData = computed(() => ppStats.value.ratio !== null)
     </BaseCard>
     </template>
 
-    <BaseCard v-if="!totalWorkouts">
-      <p class="muted">Brak danych. Wykonaj pierwszy trening żeby zobaczyć statystyki.</p>
+    <BaseCard v-if="!totalWorkouts" class="stats-empty">
+      <i class="ti ti-chart-line stats-empty-icon" aria-hidden="true"></i>
+      <h3 class="card-title stats-empty-title">Tu pojawią się Twoje statystyki</h3>
+      <p class="muted stats-empty-text">Po pierwszym zapisanym treningu zobaczysz liczbę treningów, serie, wolumen i kalendarz aktywności.</p>
+      <RouterLink :to="{ name: 'workout' }" class="btn btn-primary">
+        <i class="ti ti-player-play"></i> Zacznij trening
+      </RouterLink>
     </BaseCard>
   </div>
 </template>
@@ -313,9 +319,20 @@ const hasPushPullData = computed(() => ppStats.value.ratio !== null)
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  /* auto-fit: kafelki wypełniają całą szerokość (na desktopie 5 w rzędzie) */
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: var(--space-3);
 }
+/* Na telefonie (2 kolumny) ostatni, nieparzysty kafelek — Wolumen — na całą szerokość */
+@media (max-width: 640px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .stats-grid .stat-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
+.stats-empty { text-align: center; padding: var(--space-6) var(--space-5); }
+.stats-empty-icon { font-size: 32px; color: var(--text-dim); display: block; margin-bottom: var(--space-3); }
+.stats-empty-title { margin-bottom: var(--space-2); }
+.stats-empty-text { font-size: 14px; line-height: 1.5; max-width: 360px; margin: 0 auto var(--space-4); }
+.stats-empty .btn { text-decoration: none; }
 .stat-card {
   background: var(--bg-elev);
   border: 1px solid var(--border);

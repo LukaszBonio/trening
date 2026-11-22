@@ -741,7 +741,7 @@ async function discardWorkout() {
 }
 .days-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 10px;
   padding: 0 var(--space-4) var(--space-4);
   border-top: 1px solid var(--border);

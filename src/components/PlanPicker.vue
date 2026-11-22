@@ -57,6 +57,9 @@ function toggleFav(plan, e) {
           <i class="ti ti-star"></i>
         </button>
       </div>
+      <div class="plan-preview" :title="plan.exercises.map(e => e.name).join(' · ')">
+        {{ plan.exercises.slice(0, 3).map(e => e.name).join(' · ') }}<span v-if="plan.exercises.length > 3"> …</span>
+      </div>
       <div class="plan-meta">
         {{ plan.exercises.length }} ćwiczeń ·
         {{ plan.exercises.reduce((s, e) => s + e.sets, 0) }} serii
@@ -90,9 +93,11 @@ function toggleFav(plan, e) {
   flex-direction: column;
   gap: 4px;
 }
-.plan-card:hover {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+@media (hover: hover) {
+  .plan-card:hover {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
 }
 .plan-card.custom { border-style: dashed; }
 .plan-card.favorite { border-color: var(--accent-soft-2); }
@@ -121,6 +126,15 @@ function toggleFav(plan, e) {
   border-radius: 100px;
   letter-spacing: 0.5px;
   text-transform: uppercase;
+}
+.plan-preview {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .plan-meta {
   font-size: 12px;
