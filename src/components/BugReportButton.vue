@@ -5,7 +5,7 @@ import { useSessionStore } from '../stores/session'
 import { useCloudStore } from '../stores/cloud'
 import { useToast } from '../composables/useToast'
 
-// Pływający przycisk „Zgłoś błąd" — globalny, widoczny na każdym ekranie aplikacji.
+// Przycisk „Zgłoś błąd" w nagłówku — globalny, widoczny na każdym ekranie aplikacji.
 // Klik → mały modal z opisem; do zgłoszenia dołączany jest automatyczny kontekst
 // (widok, sesja, wersja, urządzenie), żeby zgłoszenia były użyteczne bez dopytywania.
 const route = useRoute()
@@ -112,37 +112,31 @@ async function send() {
 </template>
 
 <style scoped>
+/* Przycisk w nagłówku (był pływający i zasłaniał treść, m.in. „Wyślij” w Coachu) */
 .bug-fab {
-  position: fixed;
-  right: 14px;
-  /* nad dolną nawigacją mobilną (żeby jej nie zasłaniać) + safe-area */
-  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
-  z-index: 90;
-  width: 42px;
-  height: 42px;
+  position: relative;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   border: 1px solid var(--border);
-  background: var(--bg-elev-2);
+  background: transparent;
   color: var(--text-muted);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: 18px;
   cursor: pointer;
-  opacity: 0.55;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-  transition: opacity var(--dur), color var(--dur), border-color var(--dur), transform var(--dur);
+  flex-shrink: 0;
+  transition: color var(--dur), border-color var(--dur), background var(--dur);
 }
+/* cel dotyku 44 px */
+.bug-fab::after { content: ''; position: absolute; inset: -4px; }
 .bug-fab:hover {
-  opacity: 1;
-  color: var(--accent);
-  border-color: var(--accent);
-  transform: translateY(-1px);
+  color: var(--text);
+  border-color: var(--border-strong);
+  background: var(--bg-hover);
 }
-/* Na desktopie nie ma dolnej nawigacji — przycisk może siedzieć niżej */
-@media (min-width: 768px) {
-  .bug-fab { bottom: 18px; }
-}
+.bug-fab:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
 
 .bug-backdrop {
   position: fixed;
@@ -173,7 +167,7 @@ async function send() {
   align-items: center;
   gap: 8px;
 }
-.bug-head i { color: var(--accent); font-size: 20px; }
+.bug-head i { color: var(--accent-text); font-size: 20px; }
 .bug-head h3 { flex: 1; margin: 0; font-size: 16px; font-weight: 700; }
 .bug-x {
   background: transparent;

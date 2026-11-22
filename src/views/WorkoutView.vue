@@ -556,7 +556,7 @@ async function discardWorkout() {
 }
 .session-type {
   font-size: 11px;
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 600;
   letter-spacing: 1px;
   margin-bottom: 4px;
@@ -618,6 +618,7 @@ async function discardWorkout() {
   justify-content: center;
   gap: 6px;
   padding: 9px 8px;
+  min-height: 44px;
   background: transparent;
   border: none;
   border-radius: var(--radius-sm);
@@ -630,7 +631,8 @@ async function discardWorkout() {
 }
 .home-tab .ti { font-size: 16px; }
 .home-tab:hover { color: var(--text); }
-.home-tab.active { background: var(--accent); color: #000; }
+.home-tab.active { background: var(--seg-active); color: var(--text); box-shadow: var(--shadow-sm); }
+.home-tab.active .ti { color: var(--accent-text); }
 
 /* Chipy wyboru systemu w trybie „Pojedynczy" */
 .system-chips {
@@ -656,7 +658,7 @@ async function discardWorkout() {
 }
 .system-chip .ti { font-size: 15px; }
 .system-chip:hover { border-color: var(--border-strong); color: var(--text); }
-.system-chip.active { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.system-chip.active { border-color: var(--accent); color: var(--accent-text); background: var(--accent-soft); }
 .system-desc-sel { padding: 0 var(--space-4); margin: 10px 0 var(--space-2); }
 
 .repeat-banner {
@@ -665,8 +667,6 @@ async function discardWorkout() {
   justify-content: space-between;
   gap: var(--space-3);
   padding: var(--space-4);
-  background: var(--accent-soft);
-  border-color: var(--accent-soft-2);
 }
 .repeat-info {
   display: flex;
@@ -677,7 +677,7 @@ async function discardWorkout() {
 }
 .repeat-info > i {
   font-size: 24px;
-  color: var(--accent);
+  color: var(--accent-text);
   flex-shrink: 0;
 }
 .repeat-label {
@@ -696,8 +696,8 @@ async function discardWorkout() {
 }
 .repeat-tag {
   font-size: 10px;
-  background: var(--accent);
-  color: #000;
+  background: var(--accent-soft);
+  color: var(--accent-text);
   padding: 2px 8px;
   border-radius: 100px;
   font-weight: 700;
@@ -752,7 +752,7 @@ async function discardWorkout() {
   height: 44px;
   border-radius: 12px;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -848,8 +848,6 @@ async function discardWorkout() {
 .ania-card {
   padding: 0;
   overflow: hidden;
-  border-color: var(--accent-soft-2);
-  background: linear-gradient(135deg, var(--accent-soft), transparent 70%);
 }
 .ania-head {
   display: flex;
@@ -928,7 +926,7 @@ async function discardWorkout() {
   height: 30px;
   border-radius: 50%;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -940,7 +938,7 @@ async function discardWorkout() {
 .ania-day-title { font-weight: 600; font-size: 14px; }
 .ania-day-desc { font-size: 12px; color: var(--text-muted); line-height: 1.35; }
 .ania-day-btn:hover .ania-arrow {
-  color: var(--accent);
+  color: var(--accent-text);
   transform: translateX(2px);
 }
 
@@ -1055,6 +1053,7 @@ async function discardWorkout() {
 .source-tab {
   flex: 1;
   padding: 8px 12px;
+  min-height: 44px;
   background: transparent;
   border: none;
   color: var(--text-muted);
@@ -1068,8 +1067,10 @@ async function discardWorkout() {
   transition: all var(--dur) var(--ease);
 }
 .source-tab.active {
-  background: var(--accent);
-  color: #000;
+  background: var(--seg-active);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
   font-weight: 600;
 }
+.source-tab.active .ti { color: var(--accent-text); }
 </style>

@@ -169,11 +169,11 @@ function toggle(setIdx) {
   vertical-align: middle;
   transition: color var(--dur), border-color var(--dur);
 }
-.ex-info-btn:hover { color: var(--accent); border-color: var(--accent); }
+.ex-info-btn:hover { color: var(--accent-text); border-color: var(--accent); }
 .ex-tip { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 .ex-target {
   font-size: 12px;
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-soft);
   padding: 4px 8px;
   border-radius: 100px;

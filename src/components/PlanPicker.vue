@@ -117,7 +117,7 @@ function toggleFav(plan, e) {
   font-weight: 700;
   padding: 2px 6px;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
   border-radius: 100px;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -129,14 +129,21 @@ function toggleFav(plan, e) {
 .fav-btn {
   background: transparent;
   border: none;
-  color: var(--text-dim);
-  font-size: 16px;
+  color: var(--text-muted);
+  font-size: 18px;
+  /* cel dotyku 44×44 bez zmiany układu karty */
+  width: 44px;
+  height: 44px;
+  margin: -12px -12px -12px 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0;
   cursor: pointer;
   transition: color var(--dur);
 }
-.fav-btn.active { color: var(--accent); }
-.fav-btn:hover { color: var(--accent); }
+.fav-btn.active { color: var(--accent-text); }
+.fav-btn:hover { color: var(--accent-text); }
 
 .custom-actions { display: flex; gap: 6px; margin-top: 4px; }
 .btn-tiny {

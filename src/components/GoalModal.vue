@@ -128,13 +128,13 @@ function pick(key) {
 .goal-item.active {
   border-color: var(--accent);
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 600;
 }
 .goal-item i:not(.goal-check) { font-size: 18px; }
 .goal-item-label { flex: 1; }
 .goal-check {
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 18px;
 }
 </style>

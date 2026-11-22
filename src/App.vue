@@ -69,6 +69,7 @@ const tabs = [
           <i class="ti" :class="currentGoal.icon"></i>
           <span>{{ currentGoal.label }}</span>
         </button>
+        <BugReportButton />
       </div>
     </header>
 
@@ -106,8 +107,6 @@ const tabs = [
         <span>{{ tab.label }}</span>
       </RouterLink>
     </nav>
-
-    <BugReportButton />
   </div>
 </template>
 
@@ -136,7 +135,7 @@ const tabs = [
   font-family: 'Space Grotesk', sans-serif;
   font-size: 19px; font-weight: 700; letter-spacing: -0.5px;
 }
-.brand-text span { color: var(--accent); }
+.brand-text span { color: var(--accent-text); }
 .goal-badge {
   display: inline-flex;
   align-items: center;
@@ -144,18 +143,22 @@ const tabs = [
   font-size: 12px;
   padding: 6px 12px;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
   border-radius: 100px;
   font-weight: 600;
   border: 1px solid var(--accent-soft-2);
   cursor: pointer;
   transition: all var(--dur) var(--ease);
+  position: relative;
 }
+/* cel dotyku 44 px bez powiększania samej plakietki */
+.goal-badge::after { content: ''; position: absolute; inset: -8px -4px; }
 .goal-badge:hover {
   background: var(--accent-soft-2);
   border-color: var(--accent);
 }
 .goal-badge i { font-size: 14px; }
+.header-right { display: flex; align-items: center; gap: 8px; }
 .tabs {
   display: flex;
   gap: 6px;
@@ -181,10 +184,12 @@ const tabs = [
 }
 .tab:hover { color: var(--text); background: var(--bg-hover); }
 .tab.active {
-  background: var(--accent);
-  color: #000;
+  background: var(--seg-active);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
   font-weight: 600;
 }
+.tab.active i { color: var(--accent-text); }
 .tab i { font-size: 18px; }
 .main { min-height: 60vh; }
 
@@ -200,7 +205,7 @@ const tabs = [
     grid-template-columns: repeat(5, 1fr);
     position: fixed;
     bottom: 0; left: 0; right: 0;
-    background: rgba(15, 16, 20, 0.92);
+    background: var(--nav-bg);
     backdrop-filter: saturate(180%) blur(14px);
     border-top: 1px solid var(--border);
     padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
@@ -214,7 +219,7 @@ const tabs = [
     gap: 3px;
     padding: 8px 2px;
     border-radius: var(--radius-sm);
-    color: var(--text-dim);
+    color: var(--text-muted);
     text-decoration: none;
     font-size: 10px;
     font-weight: 500;
@@ -228,6 +233,6 @@ const tabs = [
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .tab-mobile.active { color: var(--accent); }
+  .tab-mobile.active { color: var(--accent-text); }
 }
 </style>

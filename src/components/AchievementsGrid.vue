@@ -67,7 +67,7 @@ const sorted = computed(() => {
   font-family: 'Space Grotesk', sans-serif;
   font-size: 18px;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .ach-grid {
   display: grid;
@@ -96,7 +96,7 @@ const sorted = computed(() => {
   justify-content: center;
   font-size: 22px;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
   flex-shrink: 0;
 }
 .ach-card.locked .ach-icon {

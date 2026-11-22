@@ -218,7 +218,7 @@ onBeforeUnmount(() => {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--accent);
+  color: var(--accent-text);
   margin-bottom: 2px;
 }
 .exi-title { margin: 0; font-size: 17px; line-height: 1.3; }
@@ -281,7 +281,7 @@ onBeforeUnmount(() => {
   cursor: pointer;
   transition: border-color var(--dur), color var(--dur);
 }
-.exi-state-btn:hover { border-color: var(--accent); color: var(--accent); }
+.exi-state-btn:hover { border-color: var(--accent); color: var(--accent-text); }
 .exi-state-btn .ti { font-size: 15px; }
 
 .exi-equip-row { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -295,7 +295,7 @@ onBeforeUnmount(() => {
   border-radius: 100px;
 }
 .exi-chip .ti { font-size: 13px; }
-.exi-chip-equip { background: var(--accent-soft); color: var(--accent); }
+.exi-chip-equip { background: var(--accent-soft); color: var(--accent-text); }
 .exi-chip-attach {
   background: var(--bg-elev-2);
   color: var(--text);
@@ -313,7 +313,7 @@ onBeforeUnmount(() => {
   text-transform: uppercase;
   color: var(--text-muted);
 }
-.exi-section-title i { color: var(--accent); font-size: 14px; }
+.exi-section-title i { color: var(--accent-text); font-size: 14px; }
 .exi-section-title.exi-warn i { color: var(--warning); }
 
 .exi-text { margin: 0; font-size: 13.5px; line-height: 1.55; color: var(--text); }
@@ -327,10 +327,10 @@ onBeforeUnmount(() => {
   font-size: 13.5px;
   line-height: 1.5;
 }
-.exi-steps li::marker { color: var(--accent); font-weight: 700; }
+.exi-steps li::marker { color: var(--accent-text); font-weight: 700; }
 
 .exi-muscles { display: flex; flex-wrap: wrap; gap: 6px; }
-.exi-chip-primary { background: var(--accent-soft); color: var(--accent); }
+.exi-chip-primary { background: var(--accent-soft); color: var(--accent-text); }
 .exi-chip-secondary {
   background: var(--bg-elev-2);
   color: var(--text-muted);

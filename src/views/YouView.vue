@@ -420,7 +420,7 @@ function onFileChange(e) {
   color: var(--text-muted);
 }
 .sync-status.ok { color: var(--success); }
-.sync-status.syncing { color: var(--accent); }
+.sync-status.syncing { color: var(--accent-text); }
 .sync-status.error { color: var(--danger); }
 .account-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
 

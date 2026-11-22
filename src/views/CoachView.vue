@@ -131,10 +131,6 @@ function reportAgeLabel() {
   gap: var(--space-3);
 }
 
-.weekly-report {
-  background: linear-gradient(135deg, var(--bg-elev) 0%, var(--accent-soft) 200%);
-  border-color: var(--accent-soft-2);
-}
 .weekly-header {
   display: flex;
   justify-content: space-between;
@@ -149,7 +145,7 @@ function reportAgeLabel() {
   align-items: center;
   gap: 8px;
 }
-.weekly-title i { color: var(--accent); }
+.weekly-title i { color: var(--accent-text); }
 .weekly-age {
   font-size: 11px;
   letter-spacing: 0.04em;
@@ -163,7 +159,7 @@ function reportAgeLabel() {
   color: var(--text-muted);
   font-size: 14px;
 }
-.weekly-loading i { color: var(--accent); font-size: 18px; }
+.weekly-loading i { color: var(--accent-text); font-size: 18px; }
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .weekly-error {
@@ -195,7 +191,7 @@ function reportAgeLabel() {
   align-items: center;
   gap: 6px;
 }
-.weekly-section-title i { color: var(--accent); font-size: 14px; }
+.weekly-section-title i { color: var(--accent-text); font-size: 14px; }
 .weekly-list {
   list-style: none;
   padding: 0;

@@ -217,7 +217,7 @@ onMounted(async () => {
   padding: 2px 8px;
   border-radius: 100px;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .type-pill.type-push { background: var(--push-soft); color: var(--push); }
 .type-pill.type-pull { background: var(--pull-soft); color: var(--pull); }

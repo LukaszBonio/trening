@@ -333,7 +333,8 @@ const hasPushPullData = computed(() => ppStats.value.ratio !== null)
   font-family: 'Space Grotesk', sans-serif;
   font-size: 28px;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
 
 .ex-picker { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: var(--space-4); }
@@ -379,7 +380,7 @@ const hasPushPullData = computed(() => ppStats.value.ratio !== null)
 .pr-rank {
   font-family: 'Space Grotesk', sans-serif;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 14px;
 }
 .pr-name { font-weight: 600; font-size: 14px; }
@@ -389,7 +390,7 @@ const hasPushPullData = computed(() => ppStats.value.ratio !== null)
   font-family: 'Space Grotesk', sans-serif;
   font-size: 22px;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .pr-1rm small { font-size: 11px; opacity: 0.7; margin-left: 2px; }
 
@@ -432,7 +433,7 @@ const hasPushPullData = computed(() => ppStats.value.ratio !== null)
 }
 .muscle-fill {
   height: 100%;
-  background: var(--accent-grad);
+  background: var(--accent);
   transition: width var(--dur);
 }
 .muscle-val { font-size: 12px; text-align: right; font-weight: 600; }
@@ -473,7 +474,7 @@ const hasPushPullData = computed(() => ppStats.value.ratio !== null)
   align-items: center;
   gap: 6px;
 }
-.pattern-section-title i { color: var(--accent); font-size: 14px; }
+.pattern-section-title i { color: var(--accent-text); font-size: 14px; }
 
 .ci-bar-container { display: flex; flex-direction: column; gap: 8px; }
 .ci-bar {
@@ -483,7 +484,7 @@ const hasPushPullData = computed(() => ppStats.value.ratio !== null)
   overflow: hidden;
 }
 .ci-fill { height: 100%; border-radius: 100px; transition: width var(--dur); }
-.ci-compound { background: var(--accent-grad); }
+.ci-compound { background: var(--accent); }
 .ci-labels { display: flex; justify-content: space-between; gap: 8px; }
 .ci-label { font-size: 12px; color: var(--text-muted); display: inline-flex; align-items: center; gap: 6px; }
 .ci-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
@@ -553,7 +554,7 @@ const hasPushPullData = computed(() => ppStats.value.ratio !== null)
 }
 .pattern-fill {
   height: 100%;
-  background: var(--accent-grad);
+  background: var(--accent);
   transition: width var(--dur);
 }
 .pattern-val { font-size: 12px; text-align: right; font-weight: 600; }

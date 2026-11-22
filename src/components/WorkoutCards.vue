@@ -584,7 +584,7 @@ watch([exIdx, setIdx, () => session.active?.id], suggestWeightIfEmpty, { immedia
   font-family: 'Space Grotesk', sans-serif;
   font-size: 14px;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-text);
   letter-spacing: 2px;
   text-transform: uppercase;
 }
@@ -610,7 +610,7 @@ watch([exIdx, setIdx, () => session.active?.id], suggestWeightIfEmpty, { immedia
   font-size: 56px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .rest-adjust { display: flex; gap: var(--space-3); }
@@ -731,7 +731,7 @@ watch([exIdx, setIdx, () => session.active?.id], suggestWeightIfEmpty, { immedia
   letter-spacing: 0.5px;
   text-transform: uppercase;
 }
-.ex-muscle { color: var(--accent); background: var(--accent-soft); }
+.ex-muscle { color: var(--accent-text); background: var(--accent-soft); }
 .ex-equip { color: var(--text-muted); background: var(--bg-elev-2); border: 1px solid var(--border); }
 .ex-name {
   font-family: 'Space Grotesk', sans-serif;
@@ -902,7 +902,7 @@ watch([exIdx, setIdx, () => session.active?.id], suggestWeightIfEmpty, { immedia
   align-items: center;
   justify-content: center;
 }
-.rpe-help-btn:hover { border-color: var(--accent); color: var(--accent); }
+.rpe-help-btn:hover { border-color: var(--accent); color: var(--accent-text); }
 
 .timer-flash {
   position: fixed;
@@ -957,7 +957,7 @@ watch([exIdx, setIdx, () => session.active?.id], suggestWeightIfEmpty, { immedia
   align-items: center;
   gap: 8px;
 }
-.last-hint i { color: var(--accent); font-size: 15px; }
+.last-hint i { color: var(--accent-text); font-size: 15px; }
 .last-hint strong { color: var(--text); font-weight: 600; }
 .last-hint .dim { color: var(--text-dim); font-size: 12px; }
 
@@ -968,7 +968,7 @@ watch([exIdx, setIdx, () => session.active?.id], suggestWeightIfEmpty, { immedia
   border: 1px solid var(--accent-soft-2);
   border-radius: var(--radius-sm);
   font-size: 13px;
-  color: var(--accent);
+  color: var(--accent-text);
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -997,7 +997,7 @@ watch([exIdx, setIdx, () => session.active?.id], suggestWeightIfEmpty, { immedia
   font-family: 'Space Grotesk', sans-serif;
   font-weight: 700;
   font-size: 13px;
-  color: var(--accent);
+  color: var(--accent-text);
   margin-bottom: 6px;
 }
 .rpe-help-close {
@@ -1026,7 +1026,7 @@ watch([exIdx, setIdx, () => session.active?.id], suggestWeightIfEmpty, { immedia
 .rpe-scale strong {
   display: inline-block;
   min-width: 32px;
-  color: var(--accent);
+  color: var(--accent-text);
   font-family: 'Space Grotesk', sans-serif;
 }
 .rpe-help-tip { margin: 0; font-size: 11px; color: var(--text-dim); font-style: italic; }
@@ -1047,7 +1047,6 @@ watch([exIdx, setIdx, () => session.active?.id], suggestWeightIfEmpty, { immedia
   gap: 10px;
   cursor: pointer;
   transition: all var(--dur) var(--ease-spring);
-  box-shadow: var(--accent-glow);
 }
 .complete-btn:hover {
   background: var(--accent-strong);
@@ -1088,7 +1087,7 @@ watch([exIdx, setIdx, () => session.active?.id], suggestWeightIfEmpty, { immedia
   cursor: pointer;
   transition: all var(--dur);
 }
-.set-chip.done { background: var(--accent-soft); color: var(--accent); border-color: var(--accent-soft-2); }
+.set-chip.done { background: var(--accent-soft); color: var(--accent-text); border-color: var(--accent-soft-2); }
 .set-chip.current { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
 .set-chip.pending:hover { border-color: var(--accent); }
 .chip-num {

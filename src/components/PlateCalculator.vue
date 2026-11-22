@@ -133,7 +133,7 @@ const result = computed(() => calculatePlates(Number(weight.value) || 0, Number(
   font-family: 'Space Grotesk', sans-serif;
   font-size: 28px;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .per-side small { font-size: 14px; opacity: 0.7; }
 

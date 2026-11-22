@@ -207,7 +207,7 @@ onMounted(() => {
   font-family: 'Space Grotesk', sans-serif;
   font-size: 22px;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .sum-val small { font-size: 12px; opacity: 0.7; margin-left: 2px; }
 
@@ -221,7 +221,7 @@ onMounted(() => {
 }
 .pr-header {
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-text);
   margin-bottom: var(--space-2);
   display: flex;
   align-items: center;
@@ -236,7 +236,7 @@ onMounted(() => {
   padding: 4px 0;
 }
 .pr-name { color: var(--text); }
-.pr-val { color: var(--accent); font-weight: 600; }
+.pr-val { color: var(--accent-text); font-weight: 600; }
 
 .modal-cta { width: 100%; padding: 14px; font-size: 15px; }
 </style>

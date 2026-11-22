@@ -95,7 +95,7 @@ onBeforeUnmount(() => { if (timer) clearInterval(timer) })
 }
 .sw.big .sw-time { font-size: 32px; }
 .sw.compact .sw-time { font-size: 16px; flex: 1; text-align: center; }
-.sw-time.live { color: var(--accent); }
+.sw-time.live { color: var(--accent-text); }
 
 .sw-btn {
   display: inline-flex;

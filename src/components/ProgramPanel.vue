@@ -303,10 +303,6 @@ const STATUS_META = {
 </template>
 
 <style scoped>
-.program-card {
-  border-color: var(--accent-soft-2);
-  background: linear-gradient(135deg, var(--accent-soft), transparent 70%);
-}
 .prog-head { display: flex; gap: 12px; align-items: center; margin-bottom: var(--space-3); }
 .prog-icon {
   width: 44px; height: 44px; border-radius: 12px;
@@ -337,7 +333,7 @@ const STATUS_META = {
   flex: 1; padding: 10px 0; background: var(--bg-elev-2); border: 1px solid var(--border);
   border-radius: var(--radius-sm); color: var(--text); font-weight: 700; font-size: 15px; cursor: pointer;
 }
-.prog-day-opt.active { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.prog-day-opt.active { border-color: var(--accent); color: var(--accent-text); background: var(--accent-soft); }
 .prog-form-actions, .prog-actions { display: flex; gap: 8px; margin-top: var(--space-2); }
 .prog-strict {
   display: flex; align-items: flex-start; gap: 10px; cursor: pointer;
@@ -356,7 +352,7 @@ const STATUS_META = {
 
 .prog-meta { display: flex; gap: 6px; margin-bottom: var(--space-3); }
 .prog-chip {
-  font-size: 11px; color: var(--accent); background: var(--accent-soft);
+  font-size: 11px; color: var(--accent-text); background: var(--accent-soft);
   padding: 3px 10px; border-radius: 100px; font-weight: 600;
   display: inline-flex; align-items: center; gap: 4px;
 }
@@ -385,7 +381,7 @@ const STATUS_META = {
   background: var(--bg-elev-2); border: 1px solid var(--border);
   border-radius: var(--radius-sm); font-size: 12.5px; color: var(--text-muted);
 }
-.prog-week > i { font-size: 15px; color: var(--accent); flex-shrink: 0; }
+.prog-week > i { font-size: 15px; color: var(--accent-text); flex-shrink: 0; }
 .prog-week strong { color: var(--text); font-variant-numeric: tabular-nums; }
 .prog-week-reset { color: var(--text-dim); }
 .prog-week.all-done {
@@ -407,12 +403,12 @@ const STATUS_META = {
   color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center;
   font-size: 16px; transition: color var(--dur), border-color var(--dur);
 }
-.prog-regen:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); }
+.prog-regen:hover:not(:disabled) { color: var(--accent-text); border-color: var(--accent); }
 .prog-regen:disabled { opacity: 0.5; cursor: default; }
 .prog-day-info { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .prog-day-num {
   flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%;
-  background: var(--accent-soft); color: var(--accent);
+  background: var(--accent-soft); color: var(--accent-text);
   display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px;
 }
 .prog-day-label { font-weight: 600; font-size: 14px; }

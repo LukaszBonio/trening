@@ -80,7 +80,7 @@ onUnmounted(() => { if (intervalId) clearInterval(intervalId) })
   letter-spacing: -1px;
   margin-bottom: var(--space-3);
 }
-.rest-timer.running .timer-display { color: var(--accent); }
+.rest-timer.running .timer-display { color: var(--accent-text); }
 .timer-controls {
   display: flex;
   gap: 8px;
@@ -103,7 +103,7 @@ onUnmounted(() => { if (intervalId) clearInterval(intervalId) })
 }
 .preset.active {
   border-color: var(--accent);
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-soft);
 }
 </style>

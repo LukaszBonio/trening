@@ -99,7 +99,7 @@ watch(() => messages.value.length, scrollChatDown)
       <!-- brak analizy — CTA -->
       <template v-else-if="!analysis && !analyzing && !analyzeError">
         <p class="muted coach-cta">AI przeanalizuje trendy każdego ćwiczenia — stagnacja, progres, regres — na bazie liczb z historii.</p>
-        <button class="btn btn-primary" @click="doAnalyze">
+        <button class="btn" @click="doAnalyze">
           <i class="ti ti-brain"></i> Analizuj postępy
         </button>
       </template>
@@ -191,7 +191,7 @@ watch(() => messages.value.length, scrollChatDown)
 <style scoped>
 .coach-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .coach-title { display: inline-flex; align-items: center; gap: 8px; margin: 0; }
-.coach-title i { color: var(--accent); }
+.coach-title i { color: var(--accent-text); }
 .coach-age { font-size: 11px; }
 
 .coach-section { padding-top: var(--space-3); }
@@ -210,7 +210,7 @@ watch(() => messages.value.length, scrollChatDown)
   color: var(--text-muted);
   margin-bottom: 12px;
 }
-.coach-section-title i { color: var(--accent); font-size: 14px; }
+.coach-section-title i { color: var(--accent-text); font-size: 14px; }
 
 .coach-cta, .coach-empty { font-size: 13px; line-height: 1.5; color: var(--text-muted); margin: 0 0 12px; }
 .coach-empty { display: flex; align-items: center; gap: 8px; }
@@ -218,7 +218,7 @@ watch(() => messages.value.length, scrollChatDown)
 
 .coach-loading {
   display: flex; align-items: center; gap: 8px;
-  color: var(--accent); font-size: 13px; padding: 8px 0;
+  color: var(--accent-text); font-size: 13px; padding: 8px 0;
 }
 .coach-error {
   display: flex; align-items: center; gap: 8px;
@@ -245,7 +245,7 @@ watch(() => messages.value.length, scrollChatDown)
   font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
   padding: 2px 8px; border-radius: 100px; margin-bottom: 6px;
 }
-.coach-insight-tag.progress { background: var(--accent-soft); color: var(--accent); }
+.coach-insight-tag.progress { background: var(--accent-soft); color: var(--accent-text); }
 .coach-insight-tag.success  { background: rgba(74, 222, 128, 0.15); color: var(--success); }
 .coach-insight-tag.warning  { background: rgba(251, 146, 60, 0.15); color: var(--warning); }
 .coach-insight-tag.tip      { background: rgba(74, 142, 255, 0.15); color: var(--pull, #4a8eff); }

@@ -145,7 +145,7 @@ function finish() {
 }
 .onb-icon {
   font-size: 40px;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .onb-title {

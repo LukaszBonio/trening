@@ -301,13 +301,12 @@ function translateError(msg) {
   background: var(--accent); color: #000;
   display: flex; align-items: center; justify-content: center;
   font-size: 24px;
-  box-shadow: var(--accent-glow);
 }
 .auth-title {
   font-family: 'Space Grotesk', sans-serif;
   font-size: 23px; font-weight: 700; letter-spacing: -0.5px;
 }
-.auth-title span { color: var(--accent); }
+.auth-title span { color: var(--accent-text); }
 .auth-sub {
   color: var(--text-muted);
   font-size: 14px;
@@ -335,8 +334,9 @@ function translateError(msg) {
 }
 .toggle-btn:hover { color: var(--text); }
 .toggle-btn.active {
-  background: var(--accent);
-  color: #000;
+  background: var(--seg-active);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
   font-weight: 600;
 }
 .auth-form { display: flex; flex-direction: column; gap: 14px; }
@@ -390,7 +390,7 @@ function translateError(msg) {
   align-self: flex-start;
   background: none;
   border: none;
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 13px;
   padding: 0;
   margin: -4px 0 2px;

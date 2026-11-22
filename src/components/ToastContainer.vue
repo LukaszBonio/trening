@@ -79,7 +79,7 @@ const { toasts, dismiss, runAction } = useToast()
 .toast-action {
   background: transparent;
   border: 1px solid var(--accent);
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 600;
   font-size: 13px;
   padding: 5px 12px;

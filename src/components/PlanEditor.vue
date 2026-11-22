@@ -210,7 +210,7 @@ function save() {
 .ex-num {
   font-family: 'Space Grotesk', sans-serif;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 14px;
 }
 .ex-controls { display: flex; gap: 4px; }
@@ -249,7 +249,7 @@ function save() {
   gap: 4px;
   cursor: pointer;
 }
-.btn-add:hover { color: var(--accent); border-color: var(--accent); }
+.btn-add:hover { color: var(--accent-text); border-color: var(--accent); }
 
 .editor-actions { display: flex; gap: 8px; justify-content: flex-end; }
 </style>

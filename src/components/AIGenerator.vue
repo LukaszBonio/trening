@@ -293,7 +293,7 @@ function statusIcon(s)  { return STATUS_META[s]?.icon || 'ti-info-circle' }
     <!-- Plan preview -->
     <div v-else class="ai-result">
       <div class="ai-result-header">
-        <i class="ti ti-sparkles" style="color: var(--accent);"></i>
+        <i class="ti ti-sparkles" style="color: var(--accent-text);"></i>
         <div>
           <div class="ai-plan-name">{{ plan.name }}</div>
           <div class="dim" style="font-size: 12px;">{{ plan.exercises.length }} ćwiczeń · plan wygenerowany przez AI</div>
@@ -460,7 +460,7 @@ function statusIcon(s)  { return STATUS_META[s]?.icon || 'ti-info-circle' }
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-soft);
   padding: 2px 7px;
   border-radius: 100px;
@@ -484,7 +484,7 @@ function statusIcon(s)  { return STATUS_META[s]?.icon || 'ti-info-circle' }
 }
 .goal-info > i {
   font-size: 22px;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .goal-info-text { flex: 1; line-height: 1.2; }
 .goal-info-label {
@@ -496,7 +496,7 @@ function statusIcon(s)  { return STATUS_META[s]?.icon || 'ti-info-circle' }
 .goal-info-value {
   font-size: 14px;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .goal-info-hint {
   font-size: 11px;
@@ -561,7 +561,7 @@ function statusIcon(s)  { return STATUS_META[s]?.icon || 'ti-info-circle' }
   align-items: center;
   gap: 6px;
 }
-.ai-analysis-title i { color: var(--accent); font-size: 14px; }
+.ai-analysis-title i { color: var(--accent-text); font-size: 14px; }
 .ai-analysis-list {
   list-style: none;
   padding: 0;
@@ -592,7 +592,7 @@ function statusIcon(s)  { return STATUS_META[s]?.icon || 'ti-info-circle' }
 .status-progress > i       { color: var(--success); }
 .status-stagnation > i     { color: var(--warning); }
 .status-overreaching > i   { color: var(--danger); }
-.status-weakly_covered > i { color: var(--accent); }
+.status-weakly_covered > i { color: var(--accent-text); }
 .ai-analysis-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
 .ai-analysis-muscle { font-weight: 600; text-transform: capitalize; }
 .ai-analysis-status {
@@ -632,7 +632,7 @@ function statusIcon(s)  { return STATUS_META[s]?.icon || 'ti-info-circle' }
   text-align: center;
   font-family: 'Space Grotesk', sans-serif;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 15px;
 }
 .ai-ex-vol {
@@ -640,7 +640,7 @@ function statusIcon(s)  { return STATUS_META[s]?.icon || 'ti-info-circle' }
   width: 86px;
   box-sizing: border-box;
   text-align: center;
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-soft);
   padding: 3px 6px;
   border-radius: 100px;
@@ -690,7 +690,7 @@ function statusIcon(s)  { return STATUS_META[s]?.icon || 'ti-info-circle' }
 }
 .ai-ex-action--swap:hover,
 .ai-ex-action--swap.is-active {
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-soft);
 }
 .ai-ex-action--info {
@@ -698,7 +698,7 @@ function statusIcon(s)  { return STATUS_META[s]?.icon || 'ti-info-circle' }
   background: transparent;
 }
 .ai-ex-action--info:hover {
-  color: var(--accent);
+  color: var(--accent-text);
   background: var(--accent-soft);
 }
 
